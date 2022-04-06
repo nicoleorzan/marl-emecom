@@ -6,7 +6,6 @@ import torch.optim as optim
 # Identify which device should be used by torch for the ANN calculations
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-
 class AgentNet(nn.Module):
     def __init__(self, n_players, n_coins):
         super(AgentNet, self).__init__()

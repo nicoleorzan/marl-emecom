@@ -1,4 +1,4 @@
-import gym
+#import gym
 from gym.spaces import Discrete
 import numpy as np
 import functools
@@ -7,10 +7,10 @@ from pettingzoo.utils import agent_selector
 from pettingzoo.utils import wrappers
 
 
-GIVE = 0
-KEEP = 1
-NONE = 2
-MOVES = ["GIVE", "KEEP", "None"]
+GIVE = 0 # give my money to pot
+KEEP = 1 # keep my money
+NONE = 2 # nothing???
+MOVES = ["GIVE", "KEEP"]#, "NONE"]
 NUM_ITERS = 100
 
 def env():
@@ -47,7 +47,7 @@ class PggEnv(AECEnv):
         These attributes should not be changed after initialization.
         '''
         self.num_agents = num_agents
-        self.num_actions = 2
+        self.num_actions = 2 # give money, keep money
         self.obs_space_size = 2 # I can observe the amount of money I have (precisely), and the multiplicative fctor (with uncertaity)
         self.possible_agents = ["player_" + str(r) for r in range(num_agents)]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
@@ -67,17 +67,6 @@ class PggEnv(AECEnv):
     def action_space(self, agent):
         return Discrete(self.num_actions)
 
-    #def render(self, mode="human"):
-    #    '''
-    #    Renders the environment. In human mode, it can print to terminal, open
-    #    up a graphical window, or open up some other display that a human can see and understand.
-    #    '''
-    #    if len(self.agents) == 2:
-    #        string = ("Current state: Agent1: {} , Agent2: {}".format(MOVES[self.state[self.agents[0]]], MOVES[self.state[self.agents[1]]]))
-    #    else:
-    #        string = "Game over"
-    #    print(string)
-
     def observe(self, agent):
         '''
         Observe should return the observation of the specified agent. This function
@@ -85,15 +74,8 @@ class PggEnv(AECEnv):
         at any time after reset() is called.
         '''
         # observation of one agent is the previous state of the other
-        return np.array(self.observations[agent])
-
-    def close(self):
-        '''
-        Close should release any graphical displays, subprocesses, network connections
-        or any other environment data which should not be kept around after the
-        user is no longer using the environment.
-        '''
-        pass
+        #return np.array(self.observations[agent])
+        return 
 
     def reset(self):
         '''
