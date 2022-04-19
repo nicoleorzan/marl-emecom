@@ -103,27 +103,32 @@ class PPO():
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.MseLoss = nn.MSELoss()
+
         self.train_returns = []
         self.tmp_return = 0
-        self.ep_rewards = []
 
-    def select_action(self, state):
+    def select_action(self, state, done=False):
+    
+        #if not done:
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             action, action_logprob = self.policy_old.act(state)
-        #print("state=", state.shape)
-        self.buffer.states.append(state)
-        self.buffer.actions.append(action)
-        self.buffer.logprobs.append(action_logprob)
 
+            #print("state=", state.shape)
+            self.buffer.states.append(state)
+            self.buffer.actions.append(action)
+            self.buffer.logprobs.append(action_logprob)
         return action.item()
+        
+        #else: 
+        #    return None
 
     def update(self):
         # Monte carlo estimate of returns
-        print("=====>UPDATE")
+        #print("=====>UPDATE")
         rewards = []
-        print("buffer rewards", len(self.buffer.rewards))
-        print("buffer is terminal", len(self.buffer.is_terminals))
+        #print("buffer rewards", len(self.buffer.rewards))
+        #print("buffer is terminal", len(self.buffer.is_terminals))
         discounted_reward = 0
         for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
             #print("term=", is_terminal)

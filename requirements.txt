@@ -1,4 +1,6 @@
 torch
+wheel
+gym>=0.22.0
 pettingzoo[all]
-pymunk==6.0.0
-pyglet<2,>=1.5.15
+stable-baselines3
+supersuit==3.3.4
