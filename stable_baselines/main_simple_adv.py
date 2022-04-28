@@ -11,7 +11,7 @@ import imageio
 
 cycles = 30
 eval_eps = 1000
-learning_steps = 300000
+learning_steps = 200000
 n_agents = 3
 
 def evaluation(model, episodes):
@@ -92,7 +92,7 @@ def plot_hist_returns(rews_before, rews_after):
     ax[2,0].hist(returns_adv0b, bins=n_bins, range=[-120., 0.])
     ax[2,1].hist(returns_adv0a, bins=n_bins, range=[-120., 0.])
     print("Saving histogram..")
-    plt.savefig("images/hist_rewards_simple_adv.png")
+    plt.savefig("images/simple_adv/hist_rewards_simple_adv.png")
 
 
 def plotting_rews(rews_b, rews_a): # rews is a LIST OF LISTS for every agent of the num of episodes to plot
@@ -126,7 +126,7 @@ def plotting_rews(rews_b, rews_a): # rews is a LIST OF LISTS for every agent of 
 
     for i,j in zip(range(0,2), range(0,2)):
         ax[i,j].set_ylim(-2,1)
-    plt.savefig("rimages/ewards_simple_adversary_v2.png")
+    plt.savefig("images/simple_adv/rewards_simple_adversary_v2.png")
 
 
 if __name__ == "__main__":

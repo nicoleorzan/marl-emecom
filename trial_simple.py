@@ -3,10 +3,12 @@ from PPO import PPO
 import matplotlib.pyplot as plt
 import numpy as np
 
-env = simple_v2.env(max_cycles=25, continuous_actions=False)
+cycles = 30
+env = simple_v2.env(max_cycles=cycles, continuous_actions=False)
 
-max_ep_len = 400                    # max timesteps in one episode
-max_training_timesteps = int(1e5)   # break training loop if timeteps > max_training_timesteps
+max_ep_len = 100                    # max timesteps in one episode
+max_training_timesteps = int(5e4)   # break training loop if timeteps > max_training_timesteps
+eval_eps = 1000
 
 print_freq = max_ep_len * 4     # print avg reward in the interval (in num timesteps)
 
@@ -17,12 +19,16 @@ gamma = 0.99                # discount factor
 
 lr_actor = 0.0003       # learning rate for actor network
 lr_critic = 0.001       # learning rate for critic network
+c1 = 0.5
+c2 = -0.01
 
 input_dim = 4
 action_space = 5
 
 agent = PPO(input_dim, action_space, lr_actor, lr_critic,  \
-    gamma, K_epochs, eps_clip, c1=0.2, c2=0.2)
+    gamma, K_epochs, eps_clip, c1, c2)
+untrained_agent = PPO(input_dim, action_space, lr_actor, lr_critic,  \
+    gamma, K_epochs, eps_clip, c1, c2)
 
 test_running_reward = 0
 
@@ -32,6 +38,70 @@ print_running_episodes = 0
 
 time_step = 0
 i_episode = 0
+
+def evaluation(agent, episodes):
+
+    rews = np.zeros((episodes, cycles+1))
+    for e in range(episodes):
+        rews[e] = evaluate_episode(agent)
+
+    return rews
+
+def evaluate_episode(agent):
+    env = simple_v2.env(max_cycles=cycles, continuous_actions=False)
+    env.reset()
+    rews_ep = []
+    for _ in env.agent_iter():
+        obs, reward, done, _ = env.last()
+        rews_ep.append(reward)
+        act = agent.select_action(obs) if not done else None
+        env.step(act)
+    env.close()
+    return rews_ep
+
+def plot_hist_returns(rews_before, rews_after):
+
+    returns_agb = np.sum(rews_before, axis=1)
+    returns_aga = np.sum(rews_after, axis=1)
+
+    n_bins = 40
+    fig, ax = plt.subplots(1, 2, figsize=(20,8))
+    fig.suptitle("Distribution of Returns", fontsize=25)
+    ax[0].hist(returns_agb, bins=n_bins, range=[-120., 100.])
+    ax[1].hist(returns_aga, bins=n_bins, range=[-120., 100.])
+    print("Saving histogram")
+    plt.savefig("images/simple/hist_rewards_simple.png")
+
+
+def plotting_rews(rews_b, rews_a): # rews is a np array with the all the rewards for n episodes
+    
+    meanrews_b = np.average(rews_b, axis=0)
+    sdrews_b = np.std(rews_b, axis=0)
+    meanrews_a = np.average(rews_a, axis=0)
+    sdrews_a = np.std(rews_a, axis=0)
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,8))
+    fig.suptitle("Rewards of agent in time for one episode", fontsize=20)
+    
+    for i in range(rews_a.shape[0]):
+        ax1.plot(np.linspace(0, rews_b.shape[1], rews_b.shape[1]), rews_b[i,:], linestyle='dashed')
+        ax2.plot(np.linspace(0, rews_a.shape[1], rews_a.shape[1]), rews_a[i,:], linestyle='dashed')
+    ax1.errorbar(np.linspace(0, rews_b.shape[1], rews_b.shape[1]), meanrews_b, sdrews_b, color='black', linewidth=3, label="before_learning")
+    ax2.errorbar(np.linspace(0, rews_a.shape[1], rews_a.shape[1]), meanrews_a, sdrews_a, color='black', linewidth=3, label="after_learning")
+    ax1.set_xlabel('Time', fontsize=18)
+    ax2.set_xlabel('Time', fontsize=18)
+    ax1.set_ylabel('Reward', fontsize=18)
+    ax1.tick_params(axis='both', which='major', labelsize=18)
+    ax2.tick_params(axis='both', which='major', labelsize=18)
+    ax1.legend(fontsize=18)
+    ax2.legend(fontsize=18)
+    plt.savefig("images/simple/rewards_simple_v2.png")
+
+
+print("\nEVALUATION BEFORE LEARNING")
+rews_before = evaluation(untrained_agent, eval_eps)
+
+#### TRAINING LOOP
 
 while time_step <= max_training_timesteps:
 
@@ -45,15 +115,12 @@ while time_step <= max_training_timesteps:
     for id_agent in env.agent_iter(max_ep_len):
 
         time_step += 1
-        #print("time step", time_step)
 
         act = agent.select_action(obs) if not done else None
         env.step(act)
 
         obs, rew, done, info = env.last()
-        #print(obs, rew, done, info)
         
-        #if (i_internal_loop != 0):
         agent.buffer.rewards.append(rew)
         agent.buffer.is_terminals.append(done)
         agent.tmp_return += rew
@@ -66,9 +133,9 @@ while time_step <= max_training_timesteps:
             agent.update()
 
         # printing average reward
-        
         if time_step % print_freq == 0:
             # print average reward till last episode
+            print("print_running_episodes=", print_running_episodes)
             print_avg_reward = print_running_reward / print_running_episodes
             print_avg_reward = round(print_avg_reward, 2)
 
@@ -89,7 +156,21 @@ while time_step <= max_training_timesteps:
 
     i_episode += 1
 
-#env.close()
+fig, (ax1) = plt.subplots(1)
+fig.suptitle("Train Returns")
+ax1.plot(np.linspace(0, len(agent.train_returns), len(agent.train_returns)), agent.train_returns)
+plt.savefig("images/simple/train_returns_simple.png")
+
+
+### EVALUATION
+print("\n\nEVALUATION \n\n")
+
+rews_after = evaluation(agent, eval_eps)
+plot_hist_returns(rews_before, rews_after)
+plotting_rews(rews_before, rews_after)
+
+
+### OBSERVE AGENT LOOP
 
 total_test_episodes = 10  
 test_running_reward = 0
@@ -109,7 +190,6 @@ for ep in range(1, total_test_episodes+1):
         if done:
             break
 
-    # clear buffer    
     agent.buffer.clear()
 
     test_running_reward += ep_reward
@@ -117,33 +197,3 @@ for ep in range(1, total_test_episodes+1):
     ep_reward = 0
 
 env.close()
-
-
-fig, (ax1) = plt.subplots(1)
-fig.suptitle("Train Returns")
-ax1.plot(np.linspace(0, len(agent.train_returns), len(agent.train_returns)), agent.train_returns)
-plt.show()
-
-# ===========================================================================
-# =============================== EVALUATION ================================
-# ===========================================================================
-
-print("\n\nEVALUATIOOOOOOOOOON \n\n")
-env1 = simple_v2.env(max_cycles=25, continuous_actions=False)
-env1.reset()
-agent.ep_rewards = []
-i = 0
-for id_agent in env1.agent_iter(100):
-    obs, rew, done, info = env1.last()
-    act = agent.select_action(obs) if not done else None
-    agent.ep_rewards.append(rew)
-
-    env1.step(act)
-    i += 1
-
-env1.close()
-
-fig, (ax1) = plt.subplots(1)
-fig.suptitle("Rewards of agents in time for one episode")
-ax1.plot(np.linspace(0, len(agent.ep_rewards), len(agent.ep_rewards)), agent.ep_rewards)
-plt.show()

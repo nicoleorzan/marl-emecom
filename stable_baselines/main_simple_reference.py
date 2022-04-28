@@ -9,7 +9,7 @@ from supersuit import pad_observations_v0
 
 cycles = 40
 eval_eps = 1000
-learning_steps = 300000
+learning_steps = 200000
 n_agents = 2
 
 def evaluation(model, episodes):
@@ -75,7 +75,7 @@ def plot_hist_returns(rews_before, rews_after):
     ax[1,0].hist(returns_ag1b, bins=n_bins, range=[-120., 0.])
     ax[1,1].hist(returns_ag1a, bins=n_bins, range=[-120., 0.])
     print("Saving histogram")
-    plt.savefig("images/hist_rewards_simple_ref.png")
+    plt.savefig("images/simple_ref/hist_rewards_simple_ref.png")
 
 
 def plotting_rews(rews_b, rews_a): # rews is a LIST OF LISTS for every agent of the num of episodes to plot
@@ -110,7 +110,7 @@ def plotting_rews(rews_b, rews_a): # rews is a LIST OF LISTS for every agent of 
     ax[0,1].set_ylim(-5,0)
     ax[1,0].set_ylim(-5,0)
     ax[1,1].set_ylim(-5,0)
-    plt.savefig("images/rewards_simple_reference_v2.png")
+    plt.savefig("images/simple_ref/rewards_simple_reference_v2.png")
 
 
 if __name__ == "__main__":

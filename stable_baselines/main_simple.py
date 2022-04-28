@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 cycles = 30
 eval_eps = 1000
-learning_steps = 10000
+learning_steps = 100000
 
 def evaluation(model, episodes):
 
@@ -53,7 +53,7 @@ def plot_hist_returns(rews_before, rews_after):
     ax[0].hist(returns_agb, bins=n_bins, range=[-120., 100.])
     ax[1].hist(returns_aga, bins=n_bins, range=[-120., 100.])
     print("Saving histogram")
-    plt.savefig("images/hist_rewards_simple.png")
+    plt.savefig("images/simple/hist_rewards_simple.png")
 
 
 def plotting_rews(rews_b, rews_a): # rews is a np array with the all the rewards for n episodes
@@ -78,7 +78,7 @@ def plotting_rews(rews_b, rews_a): # rews is a np array with the all the rewards
     ax2.tick_params(axis='both', which='major', labelsize=18)
     ax1.legend(fontsize=18)
     ax2.legend(fontsize=18)
-    plt.savefig("images/rewards_simple_v2.png")
+    plt.savefig("images/simple/rewards_simple_v2.png")
 
 
 if __name__ == "__main__":
