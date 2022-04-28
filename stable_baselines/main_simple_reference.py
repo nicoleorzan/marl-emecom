@@ -1,98 +1,81 @@
 from stable_baselines3.ppo import MlpPolicy
 from stable_baselines3 import PPO
-from pettingzoo.mpe import simple_adversary_v2
+from pettingzoo.mpe import simple_reference_v2
 from stable_baselines3.common.utils import set_random_seed
 import supersuit as ss
 import numpy as np
 import matplotlib.pyplot as plt
 from supersuit import pad_observations_v0
-from save_gif import _label_with_episode_number
-import imageio
 
-cycles = 30
+cycles = 40
 eval_eps = 1000
 learning_steps = 300000
-n_agents = 3
+n_agents = 2
 
 def evaluation(model, episodes):
 
     agent0r = np.zeros((episodes, cycles))
     agent1r = np.zeros((episodes, cycles))
-    adv0r = np.zeros((episodes, cycles))
     for e in range(episodes):
         if (e%100 == 0):
             print("Episode:", e)
-        agent0r[e], agent1r[e], adv0r[e] = evaluate_episode(model)
+        agent0r[e], agent1r[e] = evaluate_episode(model)
 
-    return [agent0r, agent1r, adv0r]
+    return [agent0r, agent1r]
 
 
 def evaluate_episode(model):
-    env = simple_adversary_v2.env(max_cycles=cycles, continuous_actions=False)
+    env = simple_reference_v2.env(local_ratio=0.5, max_cycles=cycles, continuous_actions=False)
     env = pad_observations_v0(env)
     env.reset()
-    agent0r = np.zeros(cycles); agent1r = np.zeros(cycles); adv0r = np.zeros(cycles)
+    agent0r = np.zeros(cycles); agent1r = np.zeros(cycles)
     i = 0
     for agent in env.agent_iter():
         obs, reward, done, _ = env.last()
         act = model.predict(obs, deterministic=True)[0] if not done else None
         env.step(act)
         if (i > 2):
-            if (agent == 'adversary_0'):
-                adv0r[int(i/n_agents)-2] = reward
-            elif (agent == 'agent_0'):
-                agent0r[int(i/n_agents)-n_agents] = reward
+            if (agent == 'agent_0'):
+                agent0r[int(i/2)-2] = reward
             elif (agent == 'agent_1'):
-                agent1r[int(i/n_agents)-4] = reward
+                agent1r[int(i/2)-2] = reward
         i += 1
+        if done:
+            break
     env.close()
-    return agent0r, agent1r, adv0r
+    return agent0r, agent1r
 
 
-def observe(model, frames = None):
-    env = simple_adversary_v2.env(max_cycles=cycles, continuous_actions=False)
+def observe(model):
+    env = simple_reference_v2.env(local_ratio=0.5, max_cycles=cycles, continuous_actions=False)
     env = pad_observations_v0(env)
     env.reset()
     for _ in env.agent_iter():
         obs, _, done, _ = env.last()
-        act = model.predict(obs, deterministic=True)[0] if not done else None
+        act = model.predict(obs, deterministic=False)[0] if not done else None
         env.step(act)
-        if frames != None:
-            frame = env.render(mode="rgb_array")
-            frames.append(_label_with_episode_number(frame, episode_num=i))
-        else:
-            env.render()
-
-        if done:
-                break
+        env.render()
     env.close()
-    if frames != None:
-        imageio.mimwrite('agent.gif', frames, fps=120)
 
 def plot_hist_returns(rews_before, rews_after):
 
-    agent0r, agent1r, adv0r = rews_before
+    agent0r, agent1r = rews_before
     returns_ag0b = np.sum(agent0r, axis=1)
     returns_ag1b = np.sum(agent1r, axis=1)
-    returns_adv0b = np.sum(adv0r, axis=1)
     
-
-    agent0r, agent1r, adv0r = rews_after
+    agent0r, agent1r = rews_after
     returns_ag0a = np.sum(agent0r, axis=1)
     returns_ag1a = np.sum(agent1r, axis=1)
-    returns_adv0a = np.sum(adv0r, axis=1)
 
     n_bins = 40
     fig, ax = plt.subplots(n_agents, 2, figsize=(20,8))
     fig.suptitle("Distribution of Returns", fontsize=25)
-    ax[0,0].hist(returns_ag0b, bins=n_bins, range=[-30., 60.])
-    ax[0,1].hist(returns_ag0a, bins=n_bins, range=[-30., 60.])
-    ax[1,0].hist(returns_ag1b, bins=n_bins, range=[-30., 60.])
-    ax[1,1].hist(returns_ag1a, bins=n_bins, range=[-30., 60.])
-    ax[2,0].hist(returns_adv0b, bins=n_bins, range=[-120., 0.])
-    ax[2,1].hist(returns_adv0a, bins=n_bins, range=[-120., 0.])
-    print("Saving histogram..")
-    plt.savefig("images/hist_rewards_simple_adv.png")
+    ax[0,0].hist(returns_ag0b, bins=n_bins, range=[-120., 0.])
+    ax[0,1].hist(returns_ag0a, bins=n_bins, range=[-120., 0.])
+    ax[1,0].hist(returns_ag1b, bins=n_bins, range=[-120., 0.])
+    ax[1,1].hist(returns_ag1a, bins=n_bins, range=[-120., 0.])
+    print("Saving histogram")
+    plt.savefig("images/hist_rewards_simple_ref.png")
 
 
 def plotting_rews(rews_b, rews_a): # rews is a LIST OF LISTS for every agent of the num of episodes to plot
@@ -120,13 +103,14 @@ def plotting_rews(rews_b, rews_a): # rews is a LIST OF LISTS for every agent of 
         ax[i,0].legend(fontsize=18)
         ax[i,1].legend(fontsize=18)
 
-    ax[2,0].set_xlabel('Time', fontsize=18)
-    ax[2,1].set_xlabel('Time', fontsize=18)
+    ax[1,0].set_xlabel('Time', fontsize=18)
+    ax[1,1].set_xlabel('Time', fontsize=18)
     ax[0,0].set_ylabel('Reward', fontsize=18)
-
-    for i,j in zip(range(0,2), range(0,2)):
-        ax[i,j].set_ylim(-2,1)
-    plt.savefig("rimages/ewards_simple_adversary_v2.png")
+    ax[0,0].set_ylim(-5,0)
+    ax[0,1].set_ylim(-5,0)
+    ax[1,0].set_ylim(-5,0)
+    ax[1,1].set_ylim(-5,0)
+    plt.savefig("images/rewards_simple_reference_v2.png")
 
 
 if __name__ == "__main__":
@@ -137,7 +121,7 @@ if __name__ == "__main__":
     # =================== SET UP ENVIRONMENT ====================
     # ===========================================================
 
-    env = simple_adversary_v2.parallel_env(N=2, max_cycles=cycles, continuous_actions=False)
+    env = simple_reference_v2.parallel_env(local_ratio=0.5, max_cycles=cycles, continuous_actions=False)
     env = pad_observations_v0(env)
     env = ss.pettingzoo_env_to_vec_env_v1(env)
     env = ss.concat_vec_envs_v1(env, 8, num_cpus=4, base_class='stable_baselines3')
@@ -155,7 +139,7 @@ if __name__ == "__main__":
     print("\nLEARNING")
     model.learn(total_timesteps=learning_steps)
     print("SAVING MODEL...")
-    model.save("policy_simple_adv")
+    model.save("policy_simple_ref")
 
     env.close()
     del model
@@ -164,7 +148,7 @@ if __name__ == "__main__":
     # ===================================================
     print("\nEALUATION AFTER LEARNING")
 
-    model = PPO.load("policy_simple_adv")
+    model = PPO.load("policy_simple_ref")
     
     rews_after = evaluation(model, eval_eps)
 
@@ -175,7 +159,6 @@ if __name__ == "__main__":
     # ===================== OBSERVE =====================
     # ===================================================
     print("OSERVE AGENT")
-    frames = []
-    for i in range(2):
+    for i in range(5):
         observe(model)
     print("finished observation")

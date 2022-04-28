@@ -2,5 +2,7 @@ torch
 wheel
 gym>=0.22.0
 pettingzoo[all]
-stable-baselines3
-supersuit==3.3.4
+stable-baselines3[extra]
+supersuit==3.3.5
+rllib
+ray[rllib]
