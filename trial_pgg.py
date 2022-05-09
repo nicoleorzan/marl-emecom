@@ -9,7 +9,7 @@ max_training_timesteps = 10000  #int(1e3)   # break training loop if timeteps > 
 update_timestep = 40          # update policy every n timesteps
 
 n_agents = 2
-n_total_coins = 10
+n_total_coins = 6
 
 action_space = 2
 input_dim_agent = 3         # we observe coins we have, num of agents, and multiplier factor with uncertainty
@@ -18,7 +18,7 @@ eps_clip = 0.2              # clip parameter for PPO
 gamma = 0.99                # discount factor
 c1 = 0.5
 c2 = -0.01
-lr_actor = 0.0003       # learning rate for actor network
+lr_actor = 0.001       # learning rate for actor network
 lr_critic = 0.001       # learning rate for critic network
 
 max_ep_len = 1                    # max timesteps in one episode

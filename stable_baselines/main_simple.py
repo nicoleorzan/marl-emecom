@@ -120,8 +120,11 @@ if __name__ == "__main__":
     model = PPO.load("policy_simple")
 
     rews_after = evaluation(model, eval_eps)
+    print("Plotting hist returns...")
     plot_hist_returns(rews_before, rews_after)
+    print("done.\nPlatting rewards...")
     plotting_rews(rews_before, rews_after)
+    print("done.")
 
     # ===================== OBSERVE =====================
     # ===================================================

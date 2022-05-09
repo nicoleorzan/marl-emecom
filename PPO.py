@@ -29,6 +29,13 @@ class RolloutBuffer:
         del self.rewards[:]
         del self.is_terminals[:]
 
+    def __print__(self):
+        print("states=", len(self.states))
+        print("actions=", len(self.actions))
+        print("logprobs=", len(self.logprobs))
+        print("rewards=", len(self.rewards))
+        print("is_terminals=", len(self.is_terminals))
+
 class ActorCritic(nn.Module):
 
     def __init__(self, input_dim, action_dim):
@@ -66,15 +73,16 @@ class ActorCritic(nn.Module):
     def evaluate(self, state, action):
         #print("EVALUATE")
         #print("state=", state.shape)
+        #print("action=", action)
         action_probs = self.actor(state)
         #print("probs=", action_probs.shape)
         dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
-        action_logprobs = dist.log_prob(action)
+        action_logprob = dist.log_prob(action)
         #print("action_loprobs=", action_logprobs.shape)
         dist_entropy = dist.entropy()
         state_values = self.critic(state)
-
-        return action_logprobs, dist_entropy, state_values
+        #print("action_logprob, dist_entropy, state_values=", action_logprob, dist_entropy, state_values)
+        return action_logprob, dist_entropy, state_values
 
 
 class PPO():
@@ -83,6 +91,7 @@ class PPO():
 
         self.input_dim = input_dim
         self.action_dim = action_dim
+        #print("input_dim=", input_dim, "action_dim=", action_dim)
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.gamma = gamma
@@ -119,9 +128,19 @@ class PPO():
             self.buffer.actions.append(action)
             self.buffer.logprobs.append(action_logprob)
         return action.item()
-        
-        #else: 
-        #    return None
+
+    def eval_action(self, state, done=False):
+    
+        actions_logprobs = []
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(device)
+            for action in range(self.action_dim):
+                a = torch.Tensor([action])
+                action_logprob, _, _ = self.policy_old.evaluate(state, a)
+                print("action_logprob=",action_logprob)
+                actions_logprobs.append(action_logprob.item())
+
+        return actions_logprobs
 
     def update(self):
         # Monte carlo estimate of returns
@@ -136,7 +155,7 @@ class PPO():
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
-        #print("rewards=", rewards)
+        #print("rewards=", len(rewards))
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
@@ -162,7 +181,7 @@ class PPO():
             surr1 = ratios*advantages
             surr2 = torch.clamp(ratios, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages
 
-            loss = (-torch.min(surr1, surr2) - self.c1*self.MseLoss(state_values, rewards) - self.c2*dist_entropy)
+            loss = (-torch.min(surr1, surr2) + self.c1*self.MseLoss(state_values, rewards) + self.c2*dist_entropy)
 
             self.optimizer.zero_grad()
             loss.mean().backward()

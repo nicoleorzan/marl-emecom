@@ -9,7 +9,7 @@ from supersuit import pad_observations_v0
 
 cycles = 40
 eval_eps = 1000
-learning_steps = 200000
+learning_steps = 500000
 n_agents = 2
 
 def evaluation(model, episodes):

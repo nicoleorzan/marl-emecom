@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 cycles = 30
+eval_eps = 1000
+max_training_timesteps = int(5e4)   # break training loop if timeteps > max_training_timesteps
+
 env = simple_v2.env(max_cycles=cycles, continuous_actions=False)
 
 max_ep_len = 100                    # max timesteps in one episode
-max_training_timesteps = int(5e4)   # break training loop if timeteps > max_training_timesteps
-eval_eps = 1000
 
 print_freq = max_ep_len * 4     # print avg reward in the interval (in num timesteps)
 
@@ -95,7 +96,7 @@ def plotting_rews(rews_b, rews_a): # rews is a np array with the all the rewards
     ax2.tick_params(axis='both', which='major', labelsize=18)
     ax1.legend(fontsize=18)
     ax2.legend(fontsize=18)
-    plt.savefig("images/simple/rewards_simple_v2.png")
+    plt.savefig("images/simple/rewards_simple.png")
 
 
 print("\nEVALUATION BEFORE LEARNING")
@@ -166,8 +167,11 @@ plt.savefig("images/simple/train_returns_simple.png")
 print("\n\nEVALUATION \n\n")
 
 rews_after = evaluation(agent, eval_eps)
+print("Plotting hist returns...")
 plot_hist_returns(rews_before, rews_after)
+print("done.\nPlatting rewards...")
 plotting_rews(rews_before, rews_after)
+print("done.")
 
 
 ### OBSERVE AGENT LOOP

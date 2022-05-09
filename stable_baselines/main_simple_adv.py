@@ -11,20 +11,20 @@ import imageio
 
 cycles = 30
 eval_eps = 1000
-learning_steps = 200000
+learning_steps = 500000
 n_agents = 3
 
 def evaluation(model, episodes):
 
+    adv0r = np.zeros((episodes, cycles))
     agent0r = np.zeros((episodes, cycles))
     agent1r = np.zeros((episodes, cycles))
-    adv0r = np.zeros((episodes, cycles))
     for e in range(episodes):
         if (e%100 == 0):
             print("Episode:", e)
-        agent0r[e], agent1r[e], adv0r[e] = evaluate_episode(model)
+        adv0r[e], agent0r[e], agent1r[e] = evaluate_episode(model)
 
-    return [agent0r, agent1r, adv0r]
+    return [adv0r, agent0r, agent1r]
 
 
 def evaluate_episode(model):
@@ -41,12 +41,12 @@ def evaluate_episode(model):
             if (agent == 'adversary_0'):
                 adv0r[int(i/n_agents)-2] = reward
             elif (agent == 'agent_0'):
-                agent0r[int(i/n_agents)-n_agents] = reward
+                agent0r[int(i/n_agents)-3] = reward
             elif (agent == 'agent_1'):
                 agent1r[int(i/n_agents)-4] = reward
         i += 1
     env.close()
-    return agent0r, agent1r, adv0r
+    return adv0r, agent0r, agent1r
 
 
 def observe(model, frames = None):
@@ -71,26 +71,25 @@ def observe(model, frames = None):
 
 def plot_hist_returns(rews_before, rews_after):
 
-    agent0r, agent1r, adv0r = rews_before
+    adv0r, agent0r, agent1r = rews_before
+    returns_adv0b = np.sum(adv0r, axis=1)
     returns_ag0b = np.sum(agent0r, axis=1)
     returns_ag1b = np.sum(agent1r, axis=1)
-    returns_adv0b = np.sum(adv0r, axis=1)
-    
 
-    agent0r, agent1r, adv0r = rews_after
+    adv0r, agent0r, agent1r = rews_after
+    returns_adv0a = np.sum(adv0r, axis=1)
     returns_ag0a = np.sum(agent0r, axis=1)
     returns_ag1a = np.sum(agent1r, axis=1)
-    returns_adv0a = np.sum(adv0r, axis=1)
 
     n_bins = 40
     fig, ax = plt.subplots(n_agents, 2, figsize=(20,8))
     fig.suptitle("Distribution of Returns", fontsize=25)
-    ax[0,0].hist(returns_ag0b, bins=n_bins, range=[-30., 60.])
-    ax[0,1].hist(returns_ag0a, bins=n_bins, range=[-30., 60.])
-    ax[1,0].hist(returns_ag1b, bins=n_bins, range=[-30., 60.])
-    ax[1,1].hist(returns_ag1a, bins=n_bins, range=[-30., 60.])
-    ax[2,0].hist(returns_adv0b, bins=n_bins, range=[-120., 0.])
-    ax[2,1].hist(returns_adv0a, bins=n_bins, range=[-120., 0.])
+    ax[0,0].hist(returns_adv0b, bins=n_bins, range=[-120., 0.], label='adv')
+    ax[0,1].hist(returns_adv0a, bins=n_bins, range=[-120., 0.], label='adv')
+    ax[1,0].hist(returns_ag0b, bins=n_bins, range=[-30., 60.], label='ag0')
+    ax[1,1].hist(returns_ag0a, bins=n_bins, range=[-30., 60.], label='ag0')
+    ax[2,0].hist(returns_ag1b, bins=n_bins, range=[-30., 60.], label='ag1')
+    ax[2,1].hist(returns_ag1a, bins=n_bins, range=[-30., 60.], label='ag1')
     print("Saving histogram..")
     plt.savefig("images/simple_adv/hist_rewards_simple_adv.png")
 
