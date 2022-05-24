@@ -8,8 +8,11 @@ eval_eps = 1000
 max_training_timesteps = 10000  #int(1e3)   # break training loop if timeteps > max_training_timesteps
 update_timestep = 40          # update policy every n timesteps
 
+# Game characteristics
 n_agents = 2
 n_total_coins = 6
+mult_factor = 2
+num_iterations = 2
 
 action_space = 2
 input_dim_agent = 3         # we observe coins we have, num of agents, and multiplier factor with uncertainty
@@ -26,7 +29,7 @@ num_blocks = 10                   # number of blocks for moving average
 
 print_freq = 100     # print avg reward in the interval (in num timesteps)
 
-env = pgg_v0.env(n_agents = n_agents, n_total_coins = n_total_coins)
+env = pgg_v0.env(n_agents=n_agents, n_total_coins=n_total_coins, mult_factor=mult_factor, num_iterations=num_iterations)
 
 agent0_PPO = PPO(input_dim_agent, action_space, lr_actor, lr_critic,  \
     gamma, K_epochs, eps_clip, c1, c2)
@@ -56,9 +59,8 @@ def evaluation(agents_dict, episodes):
     return [agent0r, agent1r]
 
 def evaluate_episode(agents_dict):
-    env = pgg_v0.env(n_agents = n_agents, n_total_coins = n_total_coins)
+    env = pgg_v0.env(n_agents=n_agents, n_total_coins=n_total_coins, mult_factor=mult_factor, num_iterations=num_iterations)
     env.reset()
-    #agent0r = np.zeros(1); agent1r = np.zeros(1)
     i = 0
     for agent in env.agent_iter():
         obs, reward, done, _ = env.last()
@@ -81,10 +83,14 @@ def plot_hist_returns(rews_before, rews_after):
     n_bins = 40
     fig, ax = plt.subplots(n_agents, 2, figsize=(20,8))
     fig.suptitle("Distribution of Returns", fontsize=25)
-    ax[0,0].hist(agent0rb, bins=n_bins, range=[-30., 60.])
-    ax[0,1].hist(agent1rb, bins=n_bins, range=[-30., 60.])
-    ax[1,0].hist(agent0ra, bins=n_bins, range=[-30., 60.])
-    ax[1,1].hist(agent1ra, bins=n_bins, range=[-30., 60.])
+    ax[0,0].hist(agent0rb, bins=n_bins, range=[-30., 60.], label='agent0 before')
+    ax[0,0].legend()
+    ax[0,1].hist(agent1rb, bins=n_bins, range=[-30., 60.], label='agent1 before')
+    ax[0,1].legend()
+    ax[1,0].hist(agent0ra, bins=n_bins, range=[-30., 60.], label='agent0 after')
+    ax[1,0].legend()
+    ax[1,1].hist(agent1ra, bins=n_bins, range=[-30., 60.], label='agent1 after')
+    ax[1,1].legend()
     print("Saving histogram..")
     plt.savefig("images/pgg/hist_rewards_pgg.png")
 
@@ -114,16 +120,16 @@ while time_step <= max_training_timesteps:
     agent0_PPO.tmp_return = 0; agent1_PPO.tmp_return = 0
 
     for id_agent in env.agent_iter():
-        #print("\nTime=", time_step)
-        #print(agent_to_idx[id_agent], id_agent)
+        print("\nTime=", time_step)
+        print(agent_to_idx[id_agent], id_agent)
         idx = agent_to_idx[id_agent]
         acting_agent = agents_dict[id_agent]
         
         obs, rew, done, info = env.last()
-        #print(obs, rew, done, info)
+        print(obs, rew, done, info)
         act = acting_agent.select_action(obs) if not done else None
-        #print("act=", act)
-        #print("env step")
+        print("act=", act)
+        print("env step")
         env.step(act)
 
         #print("step done")
@@ -145,7 +151,7 @@ while time_step <= max_training_timesteps:
             agent0_PPO.train_returns.append(agent0_PPO.tmp_return)
             agent1_PPO.train_returns.append(agent1_PPO.tmp_return)
         if (done and idx==n_agents-1):  
-            #print("======>exiting") 
+            print("======>exiting") 
             break
 
         i_internal_loop += 1

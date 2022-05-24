@@ -20,7 +20,7 @@ class RolloutBufferComm:
         self.messages = []
         self.actions = []
         self.act_logprobs = []
-        self.mex_logprobs = []
+        self.comm_logprobs = []
         self.rewards = []
         self.is_terminals = []
     
@@ -29,7 +29,7 @@ class RolloutBufferComm:
         del self.messages[:]
         del self.actions[:]
         del self.act_logprobs[:]
-        del self.mex_logprobs[:]
+        del self.comm_logprobs[:]
         del self.rewards[:]
         del self.is_terminals[:]
 
@@ -38,7 +38,7 @@ class RolloutBufferComm:
         print("messages=", len(self.messages))
         print("actions=", len(self.actions))
         print("act logprobs=", len(self.act_logprobs))
-        print("mex_logprobs=", len(self.mex_logprobs))
+        print("mex_logprobs=", len(self.comm_logprobs))
         print("rewards=", len(self.rewards))
         print("is_terminals=", len(self.is_terminals))
 
@@ -84,7 +84,7 @@ class ActorCriticComm(nn.Module):
 
     def act(self, state): # state is state + mex already concat
 
-        print(state)
+        #print(state)
         #out = torch.cat((state, mex), dim=0)
         #print("out=", out)
         out = self.layers(state)
@@ -158,7 +158,7 @@ class PPOcomm():
 
     def select_action(self, state, done=False):
     
-        print("inside")
+        #print("inside")
         #if not done:
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
@@ -168,7 +168,7 @@ class PPOcomm():
             self.buffer.messages.append(message)
             self.buffer.actions.append(action)
             self.buffer.act_logprobs.append(action_logprob)
-            self.buffer.mex_logprobs.append(message_logprob)
+            self.buffer.comm_logprobs.append(message_logprob)
         return action.item(), message.item()
 
     def eval_action(self, state, mex_in, done=False):
@@ -199,22 +199,29 @@ class PPOcomm():
         old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
         old_messages = torch.squeeze(torch.stack(self.buffer.messages, dim=0)).detach().to(device)
         old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
-        old_logprobs = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
+        old_logprobs_act = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
+        old_logprobs_comm = torch.squeeze(torch.stack(self.buffer.comm_logprobs, dim=0)).detach().to(device)
 
         for _ in range(self.K_epochs):
   
-            logprob_mex, logprob_act, dist_entropy_mex, dist_entropy_act, state_values_mex, state_values_act = self.policy.evaluate(old_states, old_messages, old_actions)
+            logprobs_comm, logprobs_act, dist_entropy_mex, dist_entropy_act, state_values_comm, state_values_act = self.policy.evaluate(old_states, old_messages, old_actions)
             #logprobs, dist_entropy, state_values = self.policy.evaluate(old_states, old_messages, old_actions)
 
-            state_values = torch.squeeze(state_values)
+            state_values_act = torch.squeeze(state_values_act)
+            state_values_comm = torch.squeeze(state_values_comm)
 
-            ratios = torch.exp(logprobs - old_logprobs.detach())
+            ratios_act = torch.exp(logprobs_act - old_logprobs_act.detach())
+            ratios_comm = torch.exp(logprobs_comm - old_logprobs_comm.detach())
 
-            advantages = rewards - state_values.detach()
-            surr1 = ratios*advantages
-            surr2 = torch.clamp(ratios, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages
-
-            loss = (-torch.min(surr1, surr2) + self.c1*self.MseLoss(state_values, rewards) + self.c2*dist_entropy)
+            advantages_act = rewards - state_values_act.detach()
+            advantages_comm = rewards - state_values_comm.detach()
+            surr1 = ratios_act*advantages_act + ratios_comm*advantages_comm
+            surr2 = torch.clamp(ratios_act, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_act
+            surr3 = torch.clamp(ratios_comm, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_comm
+            
+            surr12 = torch.min(surr1, surr2)
+            #print(surr1, surr2, surr3)
+            loss = (-torch.min(surr12, surr3) + self.c1*self.MseLoss(state_values_act, rewards) + self.c2*dist_entropy_act + self.c2*dist_entropy_mex)
 
             self.optimizer.zero_grad()
             loss.mean().backward()

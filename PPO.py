@@ -57,31 +57,21 @@ class ActorCritic(nn.Module):
         )
 
     def act(self, state):
-        #state = torch.from_numpy(state).view(1,-1)
-        #print("ACT")
-        #print("state=", state.shape)
+
         out = self.actor(state)
-        #print("probs=", out, torch.sum(out), out.shape, out.size(-1))
         dist = Categorical(logits=out) # here I changed probs with logits!!!
-        #print("dist=", dist)
         act = dist.sample()
-        #print("sampled act=", act)
         logprob = dist.log_prob(act)
 
         return act.detach(), logprob.detach()
 
     def evaluate(self, state, action):
-        #print("EVALUATE")
-        #print("state=", state.shape)
-        #print("action=", action)
+
         action_probs = self.actor(state)
-        #print("probs=", action_probs.shape)
         dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
         action_logprob = dist.log_prob(action)
-        #print("action_loprobs=", action_logprobs.shape)
         dist_entropy = dist.entropy()
         state_values = self.critic(state)
-        #print("action_logprob, dist_entropy, state_values=", action_logprob, dist_entropy, state_values)
         return action_logprob, dist_entropy, state_values
 
 
@@ -91,7 +81,6 @@ class PPO():
 
         self.input_dim = input_dim
         self.action_dim = action_dim
-        #print("input_dim=", input_dim, "action_dim=", action_dim)
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.gamma = gamma
@@ -123,7 +112,6 @@ class PPO():
             state = torch.FloatTensor(state).to(device)
             action, action_logprob = self.policy_old.act(state)
 
-            #print("state=", state.shape)
             self.buffer.states.append(state)
             self.buffer.actions.append(action)
             self.buffer.logprobs.append(action_logprob)
@@ -143,31 +131,22 @@ class PPO():
         return actions_logprobs
 
     def update(self):
-        # Monte carlo estimate of returns
-        #print("=====>UPDATE")
         rewards = []
-        #print("buffer rewards", len(self.buffer.rewards))
-        #print("buffer is terminal", len(self.buffer.is_terminals))
         discounted_reward = 0
         for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
-            #print("term=", is_terminal)
             if is_terminal:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
-        #print("rewards=", len(rewards))
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
-        #print("rewards normalized=", rewards.shape)
         old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
         old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
         old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
 
         for _ in range(self.K_epochs):
-            #print("old_states=", old_states.shape)
-            #print("old_actions=", old_actions.shape)
 
             logprobs, dist_entropy, state_values = self.policy.evaluate(old_states, old_actions)
 
@@ -175,12 +154,11 @@ class PPO():
 
             ratios = torch.exp(logprobs - old_logprobs.detach())
 
-            #print("state_values=", state_values.shape)
-            #print("rewards=", rewards.shape)
             advantages = rewards - state_values.detach()
             surr1 = ratios*advantages
             surr2 = torch.clamp(ratios, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages
 
+            #print(surr1, surr2)
             loss = (-torch.min(surr1, surr2) + self.c1*self.MseLoss(state_values, rewards) + self.c2*dist_entropy)
 
             self.optimizer.zero_grad()

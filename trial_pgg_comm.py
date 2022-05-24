@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 
 eval_eps = 1000
-max_training_timesteps = 1000  #int(1e3)   # break training loop if timeteps > max_training_timesteps
+max_training_timesteps = 10000  #int(1e3)   # break training loop if timeteps > max_training_timesteps
 update_timestep = 40          # update policy every n timesteps
 
 # Game characteristics
@@ -65,10 +65,28 @@ def evaluate_episode(agents_dict):
     env = pgg_v0.env(n_agents=n_agents, n_total_coins=n_total_coins, mult_factor=mult_factor, num_iterations=num_iterations)
     env.reset()
     i = 0
+    mex_in_0 = torch.tensor([0.]).long()
+    mex_in_0 = F.one_hot(mex_in_0, num_classes=mex_space)[0]
+    mex_in = mex_in_0
+
     for agent in env.agent_iter():
         obs, reward, done, _ = env.last()
+        obs = torch.FloatTensor(obs)
         acting_agent = agents_dict[agent]
-        act = acting_agent.select_action(obs) if not done else None
+        #print("obs=", obs, "mex=", mex_in)
+        state = torch.cat((obs, mex_in), dim=0)
+
+        #act = acting_agent.select_action(state) if not done else None
+        if not done:
+            act, mex_out = acting_agent.select_action(state)
+            mex_out = torch.Tensor([mex_out]).long()
+            mex_out = F.one_hot(mex_out, num_classes=mex_space)[0]
+            mex_in = mex_out
+            #print("mex_out=", mex_out)
+        else:
+            act = None
+            mex_out = None
+
         env.step(act)
         if (agent == 'agent_0'):
             agent0r = reward
@@ -95,14 +113,14 @@ def plot_hist_returns(rews_before, rews_after):
     ax[1,1].hist(agent1ra, bins=n_bins, range=[-30., 60.], label='agent1 after')
     ax[1,1].legend()
     print("Saving histogram..")
-    plt.savefig("images/pgg/hist_rewards_pgg.png")
+    plt.savefig("images/pgg/hist_rewards_pgg_comm.png")
 
 def moving_average(x, w):
     return np.convolve(x, np.ones(w), 'valid') / w
 
 
 #print("\nEVALUATION BEFORE LEARNING")
-#rews_before = evaluation(un_agents_dict, eval_eps)
+rews_before = evaluation(un_agents_dict, eval_eps)
 
 #### TRAINING LOOP
 print("\n===>Training")
@@ -123,30 +141,31 @@ while time_step <= max_training_timesteps:
     agent0_PPO.tmp_return = 0; agent1_PPO.tmp_return = 0
     mex_in_0 = torch.tensor([0.]).long()
     mex_in_0 = F.one_hot(mex_in_0, num_classes=mex_space)[0]
-    print("mex_in_0=", mex_in_0)
+    #print("mex_in_0=", mex_in_0)
     mex_in = mex_in_0
 
     for id_agent in env.agent_iter():
-        print("\nTime=", time_step)
-        print(agent_to_idx[id_agent], id_agent)
+        #print("\nTime=", time_step)
+        #print(agent_to_idx[id_agent], id_agent)
         idx = agent_to_idx[id_agent]
         acting_agent = agents_dict[id_agent]
         
         obs, rew, done, info = env.last()
-        print(obs, rew, done, info)
-        print("obs=", obs, "mex_in=", mex_in)
+        #print(obs, rew, done, info)
         obs = torch.FloatTensor(obs)#.to(device)
         state = torch.cat((obs, mex_in), dim=0)
-        print("state=", state)
         if not done:
             act, mex_out = acting_agent.select_action(state)
+            mex_out = torch.Tensor([mex_out]).long()
+            mex_out = F.one_hot(mex_out, num_classes=mex_space)[0]
+            mex_in = mex_out
+            #print("mex_out=", mex_out)
         else:
             act = None
             mex_out = None
-        print("qui")
-        print("act=", act, "mex_out=", mex_out)
-        print("env step")
+        #print("act=", act, "mex_out=", mex_out)
         env.step(act)
+
 
         #print("step done")
         if (i_internal_loop > 1):
@@ -167,7 +186,7 @@ while time_step <= max_training_timesteps:
             agent0_PPO.train_returns.append(agent0_PPO.tmp_return)
             agent1_PPO.train_returns.append(agent1_PPO.tmp_return)
         if (done and idx==n_agents-1):  
-            print("======>exiting") 
+            #print("======>exiting") 
             break
 
         i_internal_loop += 1
@@ -208,7 +227,7 @@ ax1.plot(np.linspace(0, len(agent0_PPO.train_returns), len(agent0_PPO.train_retu
 ax1.plot(np.linspace(0, len(agent0_PPO.train_returns), len(mov_avg_agent0)), mov_avg_agent0)
 ax2.plot(np.linspace(0, len(agent1_PPO.train_returns), len(agent1_PPO.train_returns)), agent1_PPO.train_returns)
 ax2.plot(np.linspace(0, len(agent1_PPO.train_returns), len(mov_avg_agent1)), mov_avg_agent1)
-plt.savefig("images/pgg/train_returns_pgg.png")
+plt.savefig("images/pgg/train_returns_pgg_comm.png")
 
 ### EVALUATION
 print("\n\nEVALUATION AFTER LEARNING")
