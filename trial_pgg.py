@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 import wandb
 
 hyperparameter_defaults = dict(
-    eval_eps = 100,
-    max_training_steps = 500, # break training loop if timeteps > max_training_timesteps
+    eval_eps = 1000,
+    max_training_steps = 5000, # break training loop if timeteps > max_training_timesteps
     update_timestep = 40, # update policy every n timesteps
     n_agents = 2,
     uncertainties = [0., 0.],
     coins_per_agent = 4,
-    mult_fact = 10,
+    mult_fact = 2,
     num_game_iterations = 5,
     action_space = 2,
     input_dim_agent = 3,         # we observe coins we have, num of agents, and multiplier factor with uncertainty
@@ -26,7 +26,7 @@ hyperparameter_defaults = dict(
     comm = False 
 )
 
-wandb.init(project="pgg_comm", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
+wandb.init(project="pgg", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
 config = wandb.config
 
 assert (config.n_agents == len(config.uncertainties))
@@ -100,7 +100,7 @@ def train(config):
     un_agents_dict = {}
     agent_to_idx = {}
     for idx in range(config.n_agents):
-        agents_dict['agent_'+str(idx)] = PPO(config.input_dim_agent, config.action_space, config.lr_actor, config.r_critic,  \
+        agents_dict['agent_'+str(idx)] = PPO(config.input_dim_agent, config.action_space, config.lr_actor, config.lr_critic,  \
         config.gamma, config.K_epochs, config.eps_clip, config.c1, config.c2)
         un_agents_dict['agent_'+str(idx)] = PPO(config.input_dim_agent, config.action_space, config.lr_actor, config.lr_critic,  \
         config.gamma, config.K_epochs, config.eps_clip, config.c1, config.c2)

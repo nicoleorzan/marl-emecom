@@ -28,7 +28,7 @@ hyperparameter_defaults = dict(
     lr_critic = 0.001       # learning rate for critic network
 )
 
-wandb.init(project="pgg", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
+wandb.init(project="pgg_comm", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
 config = wandb.config
 
 assert (config.n_agents == len(config.uncertainties))
@@ -237,6 +237,12 @@ def train(config):
         for i in range(n_agents):
             print_running_reward[i] += current_ep_reward[i]
             print_running_episodes[i] += 1
+
+        if (i_episode%10 == 0):
+            for ag_idx in range(config.n_agents):
+                wandb.log({"agent"+str(ag_idx)+"_return": agents_dict['agent_'+str(ag_idx)].tmp_return}, step=i_episode)
+                wandb.log({"agent"+str(ag_idx)+"_coop_level": np.mean(agents_dict['agent_'+str(ag_idx)].tmp_actions)}, step=i_episode)
+            wandb.log({"episode": i_episode}, step=i_episode)
 
         i_episode += 1
 
