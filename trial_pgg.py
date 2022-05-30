@@ -4,15 +4,16 @@ from PPO import PPO
 import numpy as np
 import matplotlib.pyplot as plt
 import wandb
+import seaborn as sns
 
 hyperparameter_defaults = dict(
     eval_eps = 1000,
-    max_training_steps = 5000, # break training loop if timeteps > max_training_timesteps
+    max_training_steps = 10000, # break training loop if timeteps > max_training_timesteps
     update_timestep = 40, # update policy every n timesteps
     n_agents = 2,
-    uncertainties = [0., 0.],
+    uncertainties = [0., 1.],
     coins_per_agent = 4,
-    mult_fact = 2,
+    mult_fact = [0.5, 1, 2, 3, 4],
     num_game_iterations = 5,
     action_space = 2,
     input_dim_agent = 3,         # we observe coins we have, num of agents, and multiplier factor with uncertainty
@@ -26,27 +27,30 @@ hyperparameter_defaults = dict(
     comm = False 
 )
 
-wandb.init(project="pgg", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
+wandb.init(project="pgg", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
 
 assert (config.n_agents == len(config.uncertainties))
 
-folder = 'coop_m='+str(config.mult_fact)+'/'
+if hasattr(config.mult_fact, '__len__'):
+    folder = 'coop_variating_m/'#='+str(config.mult_fact)+'/'
+else: 
+    folder = 'coop_'+str(config.mult_fact)+'/'    
 
 max_ep_len = 1                    # max timesteps in one episode
 num_blocks = 10                   # number of blocks for moving average
 
-print_freq = 100     # print avg reward in the interval (in num timesteps)
+print_freq = 10     # print avg reward in the interval (in num timesteps)
 
 def evaluation(agents_dict, episodes, agent_to_idx):
 
-    agentsr = np.zeros((episodes, len(agents_dict)))
+    agents_returns = np.zeros((episodes, len(agents_dict)))
     for e in range(episodes):
         if (e%100 == 0):
             print("Episode:", e)
-        agentsr[e] = evaluate_episode(agents_dict, agent_to_idx)
+        agents_returns[e] = evaluate_episode(agents_dict, agent_to_idx)
 
-    return agentsr
+    return agents_returns
 
 def evaluate_episode(agents_dict, agent_to_idx):
     env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, num_iterations=config.num_game_iterations, \
@@ -171,7 +175,7 @@ def train(config):
                 print_avg_reward[k] = print_running_reward[k] / print_running_episodes[k]
                 print_avg_reward[k] = round(print_avg_reward[k], 2)
 
-            print("Episode : {} \t\t Timestep : {} \t\t ".format(i_episode, time_step))
+            print("Episode : {} \t Timestep : {} \t Mult factor : {} ".format(i_episode, time_step, env.env.env.current_multiplier))
 
             print("Average and Episodic Reward:")
             for i_print in range(config.n_agents):
@@ -221,9 +225,9 @@ def train(config):
     fig.suptitle("Train Cooperativity mean over the iteractions")
     for i in range(n_agents):
         train_actions = agents_dict['agent_'+str(ag_idx)].train_actions
-        print("train_actions", train_actions)
+        #print("train_actions", train_actions)
         train_act_array = np.array(train_actions)
-        print("train_act_array",train_act_array)
+        #print("train_act_array",train_act_array)
         avgs = np.mean(train_act_array, axis=1)
         ax[i].plot(np.linspace(0, len(train_actions), len(train_actions)), avgs)
         #ax[i].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(moving_avgs[i])), moving_avgs[i])
@@ -239,6 +243,21 @@ def train(config):
 
     plot_hist_returns(rews_before, rews_after)
 
+    # Print policy
+    pox_coins = np.linspace(0, int(max(rews_after[0])), int(max(rews_after[0])))
+    heat = np.zeros((n_agents, len(pox_coins), len(config.mult_fact)))
+    for ag in range(config.n_agents):
+        for ii in range(len(pox_coins)):
+            for jj in range(len(config.mult_fact)):
+                obs = np.array((pox_coins[ii], n_agents, config.mult_fact[jj]))
+                act = agents_dict['agent_'+str(ag_idx)].select_action(obs)
+                heat[ag, ii,jj] = act
+        
+    fig, ax = plt.subplots(1, n_agents, figsize=(n_agents*4, 4))
+    for ag in range(config.n_agents):
+        sns.heatmap(heat[ag], ax=ax[ag])
+    print("Saving heatmap..")
+    plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"heatmap.png")
 
 if __name__ == "__main__":
     train(config)

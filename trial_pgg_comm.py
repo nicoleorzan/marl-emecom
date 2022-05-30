@@ -5,15 +5,16 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 import wandb
+import seaborn as sns
 
 hyperparameter_defaults = dict(
-    eval_eps = 1000,
-    max_training_steps = 50000, # break training loop if timeteps > max_training_timesteps
+    eval_eps = 100,
+    max_training_steps = 5000, # break training loop if timeteps > max_training_timesteps
     update_timestep = 40, # update policy every n timesteps
     n_agents = 2,
-    uncertainties = [0., 0.],
+    uncertainties = [0., 1.],
     coins_per_agent = 4,
-    mult_fact = 10,
+    mult_fact = [0.5, 1, 2, 3, 4],
     num_game_iterations = 5,
     comm = True,
     action_space = 2,
@@ -28,12 +29,15 @@ hyperparameter_defaults = dict(
     lr_critic = 0.001       # learning rate for critic network
 )
 
-wandb.init(project="pgg_comm", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
+wandb.init(project="pgg_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
 
 assert (config.n_agents == len(config.uncertainties))
 
-folder = 'coop_m='+str(config.mult_fact)+'/'
+if hasattr(config.mult_fact, '__len__'):
+    folder = 'coop_variating_m/'#='+str(config.mult_fact)+'/'
+else: 
+    folder = 'coop_'+str(config.mult_fact)+'/' 
 
 max_ep_len = 1                    # max timesteps in one episode
 num_blocks = 10                   # number of blocks for moving average
@@ -283,6 +287,25 @@ def train(config):
     print("average rews ater", np.average(rews_after[0]), np.average(rews_after[1]))
 
     plot_hist_returns(rews_before, rews_after)
+
+    # Print policy
+    pox_coins = np.linspace(0, int(max(rews_after[0])), int(max(rews_after[0])))
+    heat = np.zeros((n_agents, len(pox_coins), len(config.mult_fact)))
+    mex_in = torch.zeros((config.mex_space*config.n_agents), dtype=torch.int64)
+    for ag in range(config.n_agents):
+        for ii in range(len(pox_coins)):
+            for jj in range(len(config.mult_fact)):
+                obs = np.array((pox_coins[ii], n_agents, config.mult_fact[jj]))
+                obs = torch.FloatTensor(obs)
+                state = torch.cat((obs, mex_in), dim=0)
+                act, _ = agents_dict['agent_'+str(ag_idx)].select_action(state)
+                heat[ag, ii,jj] = act
+        
+    fig, ax = plt.subplots(1, n_agents, figsize=(n_agents*4, 4))
+    for ag in range(config.n_agents):
+        sns.heatmap(heat[ag], ax=ax[ag])
+    print("Saving heatmap..")
+    plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"heatmap_comm.png")
 
 
 if __name__ == "__main__":
