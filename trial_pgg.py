@@ -14,33 +14,29 @@ hyperparameter_defaults = dict(
     coins_per_agent = 4,
     mult_fact = 10,
     num_game_iterations = 5,
+    action_space = 2,
+    input_dim_agent = 3,         # we observe coins we have, num of agents, and multiplier factor with uncertainty
+    K_epochs = 40,               # update policy for K epochs
+    eps_clip = 0.2,              # clip parameter for PPO
+    gamma = 0.99,                # discount factor
+    c1 = 0.5,
+    c2 = -0.01,
+    lr_actor = 0.001,            # learning rate for actor network
+    lr_critic = 0.001,           # learning rate for critic network
     comm = False 
 )
 
-wandb.init(project="pgg", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
+wandb.init(project="pgg_comm", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
 config = wandb.config
-
 
 assert (config.n_agents == len(config.uncertainties))
 
 folder = 'coop_m='+str(config.mult_fact)+'/'
 
-action_space = 2
-input_dim_agent = 3         # we observe coins we have, num of agents, and multiplier factor with uncertainty
-K_epochs = 40               # update policy for K epochs
-eps_clip = 0.2              # clip parameter for PPO
-gamma = 0.99                # discount factor
-c1 = 0.5
-c2 = -0.01
-lr_actor = 0.001            # learning rate for actor network
-lr_critic = 0.001           # learning rate for critic network
-
 max_ep_len = 1                    # max timesteps in one episode
 num_blocks = 10                   # number of blocks for moving average
 
 print_freq = 100     # print avg reward in the interval (in num timesteps)
-
-
 
 def evaluation(agents_dict, episodes, agent_to_idx):
 
@@ -104,13 +100,12 @@ def train(config):
     un_agents_dict = {}
     agent_to_idx = {}
     for idx in range(config.n_agents):
-        agents_dict['agent_'+str(idx)] = PPO(input_dim_agent, action_space, lr_actor, lr_critic,  \
-        gamma, K_epochs, eps_clip, c1, c2)
-        un_agents_dict['agent_'+str(idx)] = PPO(input_dim_agent, action_space, lr_actor, lr_critic,  \
-        gamma, K_epochs, eps_clip, c1, c2)
+        agents_dict['agent_'+str(idx)] = PPO(config.input_dim_agent, config.action_space, config.lr_actor, config.r_critic,  \
+        config.gamma, config.K_epochs, config.eps_clip, config.c1, config.c2)
+        un_agents_dict['agent_'+str(idx)] = PPO(config.input_dim_agent, config.action_space, config.lr_actor, config.lr_critic,  \
+        config.gamma, config.K_epochs, config.eps_clip, config.c1, config.c2)
         agent_to_idx['agent_'+str(idx)] = idx
 
-        
     print("\nEVALUATION BEFORE LEARNING")
     rews_before = evaluation(un_agents_dict, config.eval_eps, agent_to_idx)
 
