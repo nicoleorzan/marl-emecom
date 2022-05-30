@@ -1,5 +1,5 @@
 from src.environments import pgg_v0
-import supersuit as ss
+#import supersuit as ss
 from PPO import PPO
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,7 +13,8 @@ hyperparameter_defaults = dict(
     uncertainties = [0., 0.],
     coins_per_agent = 4,
     mult_fact = 10,
-    num_game_iterations = 5    
+    num_game_iterations = 5,
+    comm = False 
 )
 
 wandb.init(project="pgg", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
@@ -139,7 +140,7 @@ def train(config):
             acting_agent = agents_dict[id_agent]
             #print("idx=", idx, "agent_to_idx=", agent_to_idx[id_agent], "id_agent=", id_agent)
             
-            obs, rew, done, info = env.last()
+            obs, rew, done, _ = env.last()
             #print(obs, rew, done, info)
             act = acting_agent.select_action(obs) if not done else None
             #print("act=", act)
@@ -194,6 +195,10 @@ def train(config):
         for i in range(config.n_agents):
             print_running_reward[i] += current_ep_reward[i]
             print_running_episodes[i] += 1
+
+        if (i_episode%10 == 0):
+            for ag_idx in range(config.n_agents):
+                wandb.log({"agent"+str(ag_idx)+"_return": agents_dict['agent_'+str(ag_idx)].tmp_return}, step=i_episode)
 
         i_episode += 1
 
