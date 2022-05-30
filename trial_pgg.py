@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import wandb
 
 hyperparameter_defaults = dict(
-    eval_eps = 1000,
-    max_training_steps = 50000, # break training loop if timeteps > max_training_timesteps
+    eval_eps = 100,
+    max_training_steps = 500, # break training loop if timeteps > max_training_timesteps
     update_timestep = 40, # update policy every n timesteps
     n_agents = 2,
     uncertainties = [0., 0.],
@@ -123,7 +123,7 @@ def train(config):
     print_running_reward = np.zeros(config.n_agents)
     print_running_episodes = np.zeros(config.n_agents)
 
-    while time_step <= config.max_training_timesteps:
+    while time_step <= config.max_training_steps:
 
         env.reset()
 
@@ -199,6 +199,8 @@ def train(config):
         if (i_episode%10 == 0):
             for ag_idx in range(config.n_agents):
                 wandb.log({"agent"+str(ag_idx)+"_return": agents_dict['agent_'+str(ag_idx)].tmp_return}, step=i_episode)
+                wandb.log({"agent"+str(ag_idx)+"_action": agents_dict['agent_'+str(ag_idx)].tmp_actions}, step=i_episode)
+            wandb.log({"episode": i_episode}, step=i_episode)
 
         i_episode += 1
 
