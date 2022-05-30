@@ -199,7 +199,7 @@ def train(config):
         if (i_episode%10 == 0):
             for ag_idx in range(config.n_agents):
                 wandb.log({"agent"+str(ag_idx)+"_return": agents_dict['agent_'+str(ag_idx)].tmp_return}, step=i_episode)
-                wandb.log({"agent"+str(ag_idx)+"_action": agents_dict['agent_'+str(ag_idx)].tmp_actions}, step=i_episode)
+                wandb.log({"agent"+str(ag_idx)+"_coop_level": np.mean(agents_dict['agent_'+str(ag_idx)].tmp_actions)}, step=i_episode)
             wandb.log({"episode": i_episode}, step=i_episode)
 
         i_episode += 1
