@@ -104,6 +104,8 @@ class PPO():
 
         self.train_returns = []
         self.tmp_return = 0
+        self.train_actions = []
+        self.tmp_actions = []
 
     def select_action(self, state, done=False):
     

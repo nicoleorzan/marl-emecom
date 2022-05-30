@@ -7,18 +7,32 @@ import torch
 import torch.nn.functional as F
 
 eval_eps = 1000
-max_training_timesteps = 10000  #int(1e3)   # break training loop if timeteps > max_training_timesteps
+max_training_timesteps = 50000  #int(1e3)   # break training loop if timeteps > max_training_timesteps
 update_timestep = 40          # update policy every n timesteps
 
 # Game characteristics
+"""n_agents = 4
+n_coin_per_agent = 4
+n_total_coins = int(n_coin_per_agent+n_agents)
+uncertainties = [0., 0.8, 0., 0.8]
+assert (n_agents == len(uncertainties))
+mult_fact = [0, 1, 2, 3, 4, 5]
+num_game_iterations = 5     # number of steps of the game"""
+
 n_agents = 2
-n_total_coins = 6
-mult_factor = 2
-num_iterations = 2
+n_coin_per_agent = 4
+n_total_coins = int(n_coin_per_agent+n_agents)
+uncertainties = [0., 0.]
+assert (n_agents == len(uncertainties))
+#mult_fact = [0, 1, 2, 3]
+mult_fact = 10
+num_game_iterations = 5
+
+folder = 'coop_m='+str(mult_fact)+'/'
 
 action_space = 2
 obs_dim = 3         # we observe coins we have, num of agents, and multiplier factor with uncertainty
-mex_space = 2                 # vocabulary
+mex_space = 2               # vocabulary
 K_epochs = 40               # update policy for K epochs
 eps_clip = 0.2              # clip parameter for PPO
 gamma = 0.99                # discount factor
@@ -32,48 +46,49 @@ num_blocks = 10                   # number of blocks for moving average
 
 print_freq = 100     # print avg reward in the interval (in num timesteps)
 
-env = pgg_v0.env(n_agents=n_agents, n_total_coins=n_total_coins, mult_factor=mult_factor, num_iterations=num_iterations)
+env = pgg_v0.env(n_agents=n_agents, n_total_coins=n_total_coins, num_iterations=num_game_iterations, \
+     mult_fact=mult_fact, uncertainties=uncertainties)
 
-agent0_PPO = PPOcomm(obs_dim, action_space, mex_space, lr_actor, lr_critic,  \
+agents_dict = {}
+un_agents_dict = {}
+agent_to_idx = {}
+for idx in range(n_agents):
+    agents_dict['agent_'+str(idx)] = PPOcomm(obs_dim, action_space, mex_space, n_agents, lr_actor, lr_critic,  \
     gamma, K_epochs, eps_clip, c1, c2)
-agent1_PPO = PPOcomm(obs_dim, action_space, mex_space, lr_actor, lr_critic,  \
+    un_agents_dict['agent_'+str(idx)] = PPOcomm(obs_dim, action_space, mex_space, n_agents, lr_actor, lr_critic,  \
     gamma, K_epochs, eps_clip, c1, c2)
-
-#untrained agents for comparison
-un_agent0_PPO = PPOcomm(obs_dim, action_space, mex_space, lr_actor, lr_critic,  \
-    gamma, K_epochs, eps_clip, c1, c2)
-un_agent1_PPO = PPOcomm(obs_dim, action_space, mex_space, lr_actor, lr_critic,  \
-    gamma, K_epochs, eps_clip, c1, c2)
-
-agents_dict = {"agent_0": agent0_PPO, "agent_1": agent1_PPO}
-un_agents_dict = {"agent_0": un_agent0_PPO, "agent_1": un_agent1_PPO}
-agent_to_idx = {"agent_0": 0, "agent_1": 1}
+    agent_to_idx['agent_'+str(idx)] = idx
 
 def evaluation(agents_dict, episodes):
 
-    agent0r = np.zeros((episodes))
-    agent1r = np.zeros((episodes))
+    agentsr = np.zeros((episodes, len(agents_dict)))
     for e in range(episodes):
         if (e%100 == 0):
             print("Episode:", e)
-        agent0r[e], agent1r[e] = evaluate_episode(agents_dict)
+        agentsr[e] = evaluate_episode(agents_dict)
 
-    #print(agent0r, agent1r)
-    return [agent0r, agent1r]
+    return agentsr
 
 def evaluate_episode(agents_dict):
-    env = pgg_v0.env(n_agents=n_agents, n_total_coins=n_total_coins, mult_factor=mult_factor, num_iterations=num_iterations)
+    env = pgg_v0.env(n_agents=n_agents, n_total_coins=n_total_coins, num_iterations=num_game_iterations, \
+        mult_fact=mult_fact, uncertainties=uncertainties)
     env.reset()
     i = 0
-    mex_in_0 = torch.tensor([0.]).long()
-    mex_in_0 = F.one_hot(mex_in_0, num_classes=mex_space)[0]
-    mex_in = mex_in_0
+    ag_rets = np.zeros(len(agents_dict))
+    #mex_in_0 = torch.tensor([0.]).long()
+    #mex_in_0 = F.one_hot(mex_in_0, num_classes=mex_space)[0]
+    #mex_in = mex_in_0
+    mex_in = torch.zeros((mex_space*n_agents), dtype=torch.int64)
+    mex_out_aggreg = torch.zeros((mex_space*n_agents)).long()
 
-    for agent in env.agent_iter():
+    for id_agent in env.agent_iter():
+        idx = agent_to_idx[id_agent]
         obs, reward, done, _ = env.last()
         obs = torch.FloatTensor(obs)
-        acting_agent = agents_dict[agent]
+        acting_agent = agents_dict[id_agent]
         #print("obs=", obs, "mex=", mex_in)
+        if (i > n_agents-1):
+            mex_in = mex_out_aggreg
         state = torch.cat((obs, mex_in), dim=0)
 
         #act = acting_agent.select_action(state) if not done else None
@@ -81,45 +96,41 @@ def evaluate_episode(agents_dict):
             act, mex_out = acting_agent.select_action(state)
             mex_out = torch.Tensor([mex_out]).long()
             mex_out = F.one_hot(mex_out, num_classes=mex_space)[0]
-            mex_in = mex_out
+            mex_out_aggreg[idx*mex_space:idx*mex_space+mex_space] = mex_out
+            #mex_in = mex_out
             #print("mex_out=", mex_out)
         else:
             act = None
             mex_out = None
 
         env.step(act)
-        if (agent == 'agent_0'):
-            agent0r = reward
-        else:
-            agent1r = reward
+        ag_rets[idx] += reward
+
         i += 1
     env.close()
-    return agent0r, agent1r
+    return ag_rets
 
 def plot_hist_returns(rews_before, rews_after):
 
-    agent0rb, agent1rb = rews_before
-    agent0ra, agent1ra = rews_after
-
-    n_bins = 40
     fig, ax = plt.subplots(n_agents, 2, figsize=(20,8))
     fig.suptitle("Distribution of Returns", fontsize=25)
-    ax[0,0].hist(agent0rb, bins=n_bins, range=[-30., 60.], label='agent0 before')
-    ax[0,0].legend()
-    ax[0,1].hist(agent1rb, bins=n_bins, range=[-30., 60.], label='agent1 before')
-    ax[0,1].legend()
-    ax[1,0].hist(agent0ra, bins=n_bins, range=[-30., 60.], label='agent0 after')
-    ax[1,0].legend()
-    ax[1,1].hist(agent1ra, bins=n_bins, range=[-30., 60.], label='agent1 after')
-    ax[1,1].legend()
+
+    n_bins = 40
+
+    for i in range(n_agents):
+        ax[i,0].hist(rews_before[i], bins=n_bins, range=[-0., max(rews_before[i])], label='agent'+str(i)+' before')
+        ax[i,0].legend(prop=dict(size=18))
+        ax[i,1].hist(rews_after[i], bins=n_bins, range=[-0., max(rews_after[i])], label='agent'+str(i)+' after')
+        ax[i,1].legend(prop=dict(size=18))
+
     print("Saving histogram..")
-    plt.savefig("images/pgg/hist_rewards_pgg_comm.png")
+    plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"hist_rewards_pgg_comm.png")
 
 def moving_average(x, w):
     return np.convolve(x, np.ones(w), 'valid') / w
 
 
-#print("\nEVALUATION BEFORE LEARNING")
+print("\nEVALUATION BEFORE LEARNING")
 rews_before = evaluation(un_agents_dict, eval_eps)
 
 #### TRAINING LOOP
@@ -138,11 +149,17 @@ while time_step <= max_training_timesteps:
 
     current_ep_reward = np.zeros(n_agents)
     i_internal_loop = 0
-    agent0_PPO.tmp_return = 0; agent1_PPO.tmp_return = 0
+    agents_tmp_returns = np.zeros((n_agents))
+    for ag_idx in range(n_agents):
+        agents_dict['agent_'+str(ag_idx)].tmp_return = 0
+        agents_dict['agent_'+str(ag_idx)].tmp_actions = []
+
     mex_in_0 = torch.tensor([0.]).long()
     mex_in_0 = F.one_hot(mex_in_0, num_classes=mex_space)[0]
     #print("mex_in_0=", mex_in_0)
-    mex_in = mex_in_0
+    mex_in = torch.zeros((mex_space*n_agents), dtype=torch.int64)
+    mex_out_aggreg = torch.zeros((mex_space*n_agents)).long()
+    #print("mex out aggr=", mex_out_aggreg)
 
     for id_agent in env.agent_iter():
         #print("\nTime=", time_step)
@@ -153,25 +170,32 @@ while time_step <= max_training_timesteps:
         obs, rew, done, info = env.last()
         #print(obs, rew, done, info)
         obs = torch.FloatTensor(obs)#.to(device)
+        if (i_internal_loop > n_agents-1):
+            mex_in = mex_out_aggreg
+        #print("mex_in =", mex_in)
         state = torch.cat((obs, mex_in), dim=0)
+        
         if not done:
             act, mex_out = acting_agent.select_action(state)
             mex_out = torch.Tensor([mex_out]).long()
             mex_out = F.one_hot(mex_out, num_classes=mex_space)[0]
-            mex_in = mex_out
+            #mex_in = mex_out
+            mex_out_aggreg[idx*mex_space:idx*mex_space+mex_space] = mex_out
             #print("mex_out=", mex_out)
+            #print("mex out aggr=", mex_out_aggreg)
         else:
             act = None
             mex_out = None
         #print("act=", act, "mex_out=", mex_out)
         env.step(act)
 
-
         #print("step done")
-        if (i_internal_loop > 1):
+        if (i_internal_loop > n_agents-1):
             acting_agent.buffer.rewards.append(rew)
             acting_agent.buffer.is_terminals.append(done)
             acting_agent.tmp_return += rew
+            if (act is not None):
+                acting_agent.tmp_actions.append(act)
 
         time_step += 1
 
@@ -182,18 +206,15 @@ while time_step <= max_training_timesteps:
         #acting_agent.buffer.__print__()   
 
         # break; if the episode is over
-        if done:
-            agent0_PPO.train_returns.append(agent0_PPO.tmp_return)
-            agent1_PPO.train_returns.append(agent1_PPO.tmp_return)
-        if (done and idx==n_agents-1):  
-            #print("======>exiting") 
-            break
+        if (done):  
+            for ag_idx in range(n_agents):
+                agents_dict['agent_'+str(ag_idx)].train_returns.append(agents_dict['agent_'+str(ag_idx)].tmp_return)
+                agents_dict['agent_'+str(ag_idx)].train_actions.append(agents_dict['agent_'+str(ag_idx)].tmp_actions)
+            if (idx == n_agents-1):
+                #print("======>exiting\n\n\n") 
+                break
 
         i_internal_loop += 1
-
-    # update PPO agent
-    if time_step % update_timestep == 0:
-        acting_agent.update()
     
     if time_step % print_freq == 0:
         #print("time_step % print_freq=",time_step % print_freq)
@@ -204,11 +225,18 @@ while time_step <= max_training_timesteps:
             print_avg_reward[k] = round(print_avg_reward[k], 2)
 
         print("Episode : {} \t\t Timestep : {} \t\t ".format(i_episode, time_step))
-        print("Average Reward : agent0=",print_avg_reward[0],", angent1=",print_avg_reward[1])
+        print("Average and Episodic Reward:")
+        for i_print in range(n_agents):
+            print("Average rew agent",str(i_print),"=", print_avg_reward[i_print], "episodic reward=", agents_dict['agent_'+str(i_print)].buffer.rewards[-1])
 
         for i in range(n_agents):
             print_running_reward[i] = 0
             print_running_episodes[i] = 0
+
+    # update PPO agent
+    if time_step % update_timestep == 0:
+        for ag_idx in range(n_agents):
+            agents_dict['agent_'+str(ag_idx)].update()
     
     for i in range(n_agents):
         print_running_reward[i] += current_ep_reward[i]
@@ -218,16 +246,32 @@ while time_step <= max_training_timesteps:
 
 
 ### PLOT TRAIN RETURNS
-mov_avg_agent0 = moving_average(agent0_PPO.train_returns, num_blocks)
-mov_avg_agent1 = moving_average(agent1_PPO.train_returns, num_blocks)
+moving_avgs = []
+for ag_idx in range(n_agents):
+    moving_avgs.append(moving_average(agents_dict['agent_'+str(ag_idx)].train_returns, num_blocks))
 
-fig, (ax1, ax2) = plt.subplots(n_agents)
+fig, ax = plt.subplots(n_agents)
 fig.suptitle("Train Returns")
-ax1.plot(np.linspace(0, len(agent0_PPO.train_returns), len(agent0_PPO.train_returns)), agent0_PPO.train_returns)
-ax1.plot(np.linspace(0, len(agent0_PPO.train_returns), len(mov_avg_agent0)), mov_avg_agent0)
-ax2.plot(np.linspace(0, len(agent1_PPO.train_returns), len(agent1_PPO.train_returns)), agent1_PPO.train_returns)
-ax2.plot(np.linspace(0, len(agent1_PPO.train_returns), len(mov_avg_agent1)), mov_avg_agent1)
-plt.savefig("images/pgg/train_returns_pgg_comm.png")
+for i in range(n_agents):
+    ax[i].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(agents_dict['agent_'+str(ag_idx)].train_returns)), agents_dict['agent_'+str(ag_idx)].train_returns)
+    ax[i].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(moving_avgs[i])), moving_avgs[i])
+plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"train_returns_pgg_comm.png")
+
+
+### COOPERATIVITY PERCENTAGE PLOT
+#moving_avgs = []
+#for ag_idx in range(n_agents):
+#    moving_avgs.append(moving_average(agents_dict['agent_'+str(ag_idx)].train_returns, num_blocks))
+fig, ax = plt.subplots(n_agents)
+fig.suptitle("Train Cooperativity mean over the iteractions")
+for i in range(n_agents):
+    train_actions = agents_dict['agent_'+str(ag_idx)].train_actions
+    train_act_array = np.array(train_actions)
+    avgs = np.mean(train_act_array, axis=1)
+    ax[i].plot(np.linspace(0, len(train_actions), len(train_actions)), avgs)
+    #ax[i].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(moving_avgs[i])), moving_avgs[i])
+plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"train_cooperativeness_comm.png")
+
 
 ### EVALUATION
 print("\n\nEVALUATION AFTER LEARNING")

@@ -10,13 +10,12 @@ GIVE = 1 # keep my money
 MOVES = ["GIVE", "KEEP"]
 NUM_ITERS = 1
 
-def make_env(n_agents, n_total_coins):
-    print("env1")
-    '''
+def env(n_agents, n_total_coins):
+    """
     The env function often wraps the environment in wrappers by default.
     You can find full documentation for these methods
     elsewhere in the developer documentation.
-    '''
+    """
     env = raw_env(n_agents, n_total_coins)
     # This wrapper is only for environments which print results to the terminal
     #env = wrappers.CaptureStdoutWrapper(env)
@@ -28,7 +27,6 @@ def make_env(n_agents, n_total_coins):
     return env
 
 def raw_env(n_agents, n_total_coins):
-    print("rew_env1")
     '''
     To support the AEC API, the raw_env() function just uses the from_parallel
     function to convert from a ParallelEnv to an AEC env
@@ -42,7 +40,6 @@ class parallel_env(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "rps_v2"}
 
     def __init__(self, n_agents, n_total_coins):
-        print("parallel class")
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents

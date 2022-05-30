@@ -45,12 +45,13 @@ class RolloutBufferComm:
 
 class ActorCriticComm(nn.Module):
 
-    def __init__(self, obs_dim, mex_dim, action_dim): # input = obs + mex
+    def __init__(self, obs_dim, mex_dim, n_agents, action_dim): # input = obs + mex
         super(ActorCriticComm, self).__init__()
 
         self.obs_dim = obs_dim
         self.mex_dim = mex_dim
-        self.input_dim = self.obs_dim + self.mex_dim
+        self.n_agents = n_agents # how many agents will send messages to me (included myself)
+        self.input_dim = self.obs_dim + self.mex_dim*self.n_agents
         self.hidden_dim = 64
         self.action_dim = action_dim
 
@@ -87,6 +88,7 @@ class ActorCriticComm(nn.Module):
         #print(state)
         #out = torch.cat((state, mex), dim=0)
         #print("out=", out)
+        #print("state=", state)
         out = self.layers(state)
         mex_probs = self.comm_actor(out)
         act_probs = self.action_actor(out)
@@ -124,7 +126,7 @@ class ActorCriticComm(nn.Module):
 
 class PPOcomm():
 
-    def __init__(self, obs_dim, action_dim, mex_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, c1, c2):
+    def __init__(self, obs_dim, action_dim, mex_dim, n_agents, lr_actor, lr_critic, gamma, K_epochs, eps_clip, c1, c2):
 
         self.obs_dim = obs_dim
         self.mex_dim = mex_dim
@@ -139,7 +141,7 @@ class PPOcomm():
 
         self.buffer = RolloutBufferComm()
     
-        self.policy = ActorCriticComm(obs_dim, mex_dim, action_dim).to(device)
+        self.policy = ActorCriticComm(obs_dim, mex_dim, n_agents, action_dim).to(device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.layers.parameters(), 'lr': lr_actor},
                         {'params': self.policy.action_actor.parameters(), 'lr': lr_actor},
@@ -148,13 +150,15 @@ class PPOcomm():
                         {'params': self.policy.comm_critic.parameters(), 'lr': lr_critic}
                     ])
 
-        self.policy_old = ActorCriticComm(obs_dim, mex_dim, action_dim).to(device)
+        self.policy_old = ActorCriticComm(obs_dim, mex_dim, n_agents, action_dim).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.MseLoss = nn.MSELoss()
 
         self.train_returns = []
         self.tmp_return = 0
+        self.train_actions = []
+        self.tmp_actions = []
 
     def select_action(self, state, done=False):
     

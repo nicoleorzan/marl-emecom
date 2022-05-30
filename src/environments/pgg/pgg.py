@@ -7,17 +7,13 @@ from pettingzoo import AECEnv
 from pettingzoo.utils import agent_selector
 from pettingzoo.utils import wrappers
 
+# azione 1 e` cooperativa
 
-KEEP = 0 # give my money to pot
-GIVE = 1 # keep my money
-MOVES = ["GIVE", "KEEP"]
-NUM_ITERS = 1
-
-def env(n_agents, n_total_coins):
+def env(n_agents, coins_per_agent, num_iterations=1, mult_fact=None, uncertainties=None):
     '''
     The env function often wraps the environment in wrappers by default.
     '''
-    env = raw_env(n_agents, n_total_coins)
+    env = raw_env(n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties)
     # This wrapper is only for environments which print results to the terminal
     #env = wrappers.CaptureStdoutWrapper(env)
     # this wrapper helps error handling for discrete action spaces
@@ -40,7 +36,7 @@ class raw_env(AECEnv):
         "is_parallelizable": True
         }
 
-    def __init__(self, n_agents, n_total_coins):
+    def __init__(self, n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties):
         '''
         The init method takes in environment arguments and
          should define the following attributes:
@@ -51,11 +47,22 @@ class raw_env(AECEnv):
         These attributes should not be changed after initialization.
         '''
         self.n_agents = n_agents
-        self.n_total_coins = n_total_coins
-        self.multiplier = 5
+        self.coins_per_agent = coins_per_agent
+        self.mult_fact = mult_fact if mult_fact != None else 1
+        #if hasattr(mult_factor, '__len__'):
+        #    self.mult_factors = mult_factor
+        self.num_iterations = num_iterations
         self.possible_agents = ["agent_" + str(r) for r in range(self.n_agents)]
+        self.agents = self.possible_agents[:]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
 
+        if (uncertainties is not None):
+            assert (self.n_agents == len(uncertainties))
+            self.uncertainties = {}
+            for idx, agent in enumerate(self.agents):
+                self.uncertainties[agent] = uncertainties[idx]
+        else: 
+            self.uncertainties = {agent: 0 for agent in self.agents}
         self.n_actions = 2 # give money, keep money
         self.obs_space_size = 2 # I can observe the amount of money I have (precisely), and the multiplicative fctor (with uncertaity)
 
@@ -93,7 +100,9 @@ class raw_env(AECEnv):
         at any time after reset() is called.
         '''
         # observation of one agent is the number of coins he possesses
-        obs_multiplier = np.random.normal(0, self.uncertainties[agent], 1)[0]
+        obs_multiplier = np.random.normal(self.current_multiplier, self.uncertainties[agent], 1)[0]
+        if obs_multiplier < 0.:
+            obs_multiplier = 0.
         return np.array((self.coins[agent], self.n_agents, obs_multiplier))
 
     def close(self):
@@ -119,21 +128,23 @@ class raw_env(AECEnv):
         self._cumulative_rewards = {agent: 0 for agent in self.agents}
         self.dones = {agent: False for agent in self.agents}
         self.infos = {agent: {} for agent in self.agents}
+
+        if hasattr(self.mult_fact, '__len__'):
+            self.current_multiplier = random.choice(self.mult_fact)
+        else: 
+            self.current_multiplier = self.mult_fact
         #print("self agents=", self.agents)
         #print("cumul rews=",self._cumulative_rewards)
         #print("self.dones=", self.dones)
         #print("self.infos=", self.infos)
         self.state = {agent: None for agent in self.agents}
         # every agent has the same amount of coins
-        self.coins = {agent: int(self.n_total_coins/self.n_agents) for agent in self.agents} 
-        self.uncertainties = {agent: random.uniform(0,1) for agent in self.agents} 
+        self.coins = {agent: self.coins_per_agent for agent in self.agents} 
+        #self.uncertainties = {agent: 0 for agent in self.agents} #{agent: random.uniform(0,1) for agent in self.agents} 
         #print("Coins",self.coins)
         self.observations = {agent: None for agent in self.agents}
         self.num_moves = 0
 
-        '''
-        Our agent_selector utility allows easy cyclic stepping through the agents list.
-        '''
         self._agent_selector = agent_selector(self.agents)
         self.agent_selection = self._agent_selector.next()
 
@@ -173,14 +184,16 @@ class raw_env(AECEnv):
 
             for agent in self.agents:
                 if (self.state[agent] == 1):
-                    self.rewards[agent] = common_pot/self.n_agents*self.multiplier
+                    self.rewards[agent] = common_pot/self.n_agents*self.current_multiplier
                 else:
-                    self.rewards[agent] = common_pot/self.n_agents*self.multiplier + self.coins[agent]
+                    self.rewards[agent] = common_pot/self.n_agents*self.current_multiplier + self.coins[agent]
+                self.coins[agent] = self.rewards[agent]
 
             self.num_moves += 1
 
             # The dones dictionary must be updated for all players.
-            self.dones = {agent: self.num_moves >= NUM_ITERS for agent in self.agents}
+            self.dones = {agent: self.num_moves >= self.num_iterations for agent in self.agents}
+            #self.dones = {agent: self.num_moves >= NUM_ITERS for agent in self.agents}
             #print("self.num_moves", self.num_moves, "NUM_ITERS=",NUM_ITERS)
             #print("self.dones=", self.dones)
 
