@@ -8,7 +8,7 @@ import seaborn as sns
 from utils import plot_hist_returns, plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 60,
+    n_experiments = 50,
     episodes_per_experiment = 800,
     update_timestep = 40, # update policy every n timesteps
     n_agents = 2,
@@ -35,14 +35,11 @@ config = wandb.config
 assert (config.n_agents == len(config.uncertainties))
 
 if hasattr(config.mult_fact, '__len__'):
-    folder = 'coop_variating_m/'#='+str(config.mult_fact)+'/'
+    folder = 'coop_variating_m/'
 else: 
     folder = 'coop_'+str(config.mult_fact)+'/'    
 
-max_ep_len = 1                    # max timesteps in one episode
-num_blocks = 10                   # number of blocks for moving average
-
-print_freq = 100     # print avg reward in the interval (in num timesteps)
+print_freq = 500     # print avg reward in the interval (in num timesteps)
 
 
 def evaluate_episode(agents_dict, agent_to_idx):
@@ -54,8 +51,8 @@ def evaluate_episode(agents_dict, agent_to_idx):
 
     for id_agent in env.agent_iter():
         idx = agent_to_idx[id_agent]
-        obs, reward, done, _ = env.last()
         acting_agent = agents_dict[id_agent]
+        obs, reward, done, _ = env.last()
         act = acting_agent.select_action(obs) if not done else None
         env.step(act)
         ag_rets[idx] += reward
@@ -77,8 +74,7 @@ def train(config):
 
     all_returns = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
     all_cooperativeness = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
-    average_returns = np.zeros((n_agents, config.episodes_per_experiment))
-    average_cooperativeness = np.zeros((n_agents, config.episodes_per_experiment))
+
     print("start")
 
     for experiment in range(config.n_experiments):
@@ -105,7 +101,7 @@ def train(config):
         print_running_reward = np.zeros(config.n_agents)
         print_running_episodes = np.zeros(config.n_agents)
 
-        for ep_in in range(config.episodes_per_experiment):
+        for _ in range(config.episodes_per_experiment):
 
             env.reset()
 
@@ -117,16 +113,13 @@ def train(config):
                 agents_dict['agent_'+str(ag_idx)].tmp_actions = []
 
             for id_agent in env.agent_iter():
-                #print("\nTime=", time_step)
                 idx = agent_to_idx[id_agent]
                 acting_agent = agents_dict[id_agent]
-                #print("idx=", idx, "agent_to_idx=", agent_to_idx[id_agent], "id_agent=", id_agent)
                 
                 obs, rew, done, _ = env.last()
                 #print(obs, rew, done, info)
                 act = acting_agent.select_action(obs) if not done else None
                 #print("act=", act)
-                #print("env step")
                 env.step(act)
 
                 if (i_internal_loop > config.n_agents-1):
@@ -157,7 +150,6 @@ def train(config):
                     print_avg_reward[k] = round(print_avg_reward[k], 2)
 
                 print("Episode : {} \t Timestep : {} \t Mult factor : {} ".format(i_episode, time_step, env.env.env.current_multiplier))
-
                 print("Average and Episodic Reward:")
                 for i_print in range(config.n_agents):
                     print("Average rew agent",str(i_print),"=", print_avg_reward[i_print], "episodic reward=", agents_dict['agent_'+str(i_print)].buffer.rewards[-1])
@@ -195,7 +187,6 @@ def train(config):
 
             # COOPERATIVITY PERCENTAGE PLOT
             cooperativity_plot(config, agents_dict, folder, "train_cooperativeness")
-            plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"train_returns.png")
 
             ### EVALUATION
             print("\n\nEVALUATION AFTER LEARNING")
@@ -224,9 +215,7 @@ def train(config):
     
     #mean calculations
     plot_avg_on_experiments(config, all_returns, all_cooperativeness, folder, "")
-            
 
 
 if __name__ == "__main__":
-    print("eh?")
     train(config)

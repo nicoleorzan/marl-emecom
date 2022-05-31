@@ -9,7 +9,7 @@ import seaborn as sns
 from utils import plot_hist_returns, plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 60,
+    n_experiments = 50,
     episodes_per_experiment = 800,
     eval_eps = 1000,
     update_timestep = 40, # update policy every n timesteps
@@ -38,14 +38,11 @@ config = wandb.config
 assert (config.n_agents == len(config.uncertainties))
 
 if hasattr(config.mult_fact, '__len__'):
-    folder = 'coop_variating_m_both_uncertain/'#='+str(config.mult_fact)+'/'
+    folder = 'coop_variating_m/'
 else: 
     folder = 'coop_'+str(config.mult_fact)+'/' 
 
-max_ep_len = 1                    # max timesteps in one episode
-num_blocks = 10                   # number of blocks for moving average
-
-print_freq = 100     # print avg reward in the interval (in num timesteps)
+print_freq = 500     # print avg reward in the interval (in num timesteps)
 
 
 def evaluate_episode(agents_dict, agent_to_idx):
@@ -54,30 +51,24 @@ def evaluate_episode(agents_dict, agent_to_idx):
     env.reset()
     i = 0
     ag_rets = np.zeros(len(agents_dict))
-    #mex_in_0 = torch.tensor([0.]).long()
-    #mex_in_0 = F.one_hot(mex_in_0, num_classes=mex_space)[0]
-    #mex_in = mex_in_0
+
     mex_in = torch.zeros((config.mex_space*config.n_agents), dtype=torch.int64)
     mex_out_aggreg = torch.zeros((config.mex_space*config.n_agents)).long()
 
     for id_agent in env.agent_iter():
         idx = agent_to_idx[id_agent]
+        acting_agent = agents_dict[id_agent]
         obs, reward, done, _ = env.last()
         obs = torch.FloatTensor(obs)
-        acting_agent = agents_dict[id_agent]
-        #print("obs=", obs, "mex=", mex_in)
         if (i > config.n_agents-1):
             mex_in = mex_out_aggreg
         state = torch.cat((obs, mex_in), dim=0)
 
-        #act = acting_agent.select_action(state) if not done else None
         if not done:
             act, mex_out = acting_agent.select_action(state)
-            mex_out = torch.Tensor([mex_out]).long()
             mex_out = F.one_hot(mex_out, num_classes=config.mex_space)[0]
             mex_out_aggreg[idx*config.mex_space:idx*config.mex_space+config.mex_space] = mex_out
-            #mex_in = mex_out
-            #print("mex_out=", mex_out)
+
         else:
             act = None
             mex_out = None
@@ -126,7 +117,7 @@ def train(config):
         print_running_reward = np.zeros(config.n_agents)
         print_running_episodes = np.zeros(config.n_agents)
 
-        for ep_in in range(config.episodes_per_experiment):
+        for _ in range(config.episodes_per_experiment):
             env.reset()
 
             current_ep_reward = np.zeros(n_agents)
@@ -135,9 +126,6 @@ def train(config):
                 agents_dict['agent_'+str(ag_idx)].tmp_return = 0
                 agents_dict['agent_'+str(ag_idx)].tmp_actions = []
 
-            mex_in_0 = torch.tensor([0.]).long()
-            mex_in_0 = F.one_hot(mex_in_0, num_classes=mex_space)[0]
-            #print("mex_in_0=", mex_in_0)
             mex_in = torch.zeros((mex_space*n_agents), dtype=torch.int64)
             mex_out_aggreg = torch.zeros((mex_space*n_agents)).long()
             #print("mex out aggr=", mex_out_aggreg)
@@ -147,8 +135,8 @@ def train(config):
                 acting_agent = agents_dict[id_agent]
                 
                 obs, rew, done, _ = env.last()
-                #print(obs, rew, done, info)
-                obs = torch.FloatTensor(obs)#.to(device)
+                obs = torch.FloatTensor(obs)
+                
                 if (i_internal_loop > n_agents-1):
                     mex_in = mex_out_aggreg
                 #print("mex_in =", mex_in)
@@ -156,19 +144,14 @@ def train(config):
                 
                 if not done:
                     act, mex_out = acting_agent.select_action(state)
-                    mex_out = torch.Tensor([mex_out]).long()
                     mex_out = F.one_hot(mex_out, num_classes=mex_space)[0]
-                    #mex_in = mex_out
                     mex_out_aggreg[idx*mex_space:idx*mex_space+mex_space] = mex_out
-                    #print("mex_out=", mex_out)
-                    #print("mex out aggr=", mex_out_aggreg)
                 else:
                     act = None
                     mex_out = None
                 #print("act=", act, "mex_out=", mex_out)
                 env.step(act)
 
-                #print("step done")
                 if (i_internal_loop > n_agents-1):
                     acting_agent.buffer.rewards.append(rew)
                     acting_agent.buffer.is_terminals.append(done)

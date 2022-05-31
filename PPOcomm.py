@@ -174,7 +174,9 @@ class PPOcomm():
             self.buffer.actions.append(action)
             self.buffer.act_logprobs.append(action_logprob)
             self.buffer.comm_logprobs.append(message_logprob)
-        return action.item(), message.item()
+
+        message = torch.Tensor([message.item()]).long()
+        return action.item(), message
 
     def eval_action(self, state, mex_in, done=False):
     
