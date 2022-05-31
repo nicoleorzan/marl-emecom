@@ -38,7 +38,7 @@ config = wandb.config
 
 assert (config.n_agents == len(config.uncertainties))
 
-if (any(config.uncertainties != 0.)):
+if (any(config.uncertainties) != 0.):
     unc = "w_uncert"
 else: 
     unc = "wOUT_uncert"
@@ -53,7 +53,7 @@ if not os.path.exists(path):
     os.makedirs(path)
     print("New directory is created!")
 
-print_freq = 500     # print avg reward in the interval (in num timesteps)
+print_freq = 400     # print avg reward in the interval (in num timesteps)
 
 def evaluate_episode(agents_dict, agent_to_idx):
     env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, num_iterations=config.num_game_iterations, \
@@ -104,6 +104,7 @@ def train(config):
     all_cooperativeness = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
 
     for experiment in range(config.n_experiments):
+
         print("Experiment=", experiment)
 
         agents_dict = {}
@@ -121,13 +122,10 @@ def train(config):
             rews_before = evaluation(un_agents_dict, config.eval_eps, agent_to_idx)
 
         #### TRAINING LOOP
-        time_step = 0
-        i_episode = 0
-
         print_running_reward = np.zeros(config.n_agents)
         print_running_episodes = np.zeros(config.n_agents)
 
-        for _ in range(config.episodes_per_experiment):
+        for ep_in in range(config.episodes_per_experiment):
             env.reset()
 
             current_ep_reward = np.zeros(n_agents)
@@ -169,8 +167,6 @@ def train(config):
                     if (act is not None):
                         acting_agent.tmp_actions.append(act)
 
-                time_step += 1
-
                 if rew != None:
                     current_ep_reward[idx] += rew
 
@@ -183,13 +179,13 @@ def train(config):
 
                 i_internal_loop += 1
             
-            if time_step % print_freq == 0:
+            if (ep_in+1) % print_freq == 0:
                 print_avg_reward = np.zeros(n_agents)
                 for k in range(n_agents):
                     print_avg_reward[k] = print_running_reward[k] / print_running_episodes[k]
                     print_avg_reward[k] = round(print_avg_reward[k], 2)
 
-                print("Episode : {} \t\t Timestep : {} \t\t ".format(i_episode, time_step))
+                print("Experiment : {} \t Episode : {} \t Mult factor : {} ".format(experiment, ep_in, env.env.env.current_multiplier))
                 print("Average and Episodic Reward:")
                 for i_print in range(n_agents):
                     print("Average rew agent",str(i_print),"=", print_avg_reward[i_print], "episodic reward=", agents_dict['agent_'+str(i_print)].buffer.rewards[-1])
@@ -199,7 +195,7 @@ def train(config):
                     print_running_episodes[i] = 0
 
             # update PPO agent
-            if time_step % config.update_timestep == 0:
+            if ep_in % config.update_timestep == 0:
                 for ag_idx in range(n_agents):
                     agents_dict['agent_'+str(ag_idx)].update()
             
@@ -207,13 +203,11 @@ def train(config):
                 print_running_reward[i] += current_ep_reward[i]
                 print_running_episodes[i] += 1
 
-            if (i_episode%10 == 0):
+            if (config.n_experiments == 1 and ep_in%10 == 0):
                 for ag_idx in range(config.n_agents):
-                    wandb.log({"agent"+str(ag_idx)+"_return": agents_dict['agent_'+str(ag_idx)].tmp_return}, step=i_episode)
-                    wandb.log({"agent"+str(ag_idx)+"_coop_level": np.mean(agents_dict['agent_'+str(ag_idx)].tmp_actions)}, step=i_episode)
-                wandb.log({"episode": i_episode}, step=i_episode)
-
-            i_episode += 1
+                    wandb.log({"agent"+str(ag_idx)+"_return": agents_dict['agent_'+str(ag_idx)].tmp_return}, step=ep_in)
+                    wandb.log({"agent"+str(ag_idx)+"_coop_level": np.mean(agents_dict['agent_'+str(ag_idx)].tmp_actions)}, step=ep_in)
+                wandb.log({"episode": ep_in}, step=ep_in)
 
 
         for ag_idx in range(n_agents):
