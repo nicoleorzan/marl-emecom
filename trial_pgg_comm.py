@@ -10,15 +10,15 @@ import os
 from utils import plot_hist_returns, plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 50,
-    episodes_per_experiment = 600,
+    n_experiments = 1,
+    episodes_per_experiment = 100,
     eval_eps = 1000,
     update_timestep = 40, # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
     coins_per_agent = 4,
-    mult_fact = [0, 0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
-    num_game_iterations = 5,
+    mult_fact = 1, #[0, 0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
+    num_game_iterations = 3,
     comm = True,
     action_space = 2,
     obs_dim = 2,                 # we observe coins we have,  and multiplier factor with uncertainty
@@ -33,15 +33,21 @@ hyperparameter_defaults = dict(
     plots = False
 )
 
-wandb.init(project="pgg_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
+mode = "offline"
+
+if (hyperparameter_defaults['n_experiments'] == 1):
+    mode = None
+wandb.init(project="pgg_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=mode)
 config = wandb.config
 
 assert (config.n_agents == len(config.uncertainties))
+
 
 if (any(config.uncertainties) != 0.):
     unc = "w_uncert"
 else: 
     unc = "wOUT_uncert"
+
 
 if hasattr(config.mult_fact, '__len__'):
     folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/"
@@ -251,8 +257,8 @@ def train(config):
             plt.savefig(path+"heatmap_comm.png")
 
 
-
-    plot_avg_on_experiments(config, all_returns, all_cooperativeness, path, "comm")
+    if (config.n_experiments > 1):
+        plot_avg_on_experiments(config, all_returns, all_cooperativeness, path, "comm")
 
 
 if __name__ == "__main__":
