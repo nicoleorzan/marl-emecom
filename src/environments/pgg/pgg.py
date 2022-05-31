@@ -69,6 +69,7 @@ class raw_env(AECEnv):
         # Gym spaces are defined and documented here: https://gym.openai.com/docs/#spaces
         self._action_spaces = {agent: Discrete(self.n_actions) for agent in self.possible_agents}
         self._observation_spaces = {agent: Discrete(self.obs_space_size) for agent in self.possible_agents}
+        self.current_multiplier = 0
         self.reset()
 
     # this cache ensures that same space object is returned for the same agent
@@ -103,7 +104,7 @@ class raw_env(AECEnv):
         obs_multiplier = np.random.normal(self.current_multiplier, self.uncertainties[agent], 1)[0]
         if obs_multiplier < 0.:
             obs_multiplier = 0.
-        return np.array((self.coins[agent], self.n_agents, obs_multiplier))
+        return np.array((self.coins[agent], obs_multiplier))
 
     def close(self):
         pass

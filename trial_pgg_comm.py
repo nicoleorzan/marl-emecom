@@ -6,6 +6,7 @@ import torch
 import torch.nn.functional as F
 import wandb
 import seaborn as sns
+from utils import plot_hist_returns, plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
     n_experiments = 60,
@@ -19,7 +20,7 @@ hyperparameter_defaults = dict(
     num_game_iterations = 5,
     comm = True,
     action_space = 2,
-    obs_dim = 3,         # we observe coins we have, num of agents, and multiplier factor with uncertainty
+    obs_dim = 2,                 # we observe coins we have,  and multiplier factor with uncertainty
     mex_space = 2,               # vocabulary
     K_epochs = 40,               # update policy for K epochs
     eps_clip = 0.2,              # clip parameter for PPO
@@ -46,15 +47,6 @@ num_blocks = 10                   # number of blocks for moving average
 
 print_freq = 100     # print avg reward in the interval (in num timesteps)
 
-def evaluation(agents_dict, episodes, agent_to_idx):
-
-    agentsr = np.zeros((episodes, len(agents_dict)))
-    for e in range(episodes):
-        if (e%100 == 0):
-            print("Episode:", e)
-        agentsr[e] = evaluate_episode(agents_dict, agent_to_idx)
-
-    return agentsr
 
 def evaluate_episode(agents_dict, agent_to_idx):
     env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, num_iterations=config.num_game_iterations, \
@@ -97,26 +89,6 @@ def evaluate_episode(agents_dict, agent_to_idx):
     env.close()
     return ag_rets
 
-def plot_hist_returns(rews_before, rews_after):
-
-    fig, ax = plt.subplots(config.n_agents, 2, figsize=(20,8))
-    fig.suptitle("Distribution of Returns", fontsize=25)
-
-    n_bins = 40
-
-    for i in range(config.n_agents):
-        ax[i,0].hist(rews_before[i], bins=n_bins, range=[-0., max(rews_before[i])], label='agent'+str(i)+' before')
-        ax[i,0].legend(prop=dict(size=18))
-        ax[i,1].hist(rews_after[i], bins=n_bins, range=[-0., max(rews_after[i])], label='agent'+str(i)+' after')
-        ax[i,1].legend(prop=dict(size=18))
-
-    print("Saving histogram..")
-    plt.savefig("images/pgg/"+str(config.n_agents)+"_agents/"+folder+"hist_rewards_pgg_comm.png")
-
-def moving_average(x, w):
-    return np.convolve(x, np.ones(w), 'valid') / w
-
-
 
 
 def train(config):
@@ -129,8 +101,6 @@ def train(config):
 
     all_returns = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
     all_cooperativeness = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
-    average_returns = np.zeros((n_agents, config.episodes_per_experiment))
-    average_cooperativeness = np.zeros((n_agents, config.episodes_per_experiment))
 
     for experiment in range(config.n_experiments):
         print("Experiment=", experiment)
@@ -260,27 +230,10 @@ def train(config):
         # PLOTS
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
-            moving_avgs = []
-            for ag_idx in range(n_agents):
-                moving_avgs.append(moving_average(agents_dict['agent_'+str(ag_idx)].train_returns, num_blocks))
-
-            fig, ax = plt.subplots(n_agents)
-            fig.suptitle("Train Returns")
-            for i in range(n_agents):
-                ax[i].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(agents_dict['agent_'+str(ag_idx)].train_returns)), agents_dict['agent_'+str(ag_idx)].train_returns)
-                ax[i].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(moving_avgs[i])), moving_avgs[i])
-            plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"train_returns_pgg_comm.png")
+            plot_train_returns(config, agents_dict, folder, "train_returns_pgg_comm")
 
             # COOPERATIVITY PERCENTAGE PLOT
-            fig, ax = plt.subplots(n_agents)
-            fig.suptitle("Train Cooperativity mean over the iteractions")
-            for i in range(n_agents):
-                train_actions = agents_dict['agent_'+str(ag_idx)].train_actions
-                train_act_array = np.array(train_actions)
-                avgs = np.mean(train_act_array, axis=1)
-                ax[i].plot(np.linspace(0, len(train_actions), len(train_actions)), avgs)
-            plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"train_cooperativeness_comm.png")
-
+            cooperativity_plot(config, agents_dict, folder, "train_cooperativeness_comm")
 
             ### EVALUATION
             print("\n\nEVALUATION AFTER LEARNING")
@@ -310,23 +263,9 @@ def train(config):
             print("Saving heatmap..")
             plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"heatmap_comm.png")
 
-    #mean calculations
-    for ag_idx in range(n_agents):
-        average_returns[ag_idx, :] = np.mean(all_returns[ag_idx], axis=0)         
-        average_cooperativeness[ag_idx, :] = np.mean(all_cooperativeness[ag_idx], axis=0)     
 
-    fig, ax = plt.subplots(n_agents)
-    fig.suptitle("AVG Train Returns")
-    for i in range(n_agents):
-        print(average_returns[ag_idx])
-        ax[i].plot(np.linspace(0, len(average_returns[ag_idx]), len(average_returns[ag_idx])), average_returns[ag_idx])
-    plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"AVG_train_returns_comm.png")
 
-    fig, ax = plt.subplots(n_agents)
-    fig.suptitle("AVG Cooperativity")
-    for i in range(n_agents):
-        ax[i].plot(np.linspace(0, len(average_cooperativeness[ag_idx, :]), len(average_cooperativeness[ag_idx, :])), average_cooperativeness[ag_idx, :])
-    plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"AVG_coop_com.png")    
+    plot_avg_on_experiments(config, all_returns, all_cooperativeness, folder, "comm")
 
 
 if __name__ == "__main__":
