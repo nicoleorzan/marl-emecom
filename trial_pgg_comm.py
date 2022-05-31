@@ -11,7 +11,7 @@ from utils import plot_hist_returns, plot_train_returns, cooperativity_plot, eva
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 100,
+    episodes_per_experiment = 5000,
     eval_eps = 1000,
     update_timestep = 40, # update policy every n timesteps
     n_agents = 3,
@@ -213,6 +213,8 @@ def train(config):
                 for ag_idx in range(config.n_agents):
                     wandb.log({"agent"+str(ag_idx)+"_return": agents_dict['agent_'+str(ag_idx)].tmp_return}, step=ep_in)
                     wandb.log({"agent"+str(ag_idx)+"_coop_level": np.mean(agents_dict['agent_'+str(ag_idx)].tmp_actions)}, step=ep_in)
+                agents_coop = [np.mean(agents_dict['agent_'+str(i)].tmp_actions) for i in range(config.n_agents)]/config.n_agents
+                wandb.log({"agents_coop_level": agents_coop}, step=ep_in)
                 wandb.log({"episode": ep_in}, step=ep_in)
 
 
