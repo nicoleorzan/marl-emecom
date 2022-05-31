@@ -10,12 +10,12 @@ import os
 from utils import plot_hist_returns, plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 5,
-    episodes_per_experiment = 10,
+    n_experiments = 50,
+    episodes_per_experiment = 600,
     eval_eps = 1000,
     update_timestep = 40, # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [2., 10., 10.],
+    uncertainties = [0., 0., 0.],
     coins_per_agent = 4,
     mult_fact = [0, 0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
     num_game_iterations = 5,
@@ -38,10 +38,15 @@ config = wandb.config
 
 assert (config.n_agents == len(config.uncertainties))
 
-if hasattr(config.mult_fact, '__len__'):
-    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters/comm/"
+if (any(config.uncertainties != 0.)):
+    unc = "w_uncert"
 else: 
-    folder = str(config.n_agents)+"agents/"+str(config.mult_fact)+"mult_"+str(config.num_game_iterations)+"iters/comm/"
+    unc = "wOUT_uncert"
+
+if hasattr(config.mult_fact, '__len__'):
+    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/"
+else: 
+    folder = str(config.n_agents)+"agents/"+str(config.mult_fact)+"mult_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/"
 
 path = "images/pgg/"+folder
 if not os.path.exists(path):
