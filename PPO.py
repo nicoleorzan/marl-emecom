@@ -106,6 +106,7 @@ class PPO():
         self.tmp_return = 0
         self.train_actions = []
         self.tmp_actions = []
+        self.cooperativeness = []
 
     def select_action(self, state, done=False):
     
@@ -127,7 +128,7 @@ class PPO():
             for action in range(self.action_dim):
                 a = torch.Tensor([action])
                 action_logprob, _, _ = self.policy_old.evaluate(state, a)
-                print("action_logprob=",action_logprob)
+                #print("action_logprob=",action_logprob)
                 actions_logprobs.append(action_logprob.item())
 
         return actions_logprobs

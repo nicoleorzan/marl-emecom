@@ -159,6 +159,7 @@ class PPOcomm():
         self.tmp_return = 0
         self.train_actions = []
         self.tmp_actions = []
+        self.cooperativeness = []
 
     def select_action(self, state, done=False):
     
