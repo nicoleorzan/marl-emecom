@@ -6,15 +6,16 @@ import torch
 import torch.nn.functional as F
 import wandb
 import seaborn as sns
+import os
 from utils import plot_hist_returns, plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 50,
-    episodes_per_experiment = 800,
+    n_experiments = 5,
+    episodes_per_experiment = 10,
     eval_eps = 1000,
     update_timestep = 40, # update policy every n timesteps
-    n_agents = 2,
-    uncertainties = [2., 10.],# 10.],
+    n_agents = 3,
+    uncertainties = [2., 10., 10.],
     coins_per_agent = 4,
     mult_fact = [0, 0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
     num_game_iterations = 5,
@@ -38,12 +39,16 @@ config = wandb.config
 assert (config.n_agents == len(config.uncertainties))
 
 if hasattr(config.mult_fact, '__len__'):
-    folder = 'coop_variating_m/'
+    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters/comm/"
 else: 
-    folder = 'coop_'+str(config.mult_fact)+'/' 
+    folder = str(config.n_agents)+"agents/"+str(config.mult_fact)+"mult_"+str(config.num_game_iterations)+"iters/comm/"
+
+path = "images/pgg/"+folder
+if not os.path.exists(path):
+    os.makedirs(path)
+    print("New directory is created!")
 
 print_freq = 500     # print avg reward in the interval (in num timesteps)
-
 
 def evaluate_episode(agents_dict, agent_to_idx):
     env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, num_iterations=config.num_game_iterations, \
@@ -136,7 +141,7 @@ def train(config):
                 
                 obs, rew, done, _ = env.last()
                 obs = torch.FloatTensor(obs)
-                
+
                 if (i_internal_loop > n_agents-1):
                     mex_in = mex_out_aggreg
                 #print("mex_in =", mex_in)
@@ -213,10 +218,10 @@ def train(config):
         # PLOTS
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
-            plot_train_returns(config, agents_dict, folder, "train_returns_pgg_comm")
+            plot_train_returns(config, agents_dict, path, "train_returns_pgg_comm")
 
             # COOPERATIVITY PERCENTAGE PLOT
-            cooperativity_plot(config, agents_dict, folder, "train_cooperativeness_comm")
+            cooperativity_plot(config, agents_dict, path, "train_cooperativeness_comm")
 
             ### EVALUATION
             print("\n\nEVALUATION AFTER LEARNING")
@@ -244,11 +249,11 @@ def train(config):
             for ag in range(config.n_agents):
                 sns.heatmap(heat[ag], ax=ax[ag])
             print("Saving heatmap..")
-            plt.savefig("images/pgg/"+str(n_agents)+"_agents/"+folder+"heatmap_comm.png")
+            plt.savefig(path+"heatmap_comm.png")
 
 
 
-    plot_avg_on_experiments(config, all_returns, all_cooperativeness, folder, "comm")
+    plot_avg_on_experiments(config, all_returns, all_cooperativeness, path, "comm")
 
 
 if __name__ == "__main__":

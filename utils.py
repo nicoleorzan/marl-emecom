@@ -16,7 +16,7 @@ def moving_average(x, w):
 
 
 
-def plot_hist_returns(rews_before, rews_after, config, folder, name):
+def plot_hist_returns(rews_before, rews_after, config, path, name):
 
     fig, ax = plt.subplots(config.n_agents, 2, figsize=(20,8))
     fig.suptitle("Distribution of Returns", fontsize=25)
@@ -30,10 +30,10 @@ def plot_hist_returns(rews_before, rews_after, config, folder, name):
         ax[i,1].legend(prop=dict(size=18))
 
     print("Saving histogram..")
-    plt.savefig("images/pgg/"+str(config.n_agents)+"_agents/"+folder+name+".png")
+    plt.savefig(path+name+".png")
 
 
-def plot_train_returns(config, agents_dict, folder, name):
+def plot_train_returns(config, agents_dict, path, name):
 
     num_blocks = 40
 
@@ -44,22 +44,22 @@ def plot_train_returns(config, agents_dict, folder, name):
     fig, ax = plt.subplots(config.n_agents)
     fig.suptitle("Train Returns")
     for ag_idx in range(config.n_agents):
-        ax[i].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(agents_dict['agent_'+str(ag_idx)].train_returns)), agents_dict['agent_'+str(ag_idx)].train_returns)
-        ax[i].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(moving_avgs[i])), moving_avgs[i])
-    plt.savefig("images/pgg/"+str(config.n_agents)+"_agents/"+folder+name+".png")
+        ax[ag_idx].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(agents_dict['agent_'+str(ag_idx)].train_returns)), agents_dict['agent_'+str(ag_idx)].train_returns)
+        ax[ag_idx].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(moving_avgs[ag_idx])), moving_avgs[ag_idx])
+    plt.savefig(path+name+".png")
 
-def cooperativity_plot(config, agents_dict, folder, name):
+def cooperativity_plot(config, agents_dict, path, name):
     fig, ax = plt.subplots(config.n_agents)
     fig.suptitle("Train Cooperativity mean over the iteractions")
     for ag_idx in range(config.n_agents):
         train_actions = agents_dict['agent_'+str(ag_idx)].train_actions
         train_act_array = np.array(train_actions)
         avgs = np.mean(train_act_array, axis=1)
-        ax[i].plot(np.linspace(0, len(train_actions), len(train_actions)), avgs)
-    plt.savefig("images/pgg/"+str(config.n_agents)+"_agents/"+folder+name+".png")
+        ax[ag_idx].plot(np.linspace(0, len(train_actions), len(train_actions)), avgs)
+    plt.savefig(path+name+".png")
 
 
-def plot_avg_on_experiments(config, all_returns, all_cooperativeness, folder, comm):
+def plot_avg_on_experiments(config, all_returns, all_cooperativeness, path, comm):
 
     average_returns = np.zeros((config.n_agents, config.episodes_per_experiment))
     average_cooperativeness = np.zeros((config.n_agents, config.episodes_per_experiment))
@@ -73,10 +73,10 @@ def plot_avg_on_experiments(config, all_returns, all_cooperativeness, folder, co
     for i in range(config.n_agents):
         print(average_returns[ag_idx])
         ax[i].plot(np.linspace(0, len(average_returns[ag_idx]), len(average_returns[ag_idx])), average_returns[ag_idx])
-    plt.savefig("images/pgg/"+str(config.n_agents)+"_agents/"+folder+"AVG_train_returns_comm"+comm+".png")
+    plt.savefig(path+"AVG_train_returns_comm"+comm+".png")
 
     fig, ax = plt.subplots(config.n_agents)
     fig.suptitle("AVG Cooperativity")
     for i in range(config.n_agents):
         ax[i].plot(np.linspace(0, len(average_cooperativeness[ag_idx, :]), len(average_cooperativeness[ag_idx, :])), average_cooperativeness[ag_idx, :])
-    plt.savefig("images/pgg/"+str(config.n_agents)+"_agents/"+folder+"AVG_coop"+comm+".png")    
+    plt.savefig(path+"AVG_coop"+comm+".png")    
