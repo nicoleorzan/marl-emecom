@@ -11,14 +11,14 @@ from utils import plot_hist_returns, plot_train_returns, cooperativity_plot, eva
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 5000,
+    episodes_per_experiment = 10,
     eval_eps = 1000,
     update_timestep = 40, # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
     coins_per_agent = 4,
-    mult_fact = 1, #[0, 0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
-    num_game_iterations = 3,
+    mult_fact = 4, #[0, 0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
+    num_game_iterations = 1,
     comm = True,
     action_space = 2,
     obs_dim = 2,                 # we observe coins we have,  and multiplier factor with uncertainty
@@ -170,8 +170,8 @@ def train(config):
                     acting_agent.buffer.rewards.append(rew)
                     acting_agent.buffer.is_terminals.append(done)
                     acting_agent.tmp_return += rew
-                    if (act is not None):
-                        acting_agent.tmp_actions.append(act)
+                if (act is not None):
+                    acting_agent.tmp_actions.append(act)
 
                 if rew != None:
                     current_ep_reward[idx] += rew
@@ -201,7 +201,7 @@ def train(config):
                     print_running_episodes[i] = 0
 
             # update PPO agent
-            if ep_in % config.update_timestep == 0:
+            if ep_in != 0 and ep_in % config.update_timestep == 0:
                 for ag_idx in range(n_agents):
                     agents_dict['agent_'+str(ag_idx)].update()
             
@@ -213,7 +213,8 @@ def train(config):
                 for ag_idx in range(config.n_agents):
                     wandb.log({"agent"+str(ag_idx)+"_return": agents_dict['agent_'+str(ag_idx)].tmp_return}, step=ep_in)
                     wandb.log({"agent"+str(ag_idx)+"_coop_level": np.mean(agents_dict['agent_'+str(ag_idx)].tmp_actions)}, step=ep_in)
-                agents_coop = [np.mean(agents_dict['agent_'+str(i)].tmp_actions) for i in range(config.n_agents)]/config.n_agents
+                agents_coop = np.sum([np.mean(agents_dict['agent_'+str(i)].tmp_actions) for i in range(config.n_agents)])
+                print(agents_coop)
                 wandb.log({"agents_coop_level": agents_coop}, step=ep_in)
                 wandb.log({"episode": ep_in}, step=ep_in)
 

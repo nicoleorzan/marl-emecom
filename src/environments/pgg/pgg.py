@@ -1,5 +1,5 @@
 #import gym
-from gym.spaces import Discrete
+from gym.spaces import Discrete, Box
 import numpy as np
 import functools
 import random
@@ -9,15 +9,16 @@ from pettingzoo.utils import wrappers
 
 # azione 1 e` cooperativa
 
-def env(n_agents, coins_per_agent, num_iterations=1, mult_fact=None, uncertainties=None):
+def env(n_agents, coins_per_agent, num_iterations=1, mult_fact=None, uncertainties=None, fraction=False):
     '''
     The env function often wraps the environment in wrappers by default.
     '''
-    env = raw_env(n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties)
+    env = raw_env(n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties, fraction)
     # This wrapper is only for environments which print results to the terminal
     #env = wrappers.CaptureStdoutWrapper(env)
     # this wrapper helps error handling for discrete action spaces
-    env = wrappers.AssertOutOfBoundsWrapper(env)
+    if (fraction == False):
+        env = wrappers.AssertOutOfBoundsWrapper(env)
     # Provides a wide vareity of helpful user errors
     # Strongly recommended
     env = wrappers.OrderEnforcingWrapper(env)
@@ -36,7 +37,7 @@ class raw_env(AECEnv):
         "is_parallelizable": True
         }
 
-    def __init__(self, n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties):
+    def __init__(self, n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties, fraction):
         '''
         The init method takes in environment arguments and
          should define the following attributes:
@@ -48,6 +49,7 @@ class raw_env(AECEnv):
         '''
         self.n_agents = n_agents
         self.coins_per_agent = coins_per_agent
+        self.fraction = fraction
         self.mult_fact = mult_fact if mult_fact != None else 1
         #if hasattr(mult_factor, '__len__'):
         #    self.mult_factors = mult_factor
@@ -67,7 +69,10 @@ class raw_env(AECEnv):
         self.obs_space_size = 2 # I can observe the amount of money I have (precisely), and the multiplicative fctor (with uncertaity)
 
         # Gym spaces are defined and documented here: https://gym.openai.com/docs/#spaces
-        self._action_spaces = {agent: Discrete(self.n_actions) for agent in self.possible_agents}
+        if (self.fraction == True):
+            self._action_spaces = {agent: Box(low=np.array([-0.001],dtype=np.float32), high=np.array([1.001],dtype=np.float32), dtype=np.float32) for agent in self.possible_agents}            
+        else:
+            self._action_spaces = {agent: Discrete(self.n_actions) for agent in self.possible_agents}
         self._observation_spaces = {agent: Discrete(self.obs_space_size) for agent in self.possible_agents}
         self.current_multiplier = 0
         self.reset()
@@ -81,8 +86,11 @@ class raw_env(AECEnv):
 
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
-        return Discrete(self.n_actions)
-    
+        if (self.fraction == True):
+            return Box(low=np.array([-0.001],dtype=np.float32), high=np.array([1.001],dtype=np.float32))            
+        else:
+            return Discrete(self.n_actions)
+                
     """def render(self, mode="human"):
         
         #Renders the environment. In human mode, it can print to terminal, open
@@ -181,14 +189,25 @@ class raw_env(AECEnv):
         if self._agent_selector.is_last():
             #print('is last')
 
-            common_pot = np.sum([self.coins[agent] for agent in self.agents if self.state[agent] == 1])
+            if self.fraction == True: 
+                # this means that the actions are not the amount of coins, 
+                # but the percentage of coins that agents put
+                common_pot = np.sum([self.coins[agent]*self.state[agent] for agent in self.agents])
 
-            for agent in self.agents:
-                if (self.state[agent] == 1):
-                    self.rewards[agent] = common_pot/self.n_agents*self.current_multiplier
-                else:
-                    self.rewards[agent] = common_pot/self.n_agents*self.current_multiplier + self.coins[agent]
-                self.coins[agent] = self.rewards[agent]
+                for agent in self.agents:
+                    self.rewards[agent] = common_pot/self.n_agents*self.current_multiplier + \
+                        (self.coins[agent]-self.coins[agent]*self.state[agent])
+                    self.coins[agent] = self.rewards[agent]
+            else: 
+                # agents only decide if to put the coins or not
+                common_pot = np.sum([self.coins[agent] for agent in self.agents if self.state[agent] == 1])
+
+                for agent in self.agents:
+                    if (self.state[agent] == 1):
+                        self.rewards[agent] = common_pot/self.n_agents*self.current_multiplier
+                    else:
+                        self.rewards[agent] = common_pot/self.n_agents*self.current_multiplier + self.coins[agent]
+                    self.coins[agent] = self.rewards[agent]
 
             self.num_moves += 1
 

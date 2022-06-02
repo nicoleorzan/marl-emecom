@@ -2,7 +2,7 @@
 from dis import disco
 import torch
 import torch.nn as nn
-from torch.distributions import Categorical
+from torch.distributions import Categorical, Normal
 #https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
 
 # set device to cpu or cuda
@@ -44,19 +44,56 @@ class ActorCritic(nn.Module):
         self.input_dim = input_dim
         self.hidden_dim = 64
         self.action_dim = action_dim
+        self.min_var = 0.0001
 
-        self.actor = nn.Sequential(
-            nn.Linear(self.input_dim, self.hidden_dim),
-            nn.Tanh(),
-            nn.Linear(self.hidden_dim, self.action_dim),
-        )
+        #self.actor = nn.Sequential(
+        #    nn.Linear(self.input_dim, self.hidden_dim),
+        #    nn.Tanh(),
+        #    nn.Linear(self.hidden_dim, self.action_dim),
+        #)
         self.critic = nn.Sequential(
             nn.Linear(self.input_dim, self.hidden_dim),
             nn.Tanh(),
             nn.Linear(self.hidden_dim, 1),
         )
 
+        self.policy = nn.Sequential(
+            nn.Linear(self.input_dim, self.hidden_dim),
+            nn.ReLU())
+
+        dim = 1
+        self.mean = nn.Sequential(
+            nn.Linear(self.hidden_dim, dim),
+            nn.Sigmoid())
+        self.var = nn.Sequential(
+            nn.Linear(self.hidden_dim, dim),
+            nn.ReLU())
+
     def act(self, state):
+
+        logits = self.policy(state)
+        mean = self.mean(logits)
+        var = self.var(logits) + self.min_var
+
+        dist = Normal(mean, var)
+
+        #entropy = dist.entropy()
+
+        #if self.training:
+        act = dist.rsample()
+        #print(act)
+        #else:
+        #    act = mean
+
+        if (act < 0.):
+            act = torch.Tensor([0.])
+        elif (act > 1.):
+            act = torch.Tensor([1.])
+
+        logprobs = dist.log_prob(act)
+
+        return act.detach(), logprobs.detach()#, entropy
+
 
         #print("state",state)
         out = self.actor(state)
@@ -68,17 +105,35 @@ class ActorCritic(nn.Module):
         return act.detach(), logprob.detach()
 
     def evaluate(self, state, action):
-        #print("state", state, action)
-        action_probs = self.actor(state)
-        #print("action probs=", action_probs)
-        dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
+        #print("state=", state)
+
+        logits = self.policy(state)
+        #print("logits=", logits)
+        mean = self.mean(logits)
+        var = self.var(logits) + self.min_var
+        #print("mean=", mean, "var=", var)
+
+        dist = Normal(mean, var)
+
         action_logprob = dist.log_prob(action)
+
         dist_entropy = dist.entropy()
+
         state_values = self.critic(state)
+
         return action_logprob, dist_entropy, state_values
 
+        #print("state", state, action)
+        #action_probs = self.actor(state)
+        #print("action probs=", action_probs)
+        #dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
+        #action_logprob = dist.log_prob(action)
+        #dist_entropy = dist.entropy()
+        #state_values = self.critic(state)
+        #return action_logprob, dist_entropy, state_values
 
-class PPO():
+
+class PPOnormal():
 
     def __init__(self, input_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, c1, c2):
 
@@ -96,7 +151,8 @@ class PPO():
     
         self.policy = ActorCritic(input_dim, action_dim).to(device)
         self.optimizer = torch.optim.Adam([
-                        {'params': self.policy.actor.parameters(), 'lr': lr_actor},
+                        {'params': self.policy.mean.parameters(), 'lr': lr_actor},
+                        {'params': self.policy.var.parameters(), 'lr': lr_actor},
                         {'params': self.policy.critic.parameters(), 'lr': lr_critic}
                     ])
 
@@ -109,7 +165,7 @@ class PPO():
         self.tmp_return = 0
         self.train_actions = []
         self.tmp_actions = []
-        self.cooperativeness = []
+        self.fractions = []
 
     def select_action(self, state, done=False):
     
@@ -155,6 +211,7 @@ class PPO():
 
         for _ in range(self.K_epochs):
 
+            #print("evaluate")
             logprobs, dist_entropy, state_values = self.policy.evaluate(old_states, old_actions)
             #print("logprobs, dist_entropy, state_values", logprobs, dist_entropy, state_values)
 
