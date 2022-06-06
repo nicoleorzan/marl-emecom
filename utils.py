@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt 
+import pandas as pd
 
 def evaluation(agents_dict, episodes, agent_to_idx):
 
@@ -76,12 +77,19 @@ def plot_avg_on_experiments(config, all_returns, all_cooperativeness, path, comm
     fig, ax = plt.subplots(config.n_agents)
     fig.suptitle("AVG Train Returns")
     for ag_idx in range(config.n_agents):
-        print(average_returns[ag_idx])
+        #print(average_returns[ag_idx])
         ax[ag_idx].plot(np.linspace(0, len(average_returns[ag_idx]), len(average_returns[ag_idx])), average_returns[ag_idx])
-    plt.savefig(path+"AVG_train_returns_comm"+comm+".png")
+    plt.savefig(path+"AVG_train_returns"+comm+".png")
 
     fig, ax = plt.subplots(config.n_agents)
     fig.suptitle("AVG Cooperativity")
     for ag_idx in range(config.n_agents):
         ax[ag_idx].plot(np.linspace(0, len(average_cooperativeness[ag_idx, :]), len(average_cooperativeness[ag_idx, :])), average_cooperativeness[ag_idx, :])
+        ax[ag_idx].set_ybound(0,1)
     plt.savefig(path+"AVG_coop"+comm+".png")    
+
+    df = pd.DataFrame(average_returns) 
+    df1 = pd.DataFrame(average_cooperativeness)
+
+    df.to_csv(path+"avg_returns"+comm+".csv")   
+    df1.to_csv(path+"avg_cooperativeness"+comm+".csv")

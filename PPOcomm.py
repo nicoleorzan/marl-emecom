@@ -3,6 +3,8 @@ from dis import disco
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical
+import torch.nn.functional as F
+
 #https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
 
 # set device to cpu or cuda
@@ -85,10 +87,6 @@ class ActorCriticComm(nn.Module):
 
     def act(self, state): # state is state + mex already concat
 
-        #print(state)
-        #out = torch.cat((state, mex), dim=0)
-        #print("out=", out)
-        #print("state=", state)
         out = self.layers(state)
         mex_probs = self.comm_actor(out)
         act_probs = self.action_actor(out)
@@ -163,8 +161,6 @@ class PPOcomm():
 
     def select_action(self, state, done=False):
     
-        #print("inside")
-        #if not done:
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             action, message, action_logprob, message_logprob = self.policy_old.act(state)
@@ -176,6 +172,7 @@ class PPOcomm():
             self.buffer.comm_logprobs.append(message_logprob)
 
         message = torch.Tensor([message.item()]).long()
+        message = F.one_hot(message, num_classes=self.mex_dim)[0]
         return action.item(), message
 
     def eval_action(self, state, mex_in, done=False):

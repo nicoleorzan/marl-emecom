@@ -3,15 +3,14 @@ from PPOcomm import PPOcomm
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-import torch.nn.functional as F
 import wandb
 import seaborn as sns
 import os
 from utils import plot_hist_returns, plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 1,
-    episodes_per_experiment = 10,
+    n_experiments = 10,
+    episodes_per_experiment = 100,
     eval_eps = 1000,
     update_timestep = 40, # update policy every n timesteps
     n_agents = 3,
@@ -28,9 +27,10 @@ hyperparameter_defaults = dict(
     gamma = 0.99,                # discount factor
     c1 = 0.5,
     c2 = -0.01,
-    lr_actor = 0.001,       # learning rate for actor network
+    lr_actor = 0.001,        # learning rate for actor network
     lr_critic = 0.001,       # learning rate for critic network,
-    plots = False
+    plots = False,
+    save_models = False
 )
 
 mode = "offline"
@@ -82,9 +82,7 @@ def evaluate_episode(agents_dict, agent_to_idx):
 
         if not done:
             act, mex_out = acting_agent.select_action(state)
-            mex_out = F.one_hot(mex_out, num_classes=config.mex_space)[0]
             mex_out_aggreg[idx*config.mex_space:idx*config.mex_space+config.mex_space] = mex_out
-
         else:
             act = None
             mex_out = None
@@ -107,38 +105,27 @@ def train(config):
     mex_space = config.mex_space
 
     all_returns = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
-    all_cooperativeness = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
+    all_coop = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
 
     for experiment in range(config.n_experiments):
 
         print("Experiment=", experiment)
 
         agents_dict = {}
-        un_agents_dict = {}
         agent_to_idx = {}
         for idx in range(config.n_agents):
             agents_dict['agent_'+str(idx)] = PPOcomm(config.obs_dim, config.action_space, config.mex_space, config.n_agents, config.lr_actor, config.lr_critic,  \
             config.gamma, config.K_epochs, config.eps_clip, config.c1, config.c2)
-            un_agents_dict['agent_'+str(idx)] = PPOcomm(config.obs_dim, config.action_space, config.mex_space, config.n_agents, config.lr_actor, config.lr_critic,  \
-            config.gamma, config.K_epochs, config.eps_clip, config.c1, config.c2)
             agent_to_idx['agent_'+str(idx)] = idx
 
-        if (config.plots == True):
-            print("\nEVALUATION BEFORE LEARNING")
-            rews_before = evaluation(un_agents_dict, config.eval_eps, agent_to_idx)
-
         #### TRAINING LOOP
-        print_running_reward = np.zeros(config.n_agents)
-        print_running_episodes = np.zeros(config.n_agents)
-
         for ep_in in range(config.episodes_per_experiment):
-            env.reset()
 
-            current_ep_reward = np.zeros(n_agents)
+            env.reset()
             i_internal_loop = 0
-            for ag_idx in range(n_agents):
-                agents_dict['agent_'+str(ag_idx)].tmp_return = 0
-                agents_dict['agent_'+str(ag_idx)].tmp_actions = []
+            for ag_idx, agent in agents_dict.items():
+                agent.tmp_return = 0
+                agent.tmp_actions = []
 
             mex_in = torch.zeros((mex_space*n_agents), dtype=torch.int64)
             mex_out_aggreg = torch.zeros((mex_space*n_agents)).long()
@@ -158,7 +145,6 @@ def train(config):
                 
                 if not done:
                     act, mex_out = acting_agent.select_action(state)
-                    mex_out = F.one_hot(mex_out, num_classes=mex_space)[0]
                     mex_out_aggreg[idx*mex_space:idx*mex_space+mex_space] = mex_out
                 else:
                     act = None
@@ -173,9 +159,6 @@ def train(config):
                 if (act is not None):
                     acting_agent.tmp_actions.append(act)
 
-                if rew != None:
-                    current_ep_reward[idx] += rew
-
                 # break; if the episode is over
                 if (done):  
                     acting_agent.train_returns.append(acting_agent.tmp_return)
@@ -186,42 +169,30 @@ def train(config):
                 i_internal_loop += 1
             
             if (ep_in+1) % print_freq == 0:
-                print_avg_reward = np.zeros(n_agents)
-                for k in range(n_agents):
-                    print_avg_reward[k] = print_running_reward[k] / print_running_episodes[k]
-                    print_avg_reward[k] = round(print_avg_reward[k], 2)
-
                 print("Experiment : {} \t Episode : {} \t Mult factor : {} ".format(experiment, ep_in, env.env.env.current_multiplier))
-                print("Average and Episodic Reward:")
-                for i_print in range(n_agents):
-                    print("Average rew agent",str(i_print),"=", print_avg_reward[i_print], "episodic reward=", agents_dict['agent_'+str(i_print)].buffer.rewards[-1])
-
-                for i in range(n_agents):
-                    print_running_reward[i] = 0
-                    print_running_episodes[i] = 0
+                print("Episodic Reward:")
+                for ag_idx, agent in agents_dict.items():
+                    print("Agent=", ag_idx, "rew=", agent.buffer.rewards[-1])
 
             # update PPO agent
             if ep_in != 0 and ep_in % config.update_timestep == 0:
-                for ag_idx in range(n_agents):
-                    agents_dict['agent_'+str(ag_idx)].update()
-            
-            for i in range(n_agents):
-                print_running_reward[i] += current_ep_reward[i]
-                print_running_episodes[i] += 1
+                for ag_idx, agent in agents_dict.items():
+                    agent.update()
 
             if (config.n_experiments == 1 and ep_in%10 == 0):
-                for ag_idx in range(config.n_agents):
-                    wandb.log({"agent"+str(ag_idx)+"_return": agents_dict['agent_'+str(ag_idx)].tmp_return}, step=ep_in)
-                    wandb.log({"agent"+str(ag_idx)+"_coop_level": np.mean(agents_dict['agent_'+str(ag_idx)].tmp_actions)}, step=ep_in)
-                agents_coop = np.sum([np.mean(agents_dict['agent_'+str(i)].tmp_actions) for i in range(config.n_agents)])
-                print(agents_coop)
+                for ag_idx, agent in agents_dict.items():#range(config.n_agents):
+                    wandb.log({"agent"+str(ag_idx)+"_return": agent.tmp_return}, step=ep_in)
+                    wandb.log({"agent"+str(ag_idx)+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
+                agents_coop = np.sum([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()])
                 wandb.log({"agents_coop_level": agents_coop}, step=ep_in)
+                agents_coop = np.sum([np.mean(agent.tmp_return) for _, agent in agents_dict.items()])
+                wandb.log({"agents_summed_returns": agents_coop}, step=ep_in)
                 wandb.log({"episode": ep_in}, step=ep_in)
 
 
         for ag_idx in range(n_agents):
             all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns
-            all_cooperativeness[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].cooperativeness
+            all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].cooperativeness
 
         # PLOTS
         if (config.plots == True):
@@ -229,13 +200,12 @@ def train(config):
             plot_train_returns(config, agents_dict, path, "train_returns_pgg_comm")
 
             # COOPERATIVITY PERCENTAGE PLOT
-            cooperativity_plot(config, agents_dict, path, "train_cooperativeness_comm")
+            cooperativity_plot(config, agents_dict, path, "train_coop_comm")
 
             ### EVALUATION
             print("\n\nEVALUATION AFTER LEARNING")
 
             rews_after = evaluation(agents_dict, config.eval_eps, agent_to_idx)
-            print("average rews before", np.average(rews_before[0]), np.average(rews_before[1]))
             print("average rews ater", np.average(rews_after[0]), np.average(rews_after[1]))
 
             #plot_hist_returns(rews_before, rews_after)
@@ -261,7 +231,12 @@ def train(config):
 
 
     if (config.n_experiments > 1):
-        plot_avg_on_experiments(config, all_returns, all_cooperativeness, path, "comm")
+        plot_avg_on_experiments(config, all_returns, all_coop, path, "comm")
+
+    # save models
+    if (config.save_models == True):
+        for ag_idx, ag in agents_dict.items():
+            torch.save(ag.policy.state_dict(), "model_"+str(ag_idx))
 
 
 if __name__ == "__main__":

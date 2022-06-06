@@ -165,7 +165,7 @@ class PPOnormal():
         self.tmp_return = 0
         self.train_actions = []
         self.tmp_actions = []
-        self.fractions = []
+        self.coop = []
 
     def select_action(self, state, done=False):
     
