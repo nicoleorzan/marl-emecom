@@ -5,20 +5,20 @@ import matplotlib.pyplot as plt
 import torch
 import wandb
 import seaborn as sns
+import pandas as pd
 import os
-from utils import plot_hist_returns, plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
+from utils import plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 10,
+    n_experiments = 50,
     episodes_per_experiment = 100,
-    eval_eps = 1000,
+    eval_eps = 100,
     update_timestep = 40, # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
     coins_per_agent = 4,
-    mult_fact = 4, #[0, 0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
+    mult_fact = [0, 0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
     num_game_iterations = 1,
-    comm = True,
     action_space = 2,
     obs_dim = 2,                 # we observe coins we have,  and multiplier factor with uncertainty
     mex_space = 2,               # vocabulary
@@ -28,9 +28,11 @@ hyperparameter_defaults = dict(
     c1 = 0.5,
     c2 = -0.01,
     lr_actor = 0.001,        # learning rate for actor network
-    lr_critic = 0.001,       # learning rate for critic network,
+    lr_critic = 0.001,       # learning rate for critic network
+    comm = True,
     plots = False,
-    save_models = False
+    save_models = True,
+    save_data = True
 )
 
 mode = "offline"
@@ -45,7 +47,7 @@ assert (config.n_agents == len(config.uncertainties))
 
 if (any(config.uncertainties) != 0.):
     unc = "w_uncert"
-else: 
+else:
     unc = "wOUT_uncert"
 
 
@@ -106,6 +108,9 @@ def train(config):
 
     all_returns = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
     all_coop = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
+
+    if (config.save_data == True):
+        df = pd.DataFrame(columns=['experiment', 'episode', 'ret_ag0', 'ret_ag1', 'ret_ag2', 'coop_ag0', 'coop_ag1', 'coop_ag2'])
 
     for experiment in range(config.n_experiments):
 
@@ -181,13 +186,22 @@ def train(config):
 
             if (config.n_experiments == 1 and ep_in%10 == 0):
                 for ag_idx, agent in agents_dict.items():#range(config.n_agents):
-                    wandb.log({"agent"+str(ag_idx)+"_return": agent.tmp_return}, step=ep_in)
-                    wandb.log({"agent"+str(ag_idx)+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
+                    wandb.log({ag_idx+"_return": agent.tmp_return}, step=ep_in)
+                    wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
                 agents_coop = np.sum([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()])
                 wandb.log({"agents_coop_level": agents_coop}, step=ep_in)
                 agents_coop = np.sum([np.mean(agent.tmp_return) for _, agent in agents_dict.items()])
                 wandb.log({"agents_summed_returns": agents_coop}, step=ep_in)
                 wandb.log({"episode": ep_in}, step=ep_in)
+
+            if (config.save_data == True):
+                df = df.append({'experiment': experiment, 'episode': ep_in, \
+                    "ret_ag0": agents_dict["agent_0"].tmp_return, \
+                    "ret_ag1": agents_dict["agent_1"].tmp_return, \
+                    "ret_ag2": agents_dict["agent_2"].tmp_return, \
+                    "coop_ag0": np.mean(agents_dict["agent_0"].tmp_actions), \
+                    "coop_ag1": np.mean(agents_dict["agent_1"].tmp_actions), \
+                    "coop_ag2": np.mean(agents_dict["agent_2"].tmp_actions)}, ignore_index=True)
 
 
         for ag_idx in range(n_agents):
@@ -229,14 +243,18 @@ def train(config):
             print("Saving heatmap..")
             plt.savefig(path+"heatmap_comm.png")
 
+    if (config.save_data == True):
+        print("all ret=", all_returns)
+        df.to_csv(path+'all_returns_comm.csv')
+
+    # save models
+    print("Saving models...")
+    if (config.save_models == True):
+        for ag_idx, ag in agents_dict.items():
+            torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
 
     if (config.n_experiments > 1):
         plot_avg_on_experiments(config, all_returns, all_coop, path, "comm")
-
-    # save models
-    if (config.save_models == True):
-        for ag_idx, ag in agents_dict.items():
-            torch.save(ag.policy.state_dict(), "model_"+str(ag_idx))
 
 
 if __name__ == "__main__":

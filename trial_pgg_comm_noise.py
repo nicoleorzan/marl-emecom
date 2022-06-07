@@ -52,7 +52,7 @@ else:
 
 
 if hasattr(config.mult_fact, '__len__'):
-    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/noise"
+    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/noise/"
 else: 
     folder = str(config.n_agents)+"agents/"+str(config.mult_fact)+"mult_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/noise/"
 
@@ -86,7 +86,7 @@ def evaluate_episode(agents_dict, agent_to_idx):
         if not done:
             act, mex_out = acting_agent.select_action(state)
             mex_out = torch.randint(0, config.mex_space, (config.n_agents*config.mex_space,))
-            mex_out_aggreg[idx*config.mex_space:idx*config.mex_space+config.mex_space] = mex_out
+            mex_out_aggreg = mex_out
         else:
             act = None
             mex_out = None
@@ -154,7 +154,7 @@ def train(config):
                 if not done:
                     act, mex_out = acting_agent.select_action(state)
                     mex_out = torch.randint(0, config.mex_space, (config.n_agents*config.mex_space,))
-                    mex_out_aggreg[idx*mex_space:idx*mex_space+mex_space] = mex_out
+                    mex_out_aggreg = mex_out
                 else:
                     act = None
                     mex_out = None
