@@ -10,8 +10,8 @@ import os
 from utils import plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 50,
-    episodes_per_experiment = 100,
+    n_experiments = 100,
+    episodes_per_experiment = 5000,
     eval_eps = 100,
     update_timestep = 40, # update policy every n timesteps
     n_agents = 3,
@@ -31,7 +31,8 @@ hyperparameter_defaults = dict(
     comm = False,
     plots = False,
     save_models = False,
-    save_data = True
+    save_data = True,
+    save_interval = 40
 )
 
 mode = "offline"
@@ -168,7 +169,7 @@ def train(config):
                     wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
                 wandb.log({"episode": ep_in}, step=ep_in)
 
-            if (config.save_data == True):
+            if (config.save_data == True and ep_in%config.save_interval == 0):
                 df = df.append({'experiment': experiment, 'episode': ep_in, \
                     "ret_ag0": agents_dict["agent_0"].tmp_return, \
                     "ret_ag1": agents_dict["agent_1"].tmp_return, \
