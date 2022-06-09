@@ -85,17 +85,21 @@ class ActorCriticComm(nn.Module):
             nn.Linear(self.hidden_dim, 1),
         )
 
-    def act(self, state): # state is state + mex already concat
+    def act(self, state, greedy=False): # state is state + mex already concat
 
         out = self.layers(state)
-        mex_probs = self.comm_actor(out)
-        act_probs = self.action_actor(out)
+        mex_logits = self.comm_actor(out)
+        act_logits = self.action_actor(out)
         
-        dist_mex = Categorical(logits=mex_probs) # here I changed probs with logits!!!
-        dist_act = Categorical(logits=act_probs) # here I changed probs with logits!!!
+        dist_mex = Categorical(logits=mex_logits) # here I changed probs with logits!!!
+        dist_act = Categorical(logits=act_logits) # here I changed probs with logits!!!
         
-        mex = dist_mex.sample()
-        act = dist_act.sample()
+        if (greedy):
+            mex = torch.argmax(mex_logits)
+            act = torch.argmax(act_logits)
+        else:
+            mex = dist_mex.sample()
+            act = dist_act.sample()
         
         logprob_mex = dist_mex.log_prob(mex)
         logprob_act = dist_act.log_prob(act)

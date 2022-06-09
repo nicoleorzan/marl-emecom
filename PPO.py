@@ -1,8 +1,8 @@
 
 from dis import disco
 import torch
+import copy
 import torch.nn as nn
-from torch.distributions import Categorical
 #https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
 
 # set device to cpu or cuda
@@ -36,54 +36,10 @@ class RolloutBuffer:
         print("rewards=", len(self.rewards))
         print("is_terminals=", len(self.is_terminals))
 
-class ActorCritic(nn.Module):
-
-    def __init__(self, input_dim, action_dim):
-        super(ActorCritic, self).__init__()
-
-        self.input_dim = input_dim
-        self.hidden_dim = 64
-        self.action_dim = action_dim
-
-        self.actor = nn.Sequential(
-            nn.Linear(self.input_dim, self.hidden_dim),
-            nn.Tanh(),
-            nn.Linear(self.hidden_dim, self.action_dim),
-        )
-        self.critic = nn.Sequential(
-            nn.Linear(self.input_dim, self.hidden_dim),
-            nn.Tanh(),
-            nn.Linear(self.hidden_dim, 1),
-        )
-
-    def act(self, state):
-
-        #print("state",state)
-        out = self.actor(state)
-        #print("out=", out)
-        dist = Categorical(logits=out) # here I changed probs with logits!!!
-        act = dist.sample()
-        logprob = dist.log_prob(act)
-
-        return act.detach(), logprob.detach()
-
-    def evaluate(self, state, action):
-        #print("state", state, action)
-        action_probs = self.actor(state)
-        #print("action probs=", action_probs)
-        dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
-        action_logprob = dist.log_prob(action)
-        dist_entropy = dist.entropy()
-        state_values = self.critic(state)
-        return action_logprob, dist_entropy, state_values
-
-
 class PPO():
 
-    def __init__(self, input_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, c1, c2):
+    def __init__(self, model, optimizer, lr_actor, lr_critic, gamma, K_epochs, eps_clip, c1, c2):
 
-        self.input_dim = input_dim
-        self.action_dim = action_dim
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.gamma = gamma
@@ -94,13 +50,10 @@ class PPO():
 
         self.buffer = RolloutBuffer()
     
-        self.policy = ActorCritic(input_dim, action_dim).to(device)
-        self.optimizer = torch.optim.Adam([
-                        {'params': self.policy.actor.parameters(), 'lr': lr_actor},
-                        {'params': self.policy.critic.parameters(), 'lr': lr_critic}
-                    ])
+        self.policy = model.to(device)
+        self.optimizer = optimizer
 
-        self.policy_old = ActorCritic(input_dim, action_dim).to(device)
+        self.policy_old = copy.deepcopy(model).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.MseLoss = nn.MSELoss()
@@ -111,9 +64,8 @@ class PPO():
         self.tmp_actions = []
         self.cooperativeness = []
 
-    def select_action(self, state, done=False):
+    def select_action(self, state):
     
-        #if not done:
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             action, action_logprob = self.policy_old.act(state)
@@ -131,7 +83,6 @@ class PPO():
             for action in range(self.action_dim):
                 a = torch.Tensor([action])
                 action_logprob, _, _ = self.policy_old.evaluate(state, a)
-                #print("action_logprob=",action_logprob)
                 actions_logprobs.append(action_logprob.item())
 
         return actions_logprobs
