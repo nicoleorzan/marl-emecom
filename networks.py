@@ -57,22 +57,21 @@ class ActorCriticContinuous(nn.Module):
         self.action_dim = action_dim
         self.min_var = 0.0001
 
+        self.policy = nn.Sequential(
+            nn.Linear(self.input_dim, self.hidden_dim),
+            nn.ReLU())
+
         self.critic = nn.Sequential(
             nn.Linear(self.input_dim, self.hidden_dim),
             nn.Tanh(),
             nn.Linear(self.hidden_dim, 1),
         )
 
-        self.policy = nn.Sequential(
-            nn.Linear(self.input_dim, self.hidden_dim),
-            nn.ReLU())
-
-        dim = 1
         self.mean = nn.Sequential(
-            nn.Linear(self.hidden_dim, dim),
+            nn.Linear(self.hidden_dim, 1),
             nn.Sigmoid())
         self.var = nn.Sequential(
-            nn.Linear(self.hidden_dim, dim),
+            nn.Linear(self.hidden_dim, 1),
             nn.ReLU())
 
     def act(self, state):

@@ -62,7 +62,7 @@ class PPO():
         self.tmp_return = 0
         self.train_actions = []
         self.tmp_actions = []
-        self.cooperativeness = []
+        self.coop = []
 
     def select_action(self, state):
     

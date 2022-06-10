@@ -4,24 +4,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import wandb
-import seaborn as sns
 import pandas as pd
 import os
 from utils import plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 100,
-    episodes_per_experiment = 5000,
+    n_experiments = 50,
+    episodes_per_experiment = 100,
     eval_eps = 100,
     update_timestep = 40, # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
     coins_per_agent = 4,
-    mult_fact = [0, 0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
-    num_game_iterations = 1,
-    action_space = 2,
+    mult_fact = [0,5],
+    num_game_iterations = 2,
     obs_dim = 2,                 # we observe coins we have,  and multiplier factor with uncertainty
     mex_space = 2,               # vocabulary
+    action_space = 2,
     K_epochs = 40,               # update policy for K epochs
     eps_clip = 0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
@@ -32,41 +31,34 @@ hyperparameter_defaults = dict(
     comm = True,
     plots = False,
     save_models = True,
-    save_data = True,
-    save_interval = 40
+    save_data = False,
+    save_interval = 40,
+    random_messages = False,
+    print_freq = 300
 )
 
-mode = "offline"
-
-if (hyperparameter_defaults['n_experiments'] == 1):
-    mode = None
 wandb.init(project="pgg_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=mode)
 config = wandb.config
-
-assert (config.n_agents == len(config.uncertainties))
-
 
 if (any(config.uncertainties) != 0.):
     unc = "w_uncert"
 else:
     unc = "wOUT_uncert"
 
-
-if hasattr(config.mult_fact, '__len__'):
+if (config.mult_fact[0] != config.mult_fact[1]):
     folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/"
 else: 
-    folder = str(config.n_agents)+"agents/"+str(config.mult_fact)+"mult_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/"
+    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/"
 
 path = "images/pgg/"+folder
 if not os.path.exists(path):
     os.makedirs(path)
     print("New directory is created!")
 
-print_freq = 400     # print avg reward in the interval (in num timesteps)
-
 def evaluate_episode(agents_dict, agent_to_idx):
-    env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, num_iterations=config.num_game_iterations, \
-        mult_fact=config.mult_fact, uncertainties=config.uncertainties)
+    env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, \
+        num_iterations=config.num_game_iterations, mult_fact=config.mult_fact, \
+        uncertainties=config.uncertainties, comm=True)
     env.reset()
     i = 0
     ag_rets = np.zeros(len(agents_dict))
@@ -85,7 +77,10 @@ def evaluate_episode(agents_dict, agent_to_idx):
 
         if not done:
             act, mex_out = acting_agent.select_action(state)
-            mex_out_aggreg[idx*config.mex_space:idx*config.mex_space+config.mex_space] = mex_out
+            if (config.random_messages == True): 
+                mex_out_aggreg = torch.randint(0, config.mex_space, (config.n_agents*config.mex_space,))
+            else:
+                mex_out_aggreg[idx*config.mex_space:idx*config.mex_space+config.mex_space] = mex_out
         else:
             act = None
             mex_out = None
@@ -101,8 +96,9 @@ def evaluate_episode(agents_dict, agent_to_idx):
 
 def train(config):
 
-    env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, num_iterations=config.num_game_iterations, \
-        mult_fact=config.mult_fact, uncertainties=config.uncertainties)
+    env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, \
+        num_iterations=config.num_game_iterations, \
+        mult_fact=config.mult_fact, uncertainties=config.uncertainties, comm=True)
 
     n_agents = config.n_agents
     mex_space = config.mex_space
@@ -120,12 +116,14 @@ def train(config):
         agents_dict = {}
         agent_to_idx = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = PPOcomm(config.obs_dim, config.action_space, config.mex_space, config.n_agents, config.lr_actor, config.lr_critic,  \
+            agents_dict['agent_'+str(idx)] = PPOcomm(config.obs_dim, config.action_space, \
+            config.mex_space, config.n_agents, config.lr_actor, config.lr_critic,  \
             config.gamma, config.K_epochs, config.eps_clip, config.c1, config.c2)
             agent_to_idx['agent_'+str(idx)] = idx
 
         #### TRAINING LOOP
         for ep_in in range(config.episodes_per_experiment):
+            #print("\nEpisode=", ep_in)
 
             env.reset()
             i_internal_loop = 0
@@ -145,17 +143,23 @@ def train(config):
                 obs = torch.FloatTensor(obs)
 
                 if (i_internal_loop > n_agents-1):
-                    mex_in = mex_out_aggreg
-                #print("mex_in =", mex_in)
+                    if (config.random_messages == True):
+                        mex_in = torch.randint(0, config.mex_space, (config.n_agents*config.mex_space,))
+                    else:
+                        mex_in = mex_out_aggreg
+
                 state = torch.cat((obs, mex_in), dim=0)
                 
                 if not done:
                     act, mex_out = acting_agent.select_action(state)
-                    mex_out_aggreg[idx*mex_space:idx*mex_space+mex_space] = mex_out
+                    if (config.random_messages == True): 
+                        mex_out_aggreg = torch.randint(0, config.mex_space, (config.n_agents*config.mex_space,)) 
+                    else:
+                        mex_out_aggreg[idx*mex_space:idx*mex_space+mex_space] = mex_out
                 else:
                     act = None
                     mex_out = None
-                #print("act=", act, "mex_out=", mex_out)
+
                 env.step(act)
 
                 if (i_internal_loop > n_agents-1):
@@ -174,7 +178,7 @@ def train(config):
 
                 i_internal_loop += 1
             
-            if (ep_in+1) % print_freq == 0:
+            if (ep_in+1) % config.print_freq == 0:
                 print("Experiment : {} \t Episode : {} \t Mult factor : {} ".format(experiment, ep_in, env.env.env.current_multiplier))
                 print("Episodic Reward:")
                 for ag_idx, agent in agents_dict.items():
@@ -186,7 +190,7 @@ def train(config):
                     agent.update()
 
             if (config.n_experiments == 1 and ep_in%10 == 0):
-                for ag_idx, agent in agents_dict.items():#range(config.n_agents):
+                for ag_idx, agent in agents_dict.items():
                     wandb.log({ag_idx+"_return": agent.tmp_return}, step=ep_in)
                     wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
                 agents_coop = np.sum([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()])
@@ -217,35 +221,7 @@ def train(config):
             # COOPERATIVITY PERCENTAGE PLOT
             cooperativity_plot(config, agents_dict, path, "train_coop_comm")
 
-            ### EVALUATION
-            print("\n\nEVALUATION AFTER LEARNING")
-
-            rews_after = evaluation(agents_dict, config.eval_eps, agent_to_idx)
-            print("average rews ater", np.average(rews_after[0]), np.average(rews_after[1]))
-
-            #plot_hist_returns(rews_before, rews_after)
-
-            # Print policy
-            pox_coins = np.linspace(0, int(max(rews_after[0])), int(max(rews_after[0])))
-            heat = np.zeros((n_agents, len(pox_coins), len(config.mult_fact)))
-            mex_in = torch.zeros((config.mex_space*config.n_agents), dtype=torch.int64)
-            for ag in range(config.n_agents):
-                for ii in range(len(pox_coins)):
-                    for jj in range(len(config.mult_fact)):
-                        obs = np.array((pox_coins[ii], n_agents, config.mult_fact[jj]))
-                        obs = torch.FloatTensor(obs)
-                        state = torch.cat((obs, mex_in), dim=0)
-                        act, _ = agents_dict['agent_'+str(ag_idx)].select_action(state)
-                        heat[ag, ii,jj] = act
-                
-            fig, ax = plt.subplots(1, n_agents, figsize=(n_agents*4, 4))
-            for ag in range(config.n_agents):
-                sns.heatmap(heat[ag], ax=ax[ag])
-            print("Saving heatmap..")
-            plt.savefig(path+"heatmap_comm.png")
-
     if (config.save_data == True):
-        print("all ret=", all_returns)
         df.to_csv(path+'all_returns_comm.csv')
 
     # save models

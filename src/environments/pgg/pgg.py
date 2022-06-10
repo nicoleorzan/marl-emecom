@@ -9,11 +9,11 @@ from pettingzoo.utils import wrappers
 
 # azione 1 e` cooperativa
 
-def env(n_agents, coins_per_agent, num_iterations=1, mult_fact=None, uncertainties=None, fraction=False):
+def env(n_agents, coins_per_agent, num_iterations=1, mult_fact=None, uncertainties=None, fraction=False, comm=False):
     '''
     The env function often wraps the environment in wrappers by default.
     '''
-    env = raw_env(n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties, fraction)
+    env = raw_env(n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties, fraction, comm)
     # This wrapper is only for environments which print results to the terminal
     #env = wrappers.CaptureStdoutWrapper(env)
     # this wrapper helps error handling for discrete action spaces
@@ -37,7 +37,7 @@ class raw_env(AECEnv):
         "is_parallelizable": True
         }
 
-    def __init__(self, n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties, fraction):
+    def __init__(self, n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties, fraction, comm):
         '''
         The init method takes in environment arguments and
          should define the following attributes:
@@ -51,12 +51,17 @@ class raw_env(AECEnv):
         self.coins_per_agent = coins_per_agent
         self.fraction = fraction
         self.mult_fact = mult_fact if mult_fact != None else 1
-        #if hasattr(mult_factor, '__len__'):
-        #    self.mult_factors = mult_factor
+        if hasattr(mult_fact, '__len__'):
+            self.min_mult = mult_fact[0]
+            self.max_mult = mult_fact[1]
+        else: 
+            self.min_mult = mult_fact
+            self.max_mult = mult_fact
         self.num_iterations = num_iterations
         self.possible_agents = ["agent_" + str(r) for r in range(self.n_agents)]
         self.agents = self.possible_agents[:]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
+        self.comm = comm
 
         if (uncertainties is not None):
             assert (self.n_agents == len(uncertainties))
@@ -70,7 +75,7 @@ class raw_env(AECEnv):
 
         # Gym spaces are defined and documented here: https://gym.openai.com/docs/#spaces
         if (self.fraction == True):
-            self._action_spaces = {agent: Box(low=np.array([-0.001],dtype=np.float32), high=np.array([1.001],dtype=np.float32), dtype=np.float32) for agent in self.possible_agents}            
+            self._action_spaces = {agent: Box(low=np.array([0.],dtype=np.float32), high=np.array([1.],dtype=np.float32), dtype=np.float32) for agent in self.possible_agents}            
         else:
             self._action_spaces = {agent: Discrete(self.n_actions) for agent in self.possible_agents}
         self._observation_spaces = {agent: Discrete(self.obs_space_size) for agent in self.possible_agents}
@@ -90,24 +95,9 @@ class raw_env(AECEnv):
             return Box(low=np.array([-0.001],dtype=np.float32), high=np.array([1.001],dtype=np.float32))            
         else:
             return Discrete(self.n_actions)
-                
-    """def render(self, mode="human"):
-        
-        #Renders the environment. In human mode, it can print to terminal, open
-        #up a graphical window, or open up some other display that a human can see and understand.
-        
-        if len(self.agents) == 2:
-            string = ("Current state: Agent1: {} , Agent2: {}".format(MOVES[self.state[self.agents[0]]], MOVES[self.state[self.agents[1]]]))
-        else:
-            string = "Game over"
-        print(string)"""
     
     def observe(self, agent):
-        '''
-        Observe should return the observation of the specified agent. This function
-        should return a sane observation (though not necessarily the most up to date possible)
-        at any time after reset() is called.
-        '''
+
         # observation of one agent is the number of coins he possesses
         obs_multiplier = np.random.normal(self.current_multiplier, self.uncertainties[agent], 1)[0]
         if obs_multiplier < 0.:
@@ -118,56 +108,40 @@ class raw_env(AECEnv):
         pass
 
     def reset(self, seed=123):
-        '''
-        Reset needs to initialize the following attributes
-        - agents
-        - rewards
-        - _cumulative_rewards
-        - dones
-        - infos
-        - agent_selection
-        And must set up the environment so that render(), step(), and observe()
-        can be called without issues.
 
-        Here it sets up the state dictionary which is used by step() and the observations dictionary which is used by step() and observe()
-        '''
         self.seed = seed
         self.agents = self.possible_agents[:]
         self.rewards = {agent: 0 for agent in self.agents}
         self._cumulative_rewards = {agent: 0 for agent in self.agents}
         self.dones = {agent: False for agent in self.agents}
         self.infos = {agent: {} for agent in self.agents}
+        if (self.comm):
+            self.comm_step = True
+        else:
+            self.comm_step = False
 
         if hasattr(self.mult_fact, '__len__'):
-            self.current_multiplier = random.choice(self.mult_fact)
+            self.current_multiplier = random.uniform(self.min_mult, self.max_mult)
         else: 
             self.current_multiplier = self.mult_fact
-        #print("self agents=", self.agents)
-        #print("cumul rews=",self._cumulative_rewards)
-        #print("self.dones=", self.dones)
-        #print("self.infos=", self.infos)
+
         self.state = {agent: None for agent in self.agents}
         # every agent has the same amount of coins
         self.coins = {agent: self.coins_per_agent for agent in self.agents} 
-        #self.uncertainties = {agent: 0 for agent in self.agents} #{agent: random.uniform(0,1) for agent in self.agents} 
-        #print("Coins",self.coins)
         self.observations = {agent: None for agent in self.agents}
         self.num_moves = 0
 
         self._agent_selector = agent_selector(self.agents)
         self.agent_selection = self._agent_selector.next()
+        self.iter = 0
 
     def step(self, action):
-        '''
-        step(action) takes in an action for the current agent (specified by
-        agent_selection) and needs to update
-        - rewards
-        - _cumulative_rewards (accumulating the rewards)
-        - dones
-        - infos
-        - agent_selection (to the next agent)
-        And any internal state used by observe() or render()
-        '''
+
+        #if (self.iter < self.num_agents-1 and self.comm==True):
+        #    self.iter +=1 
+        #    self.agent_selection = self._agent_selector.next()
+        #else:
+        #    print("=>Act step")
 
         if self.dones[self.agent_selection]:
             # handles stepping an agent which is already done
@@ -176,7 +150,6 @@ class raw_env(AECEnv):
             return self._was_done_step(action)
         agent = self.agent_selection
         #print("agent=", agent, "self._agent_selector.is_last()=",self._agent_selector.is_last())
-
         # the agent which stepped last had its _cumulative_rewards accounted for
         # (because it was returned by last()), so the _cumulative_rewards for this
         # agent should start again at 0
@@ -184,7 +157,6 @@ class raw_env(AECEnv):
 
         # stores action of current agent
         self.state[self.agent_selection] = action
-
         # collect reward if it is the last agent to act
         if self._agent_selector.is_last():
             #print('is last')
@@ -209,8 +181,10 @@ class raw_env(AECEnv):
                         self.rewards[agent] = common_pot/self.n_agents*self.current_multiplier + self.coins[agent]
                     self.coins[agent] = self.rewards[agent]
 
-            self.num_moves += 1
+            #self.comm_step = True
+            #print("modyfing comm step in true")
 
+            self.num_moves += 1
             # The dones dictionary must be updated for all players.
             self.dones = {agent: self.num_moves >= self.num_iterations for agent in self.agents}
             #self.dones = {agent: self.num_moves >= NUM_ITERS for agent in self.agents}
@@ -226,6 +200,5 @@ class raw_env(AECEnv):
         #print("agent after should be=",self.agent_selection)
         # Adds .rewards to ._cumulative_rewards
         self._accumulate_rewards()
+        #self.iter += 1
         #print("cumul rews=",self._cumulative_rewards)
-        
-

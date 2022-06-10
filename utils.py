@@ -16,24 +16,6 @@ def moving_average(x, w):
     return np.convolve(x, np.ones(w), 'valid') / w
 
 
-
-def plot_hist_returns(rews_before, rews_after, config, path, name):
-
-    fig, ax = plt.subplots(config.n_agents, 2, figsize=(20,8))
-    fig.suptitle("Distribution of Returns", fontsize=25)
-
-    n_bins = 40
-
-    for i in range(config.n_agents):
-        ax[i,0].hist(rews_before[i], bins=n_bins, range=[-0., max(rews_before[i])], label='agent'+str(i)+' before')
-        ax[i,0].legend(prop=dict(size=18))
-        ax[i,1].hist(rews_after[i], bins=n_bins, range=[-0., max(rews_after[i])], label='agent'+str(i)+' after')
-        ax[i,1].legend(prop=dict(size=18))
-
-    print("Saving histogram..")
-    plt.savefig(path+name+".png")
-
-
 def plot_train_returns(config, agents_dict, path, name):
 
     num_blocks = 40
@@ -62,34 +44,29 @@ def cooperativity_plot(config, agents_dict, path, name):
 
 def plot_avg_on_experiments(config, all_returns, all_cooperativeness, path, comm):
 
-    #print("all returns=", all_returns)
-    #print("\n")
     average_returns = np.zeros((config.n_agents, config.episodes_per_experiment))
     average_cooperativeness = np.zeros((config.n_agents, config.episodes_per_experiment))
 
     for ag_idx in range(config.n_agents):
-        #print("agent", ag_idx)
         average_returns[ag_idx, :] = np.mean(all_returns[ag_idx], axis=0) 
-        #print("avg ret agent", ag_idx, "-->", average_returns[ag_idx, :])        
         average_cooperativeness[ag_idx, :] = np.mean(all_cooperativeness[ag_idx], axis=0)     
-        #print("\n")
 
     fig, ax = plt.subplots(config.n_agents)
     fig.suptitle("AVG Train Returns")
     for ag_idx in range(config.n_agents):
-        #print(average_returns[ag_idx])
         ax[ag_idx].plot(np.linspace(0, len(average_returns[ag_idx]), len(average_returns[ag_idx])), average_returns[ag_idx])
     plt.savefig(path+"AVG_train_returns"+comm+".png")
 
     fig, ax = plt.subplots(config.n_agents)
     fig.suptitle("AVG Cooperativity")
     for ag_idx in range(config.n_agents):
+        #sns.lineplot(np.linspace(0, len(average_cooperativeness[ag_idx, :]), len(average_cooperativeness[ag_idx, :])), average_cooperativeness[ag_idx, :], ax=ax[ag_idx])
         ax[ag_idx].plot(np.linspace(0, len(average_cooperativeness[ag_idx, :]), len(average_cooperativeness[ag_idx, :])), average_cooperativeness[ag_idx, :])
         ax[ag_idx].set_ybound(0,1)
     plt.savefig(path+"AVG_coop"+comm+".png")    
 
-    df = pd.DataFrame(average_returns) 
-    df1 = pd.DataFrame(average_cooperativeness)
+    #df = pd.DataFrame(average_returns) 
+    #df1 = pd.DataFrame(average_cooperativeness)
 
-    df.to_csv(path+"avg_returns"+comm+".csv")   
-    df1.to_csv(path+"avg_cooperativeness"+comm+".csv")
+    #df.to_csv(path+"avg_returns"+comm+".csv")   
+    #df1.to_csv(path+"avg_cooperativeness"+comm+".csv")

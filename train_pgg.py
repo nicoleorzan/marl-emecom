@@ -1,26 +1,27 @@
 from src.environments import pgg_v0
 from PPO import PPO
+from networks import ActorCriticDiscrete
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import wandb
-import seaborn as sns
+import json
 import pandas as pd
 import os
 from utils import plot_train_returns, cooperativity_plot, evaluation, plot_avg_on_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 100,
-    episodes_per_experiment = 5000,
+    n_experiments = 30,
+    episodes_per_experiment = 1000,
     eval_eps = 100,
     update_timestep = 40, # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
     coins_per_agent = 4,
-    mult_fact = [0, 0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
+    mult_fact = [0,5], # list giivn min and max value of mult factor
     num_game_iterations = 1,
-    action_space = 2,
     obs_dim = 2,         # we observe coins we have, and multiplier factor with uncertainty
+    action_space = 2,
     K_epochs = 40,               # update policy for K epochs
     eps_clip = 0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
@@ -32,45 +33,36 @@ hyperparameter_defaults = dict(
     plots = False,
     save_models = False,
     save_data = True,
-    save_interval = 40
+    save_interval = 1,
+    print_freq = 400
 )
-
-mode = "offline"
-
-if (hyperparameter_defaults['n_experiments'] == 1):
-    mode = None
-wandb.init(project="pgg_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
-config = wandb.config
-
 
 wandb.init(project="pgg", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
-
-assert (config.n_agents == len(config.uncertainties))
-
 
 if (any(config.uncertainties) != 0.):
     unc = "w_uncert"
 else: 
     unc = "wOUT_uncert"
 
-
-if hasattr(config.mult_fact, '__len__'):
+if (config.mult_fact[0] != config.mult_fact[1]):
     folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+unc+"/"
 else: 
-    folder = str(config.n_agents)+"agents/"+str(config.mult_fact)+"mult_"+str(config.num_game_iterations)+"iters_"+unc+"/"
+    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+unc+"/"
 
 path = "images/pgg/"+folder
 if not os.path.exists(path):
     os.makedirs(path)
     print("New directory is created!")
 
-print_freq = 400     # print avg reward in the interval (in num timesteps)
+with open('data.json', 'w') as fp:
+    json.dump(hyperparameter_defaults, fp)
 
 
 def evaluate_episode(agents_dict, agent_to_idx):
-    env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, num_iterations=config.num_game_iterations, \
-        mult_fact=config.mult_fact, uncertainties=config.uncertainties)
+    env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, \
+        num_iterations=config.num_game_iterations, mult_fact=config.mult_fact, \
+        uncertainties=config.uncertainties)
     env.reset()
     i = 0
     ag_rets = np.zeros(len(agents_dict))
@@ -95,8 +87,9 @@ def train(config):
 
     n_agents = config.n_agents
 
-    env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, num_iterations=config.num_game_iterations, \
-    mult_fact=config.mult_fact, uncertainties=config.uncertainties)
+    env = pgg_v0.env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, \
+        num_iterations=config.num_game_iterations, mult_fact=config.mult_fact, \
+        uncertainties=config.uncertainties)
 
     all_returns = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
     all_coop = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
@@ -111,7 +104,11 @@ def train(config):
         agents_dict = {}
         agent_to_idx = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = PPO(config.obs_dim, config.action_space, config.lr_actor, config.lr_critic,  \
+            model = ActorCriticDiscrete(config.obs_dim, config.action_space)
+            optimizer = torch.optim.Adam([{'params': model.actor.parameters(), 'lr': config.lr_actor},
+                    {'params': model.critic.parameters(), 'lr': config.lr_critic} ])
+
+            agents_dict['agent_'+str(idx)] = PPO(model, optimizer, config.lr_actor, config.lr_critic,  \
             config.gamma, config.K_epochs, config.eps_clip, config.c1, config.c2)
             agent_to_idx['agent_'+str(idx)] = idx
 
@@ -146,13 +143,13 @@ def train(config):
                 # break; if the episode is over
                 if (done):
                     acting_agent.train_returns.append(acting_agent.tmp_return)
-                    acting_agent.cooperativeness.append(np.mean(acting_agent.tmp_actions))
+                    acting_agent.coop.append(np.mean(acting_agent.tmp_actions))
                     if (idx == config.n_agents-1):
                         break
 
                 i_internal_loop += 1
 
-            if (ep_in+1) % print_freq == 0:
+            if (ep_in+1) % config.print_freq == 0:
                 print("Experiment : {} \t Episode : {} \t Mult factor : {} ".format(experiment, ep_in, env.env.env.current_multiplier))
                 print("Episodic Reward:")
                 for ag_idx, agent in agents_dict.items():
@@ -164,7 +161,7 @@ def train(config):
                     agent.update()
 
             if (config.n_experiments == 1 and ep_in%10 == 0):
-                for ag_idx, agent in agents_dict.items():#range(config.n_agents):
+                for ag_idx, agent in agents_dict.items():
                     wandb.log({ag_idx+"_return": agent.tmp_return}, step=ep_in)
                     wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
                 wandb.log({"episode": ep_in}, step=ep_in)
@@ -178,9 +175,10 @@ def train(config):
                     "coop_ag1": np.mean(agents_dict["agent_1"].tmp_actions), \
                     "coop_ag2": np.mean(agents_dict["agent_2"].tmp_actions)}, ignore_index=True)
 
-        for ag_idx in range(n_agents):
-            all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns
-            all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].cooperativeness
+        if (ep_in%config.save_interval == 0):
+            for ag_idx in range(n_agents):
+                all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns
+                all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].coop
 
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
@@ -189,29 +187,8 @@ def train(config):
             # COOPERATIVITY PERCENTAGE PLOT
             cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
-            ### EVALUATION
-            print("\n\nEVALUATION AFTER LEARNING")
-            rews_after = evaluation(agents_dict, config.eval_eps, agent_to_idx)
-
-            # Print policy
-            pox_coins = np.linspace(0, int(max(rews_after[0])), int(max(rews_after[0])))
-            heat = np.zeros((n_agents, len(pox_coins), len(config.mult_fact)))
-            for ag in range(config.n_agents):
-                for ii in range(len(pox_coins)):
-                    for jj in range(len(config.mult_fact)):
-                        obs = np.array((pox_coins[ii], n_agents, config.mult_fact[jj]))
-                        act = agents_dict['agent_'+str(ag_idx)].select_action(obs)
-                        heat[ag, ii,jj] = act
-                
-            fig, ax = plt.subplots(1, n_agents, figsize=(n_agents*4, 4))
-            for ag in range(config.n_agents):
-                sns.heatmap(heat[ag], ax=ax[ag])
-            print("Saving heatmap..")
-            plt.savefig(path+"heatmap.png")
-
     if (config.save_data == True):
-        print("all ret=", all_returns)
-        df.to_csv(path+'all_returns_no_comm.csv')
+        df.to_csv(path+'data_no_comm.csv')
     
     # save models
     print("Saving models...")
