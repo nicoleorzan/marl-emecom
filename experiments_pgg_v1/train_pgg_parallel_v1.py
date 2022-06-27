@@ -7,13 +7,13 @@ import wandb
 import json
 import pandas as pd
 import os
-from analysis.utils import plot_train_returns, cooperativity_plot, evaluation, plots_experiments
+from analysis.utils import plot_train_returns, cooperativity_plot, plots_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 1,
+    n_experiments = 20,
     threshold = 2,
-    episodes_per_experiment = 1000,
-    update_timestep = 40, # update policy every n timesteps
+    episodes_per_experiment = 3000,
+    update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
     num_game_iterations = 1,
@@ -30,9 +30,10 @@ hyperparameter_defaults = dict(
     plots = False,
     save_models = False,
     save_data = True,
-    save_interval = 1,
+    save_interval = 50,
     print_freq = 100
 )
+
 
 wandb.init(project="pgg_v1_parallel", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config

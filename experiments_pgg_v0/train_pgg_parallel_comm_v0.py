@@ -10,7 +10,7 @@ from analysis.utils import plot_train_returns, cooperativity_plot, plots_experim
 
 
 hyperparameter_defaults = dict(
-    n_experiments = 5,
+    n_experiments = 20,
     episodes_per_experiment = 3000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
@@ -32,7 +32,7 @@ hyperparameter_defaults = dict(
     plots = False,
     save_models = False,
     save_data = True,
-    save_interval = 1,
+    save_interval = 50,
     print_freq = 500,
     mex_space = 2
 )
@@ -161,7 +161,7 @@ def train(config):
             cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
     if (config.save_data == True):
-        df.to_csv(path+'data_no_comm.csv')
+        df.to_csv(path+'data_comm.csv')
     
     # save models
     print("Saving models...")

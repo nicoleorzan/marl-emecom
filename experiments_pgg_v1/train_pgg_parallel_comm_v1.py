@@ -8,17 +8,16 @@ import pandas as pd
 import os
 from analysis.utils import plot_train_returns, cooperativity_plot, plots_experiments
 
+
 hyperparameter_defaults = dict(
-    n_experiments = 10,
+    n_experiments = 20,
     threshold = 2,
     episodes_per_experiment = 3000,
-    eval_eps = 100,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
     num_game_iterations = 1,
     obs_dim = 1,                 # we observe coins we have
-    mex_space = 2,
     action_space = 2,
     K_epochs = 40,               # update policy for K epochs
     eps_clip = 0.2,              # clip parameter for PPO
@@ -31,8 +30,9 @@ hyperparameter_defaults = dict(
     plots = False,
     save_models = False,
     save_data = True,
-    save_interval = 1,
-    print_freq = 100
+    save_interval = 50,
+    print_freq = 100,
+    mex_space = 2
 )
 
 wandb.init(project="pgg_v1_parallel", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
