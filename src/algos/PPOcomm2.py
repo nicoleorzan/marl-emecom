@@ -50,7 +50,7 @@ class RolloutBufferComm:
 
 class PPOcomm2():
 
-    def __init__(self, n_agents, obs_dim, action_dim, mex_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, c1, c2):
+    def __init__(self, n_agents, obs_dim, action_dim, mex_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, c1, c2, c3, c4):
 
         self.n_agents = n_agents
         self.obs_dim = obs_dim
@@ -63,9 +63,12 @@ class PPOcomm2():
         self.K_epochs = K_epochs
         self.c1 = c1 
         self.c2 = c2
+        self.c3 = 0
+        self.c4 = c4
 
         self.buffer = RolloutBufferComm()
     
+        # Communication Policy
         self.policy_comm = ActorCriticDiscrete(obs_dim, mex_dim).to(device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy_comm.actor.parameters(), 'lr': lr_actor},
@@ -75,13 +78,14 @@ class PPOcomm2():
         self.policy_comm_old = ActorCriticDiscrete(obs_dim, mex_dim).to(device)
         self.policy_comm_old.load_state_dict(self.policy_comm.state_dict())
 
+        # Action Policy
         self.policy_act = ActorCriticDiscrete(obs_dim+mex_dim*n_agents, action_dim).to(device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy_act.actor.parameters(), 'lr': lr_actor},
                         {'params': self.policy_act.critic.parameters(), 'lr': lr_critic},
                     ])
 
-        self.policy_act_old = ActorCriticDiscrete(obs_dim+mex_dim*n_agents, action_dim).to(device)
+        self.policy_act_old = ActorCriticDiscrete(obs_dim + mex_dim*n_agents, action_dim).to(device)
         self.policy_act_old.load_state_dict(self.policy_act.state_dict())
 
         self.MseLoss = nn.MSELoss()
@@ -92,7 +96,7 @@ class PPOcomm2():
         self.tmp_actions = []
         self.coop = []
 
-    def select_mex(self, state, done=False):
+    def select_mex(self, state):
 
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
@@ -106,7 +110,7 @@ class PPOcomm2():
         message = F.one_hot(message, num_classes=self.mex_dim)[0]
         return message  
 
-    def select_action(self, state, message, done=False):
+    def select_action(self, state, message):
     
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
@@ -117,11 +121,9 @@ class PPOcomm2():
             self.buffer.actions.append(action)
             self.buffer.act_logprobs.append(action_logprob)
 
-        #action = torch.Tensor([action.item()]).long()
-        #action = F.one_hot(action, num_classes=self.mex_dim)[0]
         return action.item()
 
-    def eval_mex(self, state, done=False):
+    def eval_mex(self, state):
     
         messages_logprobs = []
         with torch.no_grad():
@@ -129,12 +131,11 @@ class PPOcomm2():
             for mex in range(self.mex_dim):
                 m = torch.Tensor([mex])
                 _, mex_logprob, _= self.policy_comm_old.evaluate(state, m)
-                #print("mex_logprob=",mex_logprob)
                 messages_logprobs.append(mex_logprob.item())
 
         return messages_logprobs
 
-    def eval_action(self, state, message, done=False):
+    def eval_action(self, state, message):
     
         actions_logprobs = []
         with torch.no_grad():
@@ -142,7 +143,6 @@ class PPOcomm2():
             for action in range(self.action_dim):
                 a = torch.Tensor([action])
                 _, action_logprob, _= self.policy_act_old.evaluate(state, message, a)
-                #print("action_logprob=",action_logprob)
                 actions_logprobs.append(action_logprob.item())
 
         return actions_logprobs
@@ -171,11 +171,7 @@ class PPOcomm2():
 
         for _ in range(self.K_epochs):
   
-            #print("old states=", old_states.shape)
-            #print("old_states=", old_states.shape)
             logprobs_comm, dist_entropy_mex, state_values_comm = self.policy_comm.evaluate(old_states, old_messages_out)
-            #print("old_messages=", old_messages_out.shape)
-            #print("old_actions=", old_actions.shape)
             logprobs_act, dist_entropy_act, state_values_act = self.policy_act.evaluate(old_states_mex, old_actions)
 
             state_values_act = torch.squeeze(state_values_act)
@@ -185,13 +181,18 @@ class PPOcomm2():
             ratios_comm = torch.exp(logprobs_comm - old_logprobs_comm.detach())
 
             advantages_act = rewards - state_values_act.detach()
-            advantages_comm = rewards - state_values_comm.detach()
+            # here I have to undrstand if it is better to use rewards or the entropy distribution as "communication reward"
+            advantages_comm = -dist_entropy_mex - state_values_comm.detach()
+
             surr1 = ratios_act*advantages_act + ratios_comm*advantages_comm
             surr2 = torch.clamp(ratios_act, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_act
             surr3 = torch.clamp(ratios_comm, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_comm
             
             surr12 = torch.min(surr1, surr2)
-            loss = (-torch.min(surr12, surr3) + self.c1*self.MseLoss(state_values_act, rewards) + self.c2*dist_entropy_act + self.c2*dist_entropy_mex)
+
+            loss = (-torch.min(surr12, surr3) + \
+                self.c1*self.MseLoss(state_values_act, rewards) + self.c2*dist_entropy_act + \
+                self.c3*self.MseLoss(state_values_comm, rewards) + self.c4*dist_entropy_mex)
 
             self.optimizer.zero_grad()
             loss.mean().backward()

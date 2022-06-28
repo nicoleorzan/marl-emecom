@@ -6,7 +6,7 @@ import wandb
 import json
 import pandas as pd
 import os
-from src.analysis.utils import plot_train_returns, cooperativity_plot, plots_experiments
+import src.analysis.utils as U
 
 
 hyperparameter_defaults = dict(
@@ -25,6 +25,8 @@ hyperparameter_defaults = dict(
     gamma = 0.99,                # discount factor
     c1 = 0.5,
     c2 = -0.01,
+    c3 = 0,
+    c4 = 0.5,
     lr_actor = 0.001,            # learning rate for actor network
     lr_critic = 0.001,           # learning rate for critic network
     fraction = True,
@@ -69,6 +71,7 @@ def train(config):
 
     all_returns = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
     all_coop = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
+    stats = [None, None, None]
 
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode', 'ret_ag0', 'ret_ag1', 'ret_ag2', 'coop_ag0', 'coop_ag1', 'coop_ag2'])
@@ -82,7 +85,7 @@ def train(config):
         for idx in range(config.n_agents):
             agents_dict['agent_'+str(idx)] = PPOcomm2(config.n_agents, config.obs_dim, config.action_space, \
                 config.mex_space, config.lr_actor, config.lr_critic, config.gamma, \
-                config.K_epochs, config.eps_clip, config.c1, config.c2)
+                config.K_epochs, config.eps_clip, config.c1, config.c2, config.c3, config.c4)
             agent_to_idx['agent_'+str(idx)] = idx
 
         #### TRAINING LOOP
@@ -95,6 +98,7 @@ def train(config):
             for ag_idx, agent in agents_dict.items():
                 agent.tmp_return = 0
                 agent.tmp_actions = []
+                agent.tmp_messages = []
 
             done = False
             while not done:
@@ -111,6 +115,7 @@ def train(config):
                     agent.tmp_return += rewards[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
+                        agent.tmp_messages.append(messages[ag_idx])
                     if done:
                         agent.train_returns.append(agent.tmp_return)
                         agent.coop.append(np.mean(agent.tmp_actions))
@@ -133,6 +138,10 @@ def train(config):
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
 
+                #for ag_idx in range(config.n_agents):
+                #    stats[ag_idx] = U.calc_stats(agents_dict['agent_'+str(ag_idx)].tmp_messages, agents_dict['agent_'+str(ag_idx)].tmp_actions, config.mex_space, config.action_space, stats[ag_idx])
+                #    print("stats[", ag_idx,"]=", stats[ag_idx])
+
             if (config.n_experiments == 1 and ep_in%10 == 0):
                 for ag_idx, agent in agents_dict.items():
                     wandb.log({ag_idx+"_return": agent.tmp_return}, step=ep_in)
@@ -154,10 +163,10 @@ def train(config):
 
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
-            plot_train_returns(config, agents_dict, path, "train_returns_pgg")
+            U.plot_train_returns(config, agents_dict, path, "train_returns_pgg")
 
             # COOPERATIVITY PERCENTAGE PLOT
-            cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
+            U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
     if (config.save_data == True):
         df.to_csv(path+'data_comm.csv')
@@ -169,7 +178,7 @@ def train(config):
             torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
 
     #mean calculations
-    plots_experiments(config, all_returns, all_coop, path, "")
+    U.plots_experiments(config, all_returns, all_coop, path, "")
 
 
 if __name__ == "__main__":

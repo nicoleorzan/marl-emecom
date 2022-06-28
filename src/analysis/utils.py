@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import pandas as pd
+import torch
 
 def evaluation(agents_dict, episodes, agent_to_idx):
 
@@ -12,9 +13,41 @@ def evaluation(agents_dict, episodes, agent_to_idx):
 
     return agents_returns
 
-def moving_average(x, w):
-    return np.convolve(x, np.ones(w), 'valid') / w
+#def moving_average(x, w):
+#    return np.convolve(x, np.ones(w), 'valid') / w
 
+# from https://github.com/facebookresearch/measuring-emergent-comm/blob/master/measuring_emergent_comm/utils.py
+
+def to_int(n):
+    # Converts various things to integers
+    if type(n) is int:
+        return n
+    elif type(n) is float:
+        return int(n)
+    else:
+        return int(n.data.numpy())
+
+def calc_stats(comms, acts, n_comm, n_acts, stats):
+    # Produces a matrix ('stats') that counts co-occurrences of messages and actions
+    # Can update an existing 'stats' matrix (=None if there is none)
+    # Calls bin_acts to do the heavy lifting
+    #print("comms=", comms)
+    #print("actions=", acts)
+    comms = [torch.argmax(c) for c in comms]
+    comms = [to_int(m) for m in comms]
+    acts = [to_int(a) for a in acts]
+    #print("comms=", comms)
+    #print("actions=", acts)
+    stats = bin_acts(comms, acts, n_comm, n_acts, stats)
+    return stats
+
+def bin_acts(comms, acts, n_comm, n_acts, b=None):
+    # Binning function that creates a matrix that counts co-occurrences of messages and actions
+    if b is None:
+        b = np.zeros((n_comm, n_acts))
+    for a, c in zip(acts, comms):
+        b[c][a] += 1
+    return b
 
 def plot_train_returns(config, agents_dict, path, name):
 
