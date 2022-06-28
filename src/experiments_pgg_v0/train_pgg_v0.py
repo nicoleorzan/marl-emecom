@@ -7,7 +7,7 @@ import wandb
 import json
 import pandas as pd
 import os
-from src.analysis.utils import plot_train_returns, cooperativity_plot, evaluation, plots_experiments
+import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
     n_experiments = 10,
@@ -182,10 +182,10 @@ def train(config):
 
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
-            plot_train_returns(config, agents_dict, path, "train_returns_pgg")
+            U.plot_train_returns(config, agents_dict, path, "train_returns_pgg")
 
             # COOPERATIVITY PERCENTAGE PLOT
-            cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
+            U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
     if (config.save_data == True):
         df.to_csv(path+'data_no_comm.csv')
@@ -196,9 +196,7 @@ def train(config):
         for ag_idx, ag in agents_dict.items():
             torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
 
-    #mean calculations
-    #if (config.n_experiments > 1):
-    plots_experiments(config, all_returns, all_coop, path, "")
+    U.plots_experiments(config, all_returns, all_coop, path, "")
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import wandb
 import json
 import pandas as pd
 import os
-from src.analysis.utils import plot_train_returns, cooperativity_plot, plots_experiments
+import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
     n_experiments = 3,
@@ -150,10 +150,10 @@ def train(config):
 
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
-            plot_train_returns(config, agents_dict, path, "train_returns_pgg")
+            U.plot_train_returns(config, agents_dict, path, "train_returns_pgg")
 
             # COOPERATIVITY PERCENTAGE PLOT
-            cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
+            U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
     if (config.save_data == True):
         df.to_csv(path+'data_no_comm.csv')
@@ -167,7 +167,7 @@ def train(config):
     #mean calculations
     #if (config.n_experiments > 1):
     print("PATH=", path)
-    plots_experiments(config, all_returns, all_coop, path, "")
+    U.plots_experiments(config, all_returns, all_coop, path, "")
 
 
 if __name__ == "__main__":
