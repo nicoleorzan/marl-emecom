@@ -10,7 +10,7 @@ from src.analysis.utils import plot_train_returns, cooperativity_plot, plots_exp
 
 
 hyperparameter_defaults = dict(
-    n_experiments = 20,
+    n_experiments = 3,
     threshold = 2,
     episodes_per_experiment = 3000,
     update_timestep = 40,        # update policy every n timesteps
@@ -62,8 +62,8 @@ def train(config):
     parallel_env = pgg_parallel_v1.parallel_env(n_agents=config.n_agents, threshold=config.threshold, \
         num_iterations=config.num_game_iterations, uncertainties=config.uncertainties)
 
-    all_returns = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
-    all_coop = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
+    all_returns = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
+    all_coop = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
 
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode', 'ret_ag0', 'ret_ag1', 'ret_ag2', 'coop_ag0', 'coop_ag1', 'coop_ag2'])
@@ -135,18 +135,17 @@ def train(config):
                 wandb.log({"episode": ep_in}, step=ep_in)
 
             if (config.save_data == True and ep_in%config.save_interval == 0):
-                df = df.append({'experiment': experiment, 'episode': ep_in, \
+                df = pd.concat([df, pd.DataFrame.from_records([{'experiment': experiment, 'episode': ep_in, \
                     "ret_ag0": agents_dict["agent_0"].tmp_return, \
                     "ret_ag1": agents_dict["agent_1"].tmp_return, \
                     "ret_ag2": agents_dict["agent_2"].tmp_return, \
                     "coop_ag0": np.mean(agents_dict["agent_0"].tmp_actions), \
                     "coop_ag1": np.mean(agents_dict["agent_1"].tmp_actions), \
-                    "coop_ag2": np.mean(agents_dict["agent_2"].tmp_actions)}, ignore_index=True)
+                    "coop_ag2": np.mean(agents_dict["agent_2"].tmp_actions)}])])
 
-        if (ep_in%config.save_interval == 0):
-            for ag_idx in range(n_agents):
-                all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns
-                all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].coop
+        for ag_idx in range(n_agents):
+            all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns[0::config.save_interval]
+            all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].coop[0::config.save_interval]
 
         if (config.plots == True):
             ### PLOT TRAIN RETURNS

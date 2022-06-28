@@ -1,10 +1,7 @@
 torch
 wheel
-gym>=0.22.0
-pettingzoo[all]
+gym==0.23.0
+pettingzoo==1.18.1
 matplotlib
 wandb
 stable-baselines3[extra]
-supersuit==3.3.5
-rllib
-ray[rllib]

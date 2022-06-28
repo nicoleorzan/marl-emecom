@@ -46,12 +46,12 @@ def cooperativity_plot(config, agents_dict, path, name):
 
 def plots_experiments(config, all_returns, all_cooperativeness, path, comm):
 
-    average_returns = np.zeros((config.n_agents, config.episodes_per_experiment))
-    average_cooperativeness = np.zeros((config.n_agents, config.episodes_per_experiment))
+    average_returns = np.zeros((config.n_agents, int(config.episodes_per_experiment/config.save_interval)))
+    average_cooperativeness = np.zeros((config.n_agents, int(config.episodes_per_experiment/config.save_interval)))
 
     for ag_idx in range(config.n_agents):
         average_returns[ag_idx, :] = np.mean(all_returns[ag_idx], axis=0) 
-        average_cooperativeness[ag_idx, :] = np.mean(all_cooperativeness[ag_idx], axis=0)     
+        average_cooperativeness[ag_idx, :] = np.mean(all_cooperativeness[ag_idx], axis=0) 
 
     fig, ax = plt.subplots(config.n_agents)
     fig.suptitle("AVG Train Returns")
@@ -63,12 +63,6 @@ def plots_experiments(config, all_returns, all_cooperativeness, path, comm):
     fig.suptitle("AVG Cooperativity")
     for ag_idx in range(config.n_agents):
         #sns.lineplot(np.linspace(0, len(average_cooperativeness[ag_idx, :]), len(average_cooperativeness[ag_idx, :])), average_cooperativeness[ag_idx, :], ax=ax[ag_idx])
-        ax[ag_idx].plot(np.linspace(0, len(average_cooperativeness[ag_idx, :]), len(average_cooperativeness[ag_idx, :])), average_cooperativeness[ag_idx, :])
+        ax[ag_idx].plot(np.linspace(0, len(average_cooperativeness[ag_idx, :]), len(average_returns[ag_idx])), average_cooperativeness[ag_idx, :])
         ax[ag_idx].set_ybound(-0.01,1.01)
-    plt.savefig(path+"AVG_coop"+comm+".png")    
-
-    #df = pd.DataFrame(average_returns) 
-    #df1 = pd.DataFrame(average_cooperativeness)
-
-    #df.to_csv(path+"avg_returns"+comm+".csv")   
-    #df1.to_csv(path+"avg_cooperativeness"+comm+".csv")
+    plt.savefig(path+"AVG_coop"+comm+".png")

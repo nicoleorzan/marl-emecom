@@ -10,13 +10,13 @@ import os
 from src.analysis.utils import plot_train_returns, cooperativity_plot, plots_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 20,
-    episodes_per_experiment = 3000,
+    n_experiments = 10,
+    episodes_per_experiment = 1000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
     coins_per_agent = 4,
-    mult_fact = [1.,5.],         # list givin min and max value of mult factor
+    mult_fact = [5.,5.],         # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_dim = 2,                 # we observe coins we have, and multiplier factor with uncertainty
     action_space = 2,
@@ -68,8 +68,8 @@ def train(config):
         num_iterations=config.num_game_iterations, mult_fact=config.mult_fact, \
         uncertainties=config.uncertainties, fraction=config.fraction, comm=config.comm)
 
-    all_returns = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
-    all_coop = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
+    all_returns = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
+    all_coop = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
 
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode', 'ret_ag0', 'ret_ag1', 'ret_ag2', 'coop_ag0', 'coop_ag1', 'coop_ag2'])
@@ -103,13 +103,8 @@ def train(config):
             done = False
             while not done:
 
-                #print("\nobservations=", observations)
-                #messages = {agent: agent.select_mex(observations[idx]) for idx, agent in agents_dict.items()}
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
-                #print("actions=", actions)
                 observations, rewards, done, _ = parallel_env.step(actions)
-                #print("rewards=", rewards)
-                #print("done=", done)
 
                 for ag_idx, agent in agents_dict.items():
                     
@@ -118,12 +113,12 @@ def train(config):
                     agent.tmp_return += rewards[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
-                    if (done):
+                    if done:
                         agent.train_returns.append(agent.tmp_return)
                         agent.coop.append(np.mean(agent.tmp_actions))
 
                 # break; if the episode is over
-                if (done):
+                if done:
                     break
 
                 i_internal_loop += 1
@@ -147,18 +142,17 @@ def train(config):
                 wandb.log({"episode": ep_in}, step=ep_in)
 
             if (config.save_data == True and ep_in%config.save_interval == 0):
-                df = df.append({'experiment': experiment, 'episode': ep_in, \
+                df = pd.concat([df, pd.DataFrame.from_records([{'experiment': experiment, 'episode': ep_in, \
                     "ret_ag0": agents_dict["agent_0"].tmp_return, \
                     "ret_ag1": agents_dict["agent_1"].tmp_return, \
                     "ret_ag2": agents_dict["agent_2"].tmp_return, \
                     "coop_ag0": np.mean(agents_dict["agent_0"].tmp_actions), \
                     "coop_ag1": np.mean(agents_dict["agent_1"].tmp_actions), \
-                    "coop_ag2": np.mean(agents_dict["agent_2"].tmp_actions)}, ignore_index=True)
+                    "coop_ag2": np.mean(agents_dict["agent_2"].tmp_actions)}])])
 
-        if (ep_in%config.save_interval == 0):
-            for ag_idx in range(n_agents):
-                all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns
-                all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].coop
+        for ag_idx in range(n_agents):
+            all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns[0::config.save_interval]
+            all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].coop[0::config.save_interval]
 
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
@@ -177,7 +171,6 @@ def train(config):
             torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
 
     #mean calculations
-    #if (config.n_experiments > 1):
     plots_experiments(config, all_returns, all_coop, path, "")
 
 

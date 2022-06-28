@@ -10,9 +10,9 @@ import os
 from src.analysis.utils import plot_train_returns, cooperativity_plot, plots_experiments
 
 hyperparameter_defaults = dict(
-    n_experiments = 20,
+    n_experiments = 3,
     threshold = 2,
-    episodes_per_experiment = 3000,
+    episodes_per_experiment = 1000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
@@ -61,11 +61,9 @@ def train(config):
 
     parallel_env = pgg_parallel_v1.parallel_env(n_agents=config.n_agents, threshold=config.threshold, \
         num_iterations=config.num_game_iterations, uncertainties=config.uncertainties)
-    print(type(parallel_env))
 
-
-    all_returns = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
-    all_coop = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
+    all_returns = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
+    all_coop = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
 
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode', 'ret_ag0', 'ret_ag1', 'ret_ag2', 'coop_ag0', 'coop_ag1', 'coop_ag2'])
@@ -99,13 +97,8 @@ def train(config):
             done = False
             while not done:
 
-                #print("\nobservations=", observations)
-                #print(observations['agent_0'].shape)
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
-                #print("actions=", actions)
                 observations, rewards, done, _ = parallel_env.step(actions)
-                #print("rewards=", rewards)
-                #print("done=", done)
 
                 for ag_idx, agent in agents_dict.items():
                     
@@ -114,12 +107,12 @@ def train(config):
                     agent.tmp_return += rewards[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
-                    if (done):
+                    if done:
                         agent.train_returns.append(agent.tmp_return)
                         agent.coop.append(np.mean(agent.tmp_actions))
 
                 # break; if the episode is over
-                if (done):
+                if done:
                     break
 
                 i_internal_loop += 1
@@ -129,7 +122,7 @@ def train(config):
                     ep_in, config.num_game_iterations))
                 print("Episodic Reward:")
                 for ag_idx, agent in agents_dict.items():
-                    print("Agent=", ag_idx, "rew=", agent.buffer.rewards[-1])
+                    print("Agent=", ag_idx, "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 
             # update PPO agents
             if ep_in != 0 and ep_in % config.update_timestep == 0:
@@ -151,10 +144,9 @@ def train(config):
                     "coop_ag1": np.mean(agents_dict["agent_1"].tmp_actions), \
                     "coop_ag2": np.mean(agents_dict["agent_2"].tmp_actions)}, ignore_index=True)
 
-        if (ep_in%config.save_interval == 0):
-            for ag_idx in range(n_agents):
-                all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns
-                all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].coop
+        for ag_idx in range(n_agents):
+            all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns[0::config.save_interval]
+            all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].coop[0::config.save_interval]
 
         if (config.plots == True):
             ### PLOT TRAIN RETURNS

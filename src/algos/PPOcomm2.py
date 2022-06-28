@@ -1,6 +1,6 @@
 
 from dis import disco
-from nets.ActorCritic import ActorCriticDiscrete
+from src.nets.ActorCritic import ActorCriticDiscrete
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
