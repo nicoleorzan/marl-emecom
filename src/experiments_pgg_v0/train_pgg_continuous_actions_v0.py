@@ -39,15 +39,10 @@ hyperparameter_defaults = dict(
 wandb.init(project="pgg_cont_actions_v0", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
 
-if (any(config.uncertainties) != 0.):
-    unc = "w_uncert"
-else: 
-    unc = "wOUT_uncert"
-
 if (config.mult_fact[0] != config.mult_fact[1]):
-    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+unc+"/normal/"
+    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"/normal/"
 else: 
-    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+unc+"/normal/"
+    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"/normal/"
 
 path = "data/pgg_v0/"+folder
 if not os.path.exists(path):
@@ -96,8 +91,7 @@ def train(config):
     all_coop = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
 
     for experiment in range(config.n_experiments):
-
-        print("Experiment ", experiment)
+        #print("Experiment ", experiment)
 
         agents_dict = {}
         agent_to_idx = {}
@@ -182,10 +176,6 @@ def train(config):
     if (config.save_models == True):
         for ag_idx, ag in agents_dict.items():
             torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
-
-    #mean calculations
-    #if (config.n_experiments > 1):
-    U.plots_experiments(config, all_returns, all_coop, path, "")
 
 
 if __name__ == "__main__":

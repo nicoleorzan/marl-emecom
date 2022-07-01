@@ -42,15 +42,10 @@ mode = None
 wandb.init(project="pgg_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=mode)
 config = wandb.config
 
-if (any(config.uncertainties) != 0.):
-    unc = "w_uncert"
-else:
-    unc = "wOUT_uncert"
-
 if (config.mult_fact[0] != config.mult_fact[1]):
-    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/"
+    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"/comm/"
 else: 
-    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+unc+"/comm/"
+    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"/comm/"
 
 path = "data/pgg/"+folder
 if not os.path.exists(path):
@@ -114,11 +109,12 @@ def train(config):
     all_coop = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
 
     if (config.save_data == True):
-        df = pd.DataFrame(columns=['experiment', 'episode', 'ret_ag0', 'ret_ag1', 'ret_ag2', 'coop_ag0', 'coop_ag1', 'coop_ag2'])
+        df = pd.DataFrame(columns=['experiment', 'episode'] + \
+            ["ret_ag"+str(i) for i in range(config.n_agents)] + \
+            ["coop_ag"+str(i) for i in range(config.n_agents)])
 
     for experiment in range(config.n_experiments):
-
-        print("Experiment=", experiment)
+        #print("Experiment=", experiment)
 
         agents_dict = {}
         agent_to_idx = {}
@@ -140,15 +136,14 @@ def train(config):
 
             mex_in = torch.zeros((mex_space*n_agents), dtype=torch.int64)
             mex_out_aggreg = torch.zeros((mex_space*n_agents)).long()
-            #print("mex out aggr=", mex_out_aggreg)
 
             for id_agent in env.agent_iter():
                 idx = agent_to_idx[id_agent]
                 acting_agent = agents_dict[id_agent]
-                print("\nagent=", idx)
+                #print("\nagent=", idx)
                 
                 obs, rew, done, _ = env.last()
-                print("obs, rew, done=", obs, rew, done)
+                #print("obs, rew, done=", obs, rew, done)
                 obs = torch.FloatTensor(obs)
 
                 if (i_internal_loop > n_agents-1):
@@ -156,7 +151,6 @@ def train(config):
                         mex_in = torch.randint(0, config.mex_space, (config.n_agents*config.mex_space,))
                     else:
                         mex_in = mex_out_aggreg
-                print("mex=", mex_in)
 
                 state = torch.cat((obs, mex_in), dim=0)
                 
@@ -170,8 +164,6 @@ def train(config):
                     act = None
                     mex_out = None
 
-                print("mex_out=", mex_out)
-                print("act=",act)
                 env.step(act)
 
                 if (i_internal_loop > n_agents-1):
@@ -212,14 +204,10 @@ def train(config):
                 wandb.log({"episode": ep_in}, step=ep_in)
 
             if (config.save_data == True and ep_in%config.save_interval == 0):
-                df = df.append({'experiment': experiment, 'episode': ep_in, \
-                    "ret_ag0": agents_dict["agent_0"].tmp_return, \
-                    "ret_ag1": agents_dict["agent_1"].tmp_return, \
-                    "ret_ag2": agents_dict["agent_2"].tmp_return, \
-                    "coop_ag0": np.mean(agents_dict["agent_0"].tmp_actions), \
-                    "coop_ag1": np.mean(agents_dict["agent_1"].tmp_actions), \
-                    "coop_ag2": np.mean(agents_dict["agent_2"].tmp_actions)}, ignore_index=True)
-
+                df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
+                df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
+                df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop}
+                df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
         for ag_idx in range(n_agents):
             all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns
@@ -241,10 +229,6 @@ def train(config):
     if (config.save_models == True):
         for ag_idx, ag in agents_dict.items():
             torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
-
-    #if (config.plots == True):
-    U.plots_experiments(config, all_returns, all_coop, path, "comm")
-
 
 if __name__ == "__main__":
     train(config)

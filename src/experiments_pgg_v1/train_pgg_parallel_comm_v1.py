@@ -38,12 +38,8 @@ hyperparameter_defaults = dict(
 wandb.init(project="pgg_v1_parallel", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
 
-if (any(config.uncertainties) != 0.):
-    unc = "w_uncert"
-else: 
-    unc = "wOUT_uncert"
 
-folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+unc+"/parallel/comm/"
+folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/parallel/comm/"
 
 path = "data/pgg_v1/"+folder
 if not os.path.exists(path):
@@ -66,10 +62,11 @@ def train(config):
     all_coop = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
 
     if (config.save_data == True):
-        df = pd.DataFrame(columns=['experiment', 'episode', 'ret_ag0', 'ret_ag1', 'ret_ag2', 'coop_ag0', 'coop_ag1', 'coop_ag2'])
+        df = pd.DataFrame(columns=['experiment', 'episode'] + \
+            ["ret_ag"+str(i) for i in range(config.n_agents)] + \
+            ["coop_ag"+str(i) for i in range(config.n_agents)])
 
     for experiment in range(config.n_experiments):
-
         #print("\nExperiment ", experiment)
 
         agents_dict = {}
@@ -135,13 +132,10 @@ def train(config):
                 wandb.log({"episode": ep_in}, step=ep_in)
 
             if (config.save_data == True and ep_in%config.save_interval == 0):
-                df = pd.concat([df, pd.DataFrame.from_records([{'experiment': experiment, 'episode': ep_in, \
-                    "ret_ag0": agents_dict["agent_0"].tmp_return, \
-                    "ret_ag1": agents_dict["agent_1"].tmp_return, \
-                    "ret_ag2": agents_dict["agent_2"].tmp_return, \
-                    "coop_ag0": np.mean(agents_dict["agent_0"].tmp_actions), \
-                    "coop_ag1": np.mean(agents_dict["agent_1"].tmp_actions), \
-                    "coop_ag2": np.mean(agents_dict["agent_2"].tmp_actions)}])])
+                df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
+                df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
+                df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop}
+                df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
         for ag_idx in range(n_agents):
             all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns[0::config.save_interval]
@@ -162,9 +156,6 @@ def train(config):
     if (config.save_models == True):
         for ag_idx, ag in agents_dict.items():
             torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
-
-    #mean calculations
-    U.plots_experiments(config, all_returns, all_coop, path, "")
 
 
 if __name__ == "__main__":

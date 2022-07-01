@@ -25,6 +25,7 @@ class RolloutBufferComm:
         self.act_logprobs = []
         self.comm_logprobs = []
         self.rewards = []
+        self.mut_info = []
         self.is_terminals = []
     
     def clear(self):
@@ -35,6 +36,7 @@ class RolloutBufferComm:
         del self.act_logprobs[:]
         del self.comm_logprobs[:]
         del self.rewards[:]
+        del self.mut_info[:]
         del self.is_terminals[:]
 
     def __print__(self):
@@ -45,6 +47,7 @@ class RolloutBufferComm:
         print("act logprobs=", len(self.act_logprobs))
         print("mex_logprobs=", len(self.comm_logprobs))
         print("rewards=", len(self.rewards))
+        print("mut info=", len(self.mut_info))
         print("is_terminals=", len(self.is_terminals))
 
 
@@ -150,10 +153,10 @@ class PPOcomm2():
     def update(self):
         rewards = []
         discounted_reward = 0
-        for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
+        for reward, is_terminal, m_info in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals), reversed(self.buffer.mut_info)):
             if is_terminal:
                 discounted_reward = 0
-            discounted_reward = reward + (self.gamma * discounted_reward)
+            discounted_reward = reward + m_info + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)

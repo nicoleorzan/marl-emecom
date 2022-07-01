@@ -2,9 +2,11 @@ import functools
 from gym.spaces import Discrete, Box
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
-from pettingzoo.utils import parallel_to_aec, aec_to_parallel
+from pettingzoo.utils import parallel_to_aec
 import numpy as np
 import random
+import src.analysis.utils as U
+import src.analysis.plots as P
 
 # azione 1 e` cooperativa
 
@@ -130,7 +132,17 @@ class parallel_env(ParallelEnv):
                 obs_multiplier = 0.
             self.observations[agent] = np.array((self.coins[agent], obs_multiplier))
 
-        return self.observations    
+        return self.observations  
+
+    def communication_rewards(self, messages, actions):
+
+        mut_infos = {}
+        for _, agent in self.agents.dict():
+            mut_info = 0
+            for _, agent1 in self.agents.dict():
+                mut_info += U.calc_mutinfo(actions[agent], messages[agent1], self.n_actions, self.n_messages)
+            mut_infos[agent] = mut_info
+         
 
     def step(self, actions):
         '''

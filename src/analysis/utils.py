@@ -2,6 +2,39 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import pandas as pd
 import torch
+import math
+
+def calc_mutinfo(acts, comms, n_acts, n_comm):
+    # Calculate mutual information between actions and messages
+    # Joint probability p(a, c) is calculated by counting co-occurences, *not* by performing interventions
+    # If the actions and messages come from the same agent, then this is the speaker consistency (SC)
+    # If the actions and messages come from different agents, this is the instantaneous coordinatino (IC)
+    comms = [torch.argmax(c) for c in comms]
+    comms = [to_int(m) for m in comms]
+    acts = [torch.argmax(c) for c in acts]
+    acts = [to_int(a) for a in acts]
+
+    # Calculate probabilities by counting co-occurrences
+    p_a = probs_from_counts(acts, n_acts)
+    p_c = probs_from_counts(comms, n_comm)
+    p_ac = bin_acts(comms, acts, n_comm, n_acts)
+    p_ac /= np.sum(p_ac)  # normalize counts into a probability distribution
+
+    # Calculate mutual information
+    mutinfo = 0
+    for c in range(n_comm):
+        for a in range(n_acts):
+            if p_ac[c][a] > 0:
+                mutinfo += p_ac[c][a] * math.log(p_ac[c][a] / (p_c[c] * p_a[a]))
+    return mutinfo
+
+def probs_from_counts(l, ldim, eps=0):
+    # Outputs a probability distribution (list) of length ldim, by counting event occurrences in l
+    l_c = [eps] * ldim
+    for i in l:
+        l_c[i] += 1. / len(l)
+    return l_c
+
 
 def evaluation(agents_dict, episodes, agent_to_idx):
 
@@ -18,6 +51,7 @@ def evaluation(agents_dict, episodes, agent_to_idx):
 
 # from https://github.com/facebookresearch/measuring-emergent-comm/blob/master/measuring_emergent_comm/utils.py
 
+
 def to_int(n):
     # Converts various things to integers
     if type(n) is int:
@@ -26,6 +60,7 @@ def to_int(n):
         return int(n)
     else:
         return int(n.data.numpy())
+
 
 def calc_stats(comms, acts, n_comm, n_acts, stats):
     # Produces a matrix ('stats') that counts co-occurrences of messages and actions
@@ -41,6 +76,7 @@ def calc_stats(comms, acts, n_comm, n_acts, stats):
     stats = bin_acts(comms, acts, n_comm, n_acts, stats)
     return stats
 
+
 def bin_acts(comms, acts, n_comm, n_acts, b=None):
     # Binning function that creates a matrix that counts co-occurrences of messages and actions
     if b is None:
@@ -48,6 +84,7 @@ def bin_acts(comms, acts, n_comm, n_acts, b=None):
     for a, c in zip(acts, comms):
         b[c][a] += 1
     return b
+
 
 def plot_train_returns(config, agents_dict, path, name):
 
@@ -63,6 +100,7 @@ def plot_train_returns(config, agents_dict, path, name):
         ax[ag_idx].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(agents_dict['agent_'+str(ag_idx)].train_returns)), agents_dict['agent_'+str(ag_idx)].train_returns)
         ax[ag_idx].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(moving_avgs[ag_idx])), moving_avgs[ag_idx])
     plt.savefig(path+name+".png")
+
 
 def cooperativity_plot(config, agents_dict, path, name):
     fig, ax = plt.subplots(config.n_agents)

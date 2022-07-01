@@ -135,15 +135,16 @@ class parallel_env(ParallelEnv):
         num_contributors = np.sum([actions[agent] for agent in self.agents])
 
         for agent in self.agents:
+            # defect
             if (actions[agent] == 0 and num_contributors >= self.threshold):
-                    rewards[agent] = 1.
+                    rewards[agent] = 1. + self.coins[agent]
             elif (actions[agent] == 0 and num_contributors < self.threshold):
+                rewards[agent] = self.coins[agent]
+            # cooperate
+            elif (actions[agent] == 1 and (num_contributors-1) >= self.threshold-1):
+                rewards[agent] = 1.
+            elif (actions[agent] == 1 and (num_contributors-1) < self.threshold-1):
                 rewards[agent] = 0.
-
-            elif (actions[agent] == 1 and num_contributors >= self.threshold):
-                rewards[agent] = 1. - self.coins[agent]
-            elif (actions[agent] == 1 and num_contributors < self.threshold):
-                rewards[agent] = - self.coins[agent]
 
         self.num_moves += 1
         env_done = self.num_moves >= self.num_iterations

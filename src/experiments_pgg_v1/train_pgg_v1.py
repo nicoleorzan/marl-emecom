@@ -38,12 +38,7 @@ hyperparameter_defaults = dict(
 wandb.init(project="pgg_v1", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
 
-if (any(config.uncertainties) != 0.):
-    unc = "w_uncert"
-else: 
-    unc = "wOUT_uncert"
-
-folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+unc+"/"
+folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"/"
 
 path = "data/pgg_v1/"+folder
 if not os.path.exists(path):
@@ -90,11 +85,12 @@ def train(config):
     all_coop = np.zeros((n_agents, config.n_experiments, config.episodes_per_experiment))
 
     if (config.save_data == True):
-        df = pd.DataFrame(columns=['experiment', 'episode', 'ret_ag0', 'ret_ag1', 'ret_ag2', 'coop_ag0', 'coop_ag1', 'coop_ag2'])
+        df = pd.DataFrame(columns=['experiment', 'episode'] + \
+            ["ret_ag"+str(i) for i in range(config.n_agents)] + \
+            ["coop_ag"+str(i) for i in range(config.n_agents)])
 
     for experiment in range(config.n_experiments):
-
-        print("Experiment ", experiment)
+        #print("Experiment ", experiment)
 
         agents_dict = {}
         agent_to_idx = {}
@@ -109,7 +105,6 @@ def train(config):
 
         #### TRAINING LOOP
         for ep_in in range(config.episodes_per_experiment):
-            #print("ep_in", ep_in)
 
             env.reset()
             i_internal_loop = 0
@@ -119,15 +114,11 @@ def train(config):
                 agent.tmp_actions = []
 
             for id_agent in env.agent_iter():
-                #print("agent=", id_agent)
                 idx = agent_to_idx[id_agent]
                 acting_agent = agents_dict[id_agent]
                 
                 obs, rew, done, _ = env.last()
-                #print(obs, rew, done)
-                #print(obs.shape)
                 act = acting_agent.select_action(obs) if not done else None
-                #print("act=", act)
                 env.step(act)
 
                 if (i_internal_loop > config.n_agents-1):
@@ -142,7 +133,6 @@ def train(config):
                 if (done):
                     acting_agent.train_returns.append(acting_agent.tmp_return)
                     acting_agent.coop.append(np.mean(acting_agent.tmp_actions))
-                    #print("acting_agent.tmp_return",acting_agent.tmp_return)
                     if (idx == config.n_agents-1):
                         break
 
@@ -167,13 +157,10 @@ def train(config):
                 wandb.log({"episode": ep_in}, step=ep_in)
 
             if (config.save_data == True and ep_in%config.save_interval == 0):
-                df = df.append({'experiment': experiment, 'episode': ep_in, \
-                    "ret_ag0": agents_dict["agent_0"].tmp_return, \
-                    "ret_ag1": agents_dict["agent_1"].tmp_return, \
-                    "ret_ag2": agents_dict["agent_2"].tmp_return, \
-                    "coop_ag0": np.mean(agents_dict["agent_0"].tmp_actions), \
-                    "coop_ag1": np.mean(agents_dict["agent_1"].tmp_actions), \
-                    "coop_ag2": np.mean(agents_dict["agent_2"].tmp_actions)}, ignore_index=True)
+                df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
+                df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
+                df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop}
+                df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
         if (ep_in%config.save_interval == 0):
             for ag_idx in range(n_agents):
@@ -195,10 +182,6 @@ def train(config):
     if (config.save_models == True):
         for ag_idx, ag in agents_dict.items():
             torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
-
-    #mean calculations
-    #if (config.n_experiments > 1):
-    U.plots_experiments(config, all_returns, all_coop, path, "")
 
 
 if __name__ == "__main__":
