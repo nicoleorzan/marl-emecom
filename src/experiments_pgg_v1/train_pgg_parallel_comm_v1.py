@@ -24,8 +24,6 @@ hyperparameter_defaults = dict(
     gamma = 0.99,                # discount factor
     c1 = 0.5,
     c2 = -0.01,
-    c3 = 0,
-    c4 = 0.5,
     lr_actor = 0.001,            # learning rate for actor network
     lr_critic = 0.001,           # learning rate for critic network
     comm = False,
@@ -34,7 +32,9 @@ hyperparameter_defaults = dict(
     save_data = True,
     save_interval = 50,
     print_freq = 100,
-    mex_space = 2
+    mex_space = 2,
+    c3 = 0,
+    c4 = 0.5
 )
 
 wandb.init(project="pgg_v1_parallel", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
@@ -96,6 +96,7 @@ def train(config):
                 message = torch.stack([v for _, v in messages.items()]).view(-1)
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)
+                #print("observations, rewards, done=", observations, rewards, done)
 
                 for ag_idx, agent in agents_dict.items():
                     
