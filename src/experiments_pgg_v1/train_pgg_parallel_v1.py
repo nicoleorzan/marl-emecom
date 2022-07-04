@@ -10,9 +10,9 @@ import os
 import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
-    n_experiments = 3,
+    n_experiments = 50,
     threshold = 2,
-    episodes_per_experiment = 1000,
+    episodes_per_experiment = 3000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
@@ -38,7 +38,7 @@ hyperparameter_defaults = dict(
 wandb.init(project="pgg_v1_parallel", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
 
-folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"/parallel/"
+folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/parallel/"
 
 path = "data/pgg_v1/"+folder
 if not os.path.exists(path):

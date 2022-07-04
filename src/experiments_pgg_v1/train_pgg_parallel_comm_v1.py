@@ -10,7 +10,7 @@ import src.analysis.utils as U
 
 
 hyperparameter_defaults = dict(
-    n_experiments = 3,
+    n_experiments = 50,
     threshold = 2,
     episodes_per_experiment = 3000,
     update_timestep = 40,        # update policy every n timesteps
@@ -24,6 +24,8 @@ hyperparameter_defaults = dict(
     gamma = 0.99,                # discount factor
     c1 = 0.5,
     c2 = -0.01,
+    c3 = 0,
+    c4 = 0.5,
     lr_actor = 0.001,            # learning rate for actor network
     lr_critic = 0.001,           # learning rate for critic network
     comm = False,
@@ -37,7 +39,6 @@ hyperparameter_defaults = dict(
 
 wandb.init(project="pgg_v1_parallel", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
-
 
 folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/parallel/comm/"
 
@@ -74,7 +75,7 @@ def train(config):
         for idx in range(config.n_agents):
             agents_dict['agent_'+str(idx)] = PPOcomm2(config.n_agents, config.obs_dim, config.action_space, \
                 config.mex_space, config.lr_actor, config.lr_critic, config.gamma, \
-                config.K_epochs, config.eps_clip, config.c1, config.c2)
+                config.K_epochs, config.eps_clip, config.c1, config.c2, config.c3, config.c4)
             agent_to_idx['agent_'+str(idx)] = idx
 
         #### TRAINING LOOP
@@ -118,7 +119,7 @@ def train(config):
                     ep_in, config.num_game_iterations))
                 print("Episodic Reward:")
                 for ag_idx, agent in agents_dict.items():
-                    print("Agent=", ag_idx, "rew=", agent.buffer.rewards[-1])
+                    print("Agent=", ag_idx, "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 
             # update PPO agents
             if ep_in != 0 and ep_in % config.update_timestep == 0:
