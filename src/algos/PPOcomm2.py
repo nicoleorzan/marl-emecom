@@ -153,24 +153,37 @@ class PPOcomm2():
     def update(self):
         rewards = []
         discounted_reward = 0
-        for reward, is_terminal, m_info in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals), reversed(self.buffer.mut_info)):
+        for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):#, reversed(self.buffer.mut_info)):
             if is_terminal:
                 discounted_reward = 0
-            discounted_reward = reward + m_info + (self.gamma * discounted_reward)
+            discounted_reward = reward + (self.gamma * discounted_reward)
+            #discounted_reward = reward + m_info + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
+        #print("self.policy_comm.input_dim=", self.policy_comm.input_dim)
+        #print("self.policy_act.input_dim=", self.policy_act.input_dim)
         if (self.policy_comm.input_dim == 1):
             old_states = torch.stack(self.buffer.states, dim=0).detach().to(device)
+            old_actions = torch.stack(self.buffer.actions, dim=0).detach().to(device)
+            old_messages_out = torch.stack(self.buffer.messages_out, dim=0).detach().to(device)
+            old_states_mex = torch.stack(self.buffer.state_mex, dim=0).detach().to(device)
+            old_logprobs_act = torch.stack(self.buffer.act_logprobs, dim=0).detach().to(device)
+            old_logprobs_comm = torch.stack(self.buffer.comm_logprobs, dim=0).detach().to(device)
         else:
             old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
-        old_messages_out = torch.squeeze(torch.stack(self.buffer.messages_out, dim=0)).detach().to(device)
-        old_states_mex = torch.squeeze(torch.stack(self.buffer.state_mex, dim=0)).detach().to(device)
-        old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
-        old_logprobs_act = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
-        old_logprobs_comm = torch.squeeze(torch.stack(self.buffer.comm_logprobs, dim=0)).detach().to(device)
+            old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
+            old_messages_out = torch.squeeze(torch.stack(self.buffer.messages_out, dim=0)).detach().to(device)
+            old_states_mex = torch.squeeze(torch.stack(self.buffer.state_mex, dim=0)).detach().to(device)
+            old_logprobs_act = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
+            old_logprobs_comm = torch.squeeze(torch.stack(self.buffer.comm_logprobs, dim=0)).detach().to(device)
+
+        #print("actions=", old_actions.shape)
+        #print("states=", old_states.shape)
+        #print("messagess_out=", old_messages_out.shape)
+        #print("states_mex=", old_states_mex.shape)
 
         for _ in range(self.K_epochs):
   
@@ -178,7 +191,10 @@ class PPOcomm2():
             logprobs_act, dist_entropy_act, state_values_act = self.policy_act.evaluate(old_states_mex, old_actions)
 
             state_values_act = torch.squeeze(state_values_act)
+            #print("states values act", state_values_act.shape)
             state_values_comm = torch.squeeze(state_values_comm)
+            #print("states values comm", state_values_comm.shape)
+            #print("rewards=", rewards.shape)
 
             ratios_act = torch.exp(logprobs_act - old_logprobs_act.detach())
             ratios_comm = torch.exp(logprobs_comm - old_logprobs_comm.detach())

@@ -100,6 +100,7 @@ class PPO():
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
+        #print("self.policy.input_dim=", self.policy.input_dim)
         if (self.policy.input_dim == 1):
             old_states = torch.stack(self.buffer.states, dim=0).detach().to(device)
             old_actions = torch.stack(self.buffer.actions, dim=0).detach().to(device)
@@ -108,6 +109,9 @@ class PPO():
             old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
             old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
             old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
+
+        #print("actions=", old_actions.shape)
+        #print("states=", old_states.shape)
 
         for _ in range(self.K_epochs):
             #print("old states=", old_states)
@@ -118,6 +122,8 @@ class PPO():
             #print("logprobs, dist_entropy, state_values", logprobs, dist_entropy, state_values)
 
             state_values = torch.squeeze(state_values)
+            #print("states values act", state_values.shape)
+            #print("rewards=", rewards.shape)
             #print("state_values=", state_values)
             #print("rewards=", rewards)
 
