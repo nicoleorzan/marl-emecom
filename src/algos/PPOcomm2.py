@@ -66,7 +66,7 @@ class PPOcomm2():
         self.K_epochs = K_epochs
         self.c1 = c1 
         self.c2 = c2
-        self.c3 = 0
+        self.c3 = c3
         self.c4 = c4
 
         self.buffer = RolloutBufferComm()

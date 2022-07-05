@@ -4,6 +4,7 @@ from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
 from pettingzoo.utils import parallel_to_aec, aec_to_parallel
 import numpy as np
+import random
 
 # azione 1 e` cooperativa
 
@@ -105,7 +106,10 @@ class parallel_env(ParallelEnv):
             self.comm_step = False
 
         # agent get a random amount of coin that represents part of the state
-        self.coins = {agent: np.random.uniform(0,5) for agent in self.agents} 
+        a = [random.randint(0,10) for i in range(self.n_agents)]
+        sum_a = np.sum(a)
+        coins = a/sum_a
+        self.coins = {agent: coins[idx] for idx, agent in enumerate(self.agents)}
         self.observations = {agent: None for agent in self.agents}
         self.num_moves = 0
  

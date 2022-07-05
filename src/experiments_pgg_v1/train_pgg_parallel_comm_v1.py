@@ -10,12 +10,12 @@ import src.analysis.utils as U
 
 
 hyperparameter_defaults = dict(
-    n_experiments = 50,
+    n_experiments = 1,
     threshold = 2,
     episodes_per_experiment = 3000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 0.],
+    uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
     num_game_iterations = 1,
     obs_dim = 1,                 # we observe coins we have
     action_space = 2,
@@ -37,7 +37,7 @@ hyperparameter_defaults = dict(
     c4 = 0.5
 )
 
-wandb.init(project="pgg_v1_parallel", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
+wandb.init(project="pgg_v1_parallel_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
 
 folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/parallel/comm/"
@@ -132,6 +132,8 @@ def train(config):
                     wandb.log({ag_idx+"_return": agent.tmp_return}, step=ep_in)
                     wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
                 wandb.log({"episode": ep_in}, step=ep_in)
+                wandb.log({"avg_return": np.mean([agent.tmp_return for _, agent in agents_dict.items()])}, step=ep_in)
+                wandb.log({"avg_coop": np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()])}, step=ep_in)
 
             if (config.save_data == True and ep_in%config.save_interval == 0):
                 df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
@@ -151,7 +153,7 @@ def train(config):
             U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
     if (config.save_data == True):
-        df.to_csv(path+'data_no_comm.csv')
+        df.to_csv(path+'data_comm.csv')
     
     # save models
     print("Saving models...")

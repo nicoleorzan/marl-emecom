@@ -15,7 +15,7 @@ hyperparameter_defaults = dict(
     episodes_per_experiment = 3000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 0.],
+    uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
     num_game_iterations = 1,
     obs_dim = 1,                 # we observe coins we have
     action_space = 2,
@@ -132,6 +132,8 @@ def train(config):
                     wandb.log({ag_idx+"_return": agent.tmp_return}, step=ep_in)
                     wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
                 wandb.log({"episode": ep_in}, step=ep_in)
+                wandb.log({"avg_return": np.mean([agent.tmp_return for _, agent in agents_dict.items()])}, step=ep_in)
+                wandb.log({"avg_coop": np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()])}, step=ep_in)
 
             if (config.save_data == True and ep_in%config.save_interval == 0):
                 df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
