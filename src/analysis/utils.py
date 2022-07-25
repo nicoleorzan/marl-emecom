@@ -35,17 +35,6 @@ def probs_from_counts(l, ldim, eps=0):
         l_c[i] += 1. / len(l)
     return l_c
 
-
-def evaluation(agents_dict, episodes, agent_to_idx):
-
-    agents_returns = np.zeros((episodes, len(agents_dict)))
-    for e in range(episodes):
-        if (e%100 == 0):
-            print("Episode:", e)
-        agents_returns[e] = evaluate_episode(agents_dict, agent_to_idx)
-
-    return agents_returns
-
 #def moving_average(x, w):
 #    return np.convolve(x, np.ones(w), 'valid') / w
 

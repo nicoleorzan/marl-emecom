@@ -92,7 +92,7 @@ class parallel_env(ParallelEnv):
     def close(self):
         pass
 
-    def reset(self, seed=123):
+    def reset(self, coins=None, seed=123):
 
         self.seed = seed
         self.agents = self.possible_agents[:]
@@ -106,9 +106,14 @@ class parallel_env(ParallelEnv):
             self.comm_step = False
 
         # agent get a random amount of coin that represents part of the state
-        a = [random.randint(0,10) for i in range(self.n_agents)]
-        sum_a = np.sum(a)
-        coins = a/sum_a
+        if coins is not None:
+            self.coins = coins
+        else:
+            a = [random.randint(0,10) for i in range(self.n_agents)]
+            while (all(elem == a[0] for elem in a)):
+                a = [random.randint(0,10) for i in range(self.n_agents)]
+            sum_a = np.sum(a)
+            coins = a/sum_a
         self.coins = {agent: coins[idx] for idx, agent in enumerate(self.agents)}
         self.observations = {agent: None for agent in self.agents}
         self.num_moves = 0

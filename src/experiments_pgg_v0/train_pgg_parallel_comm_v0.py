@@ -11,12 +11,12 @@ import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 1,
+    episodes_per_experiment = 1000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 0.],
+    uncertainties = [3., 3., 3.],
     coins_per_agent = 4,
-    mult_fact = [5.,5.],         # list givin min and max value of mult factor
+    mult_fact = [1.,5.],         # list givin min and max value of mult factor
     num_game_iterations = 10,
     obs_dim = 2,                 # we observe coins we have, and multiplier factor with uncertainty
     action_space = 2,
@@ -35,7 +35,7 @@ hyperparameter_defaults = dict(
     save_models = False,
     save_data = True,
     save_interval = 50,
-    print_freq = 500,
+    print_freq = 300,
     mex_space = 2
 )
 
@@ -60,14 +60,8 @@ with open(path+'params.json', 'w') as fp:
 
 def train(config):
 
-    n_agents = config.n_agents
-
     parallel_env = pgg_parallel_v0.parallel_env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, \
         num_iterations=config.num_game_iterations, mult_fact=config.mult_fact, uncertainties=config.uncertainties)
-
-    all_returns = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
-    all_coop = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
-    stats = [None, None, None]
 
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
@@ -103,7 +97,7 @@ def train(config):
                 messages = {agent: agents_dict[agent].select_mex(observations[agent]) for agent in parallel_env.agents}
                 message = torch.stack([v for _, v in messages.items()]).view(-1)
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
-                mut_infos = parallel_env.communication_rewards(messages, actions)
+                #mut_infos = parallel_env.communication_rewards(messages, actions)
                 observations, rewards, done, _ = parallel_env.step(actions)
 
                 for ag_idx, agent in agents_dict.items():
@@ -148,10 +142,6 @@ def train(config):
                 df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
                 df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop}
                 df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
-
-        for ag_idx in range(n_agents):
-            all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns[0::config.save_interval]
-            all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].coop[0::config.save_interval]
 
         if (config.plots == True):
             ### PLOT TRAIN RETURNS

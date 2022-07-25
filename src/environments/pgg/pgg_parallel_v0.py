@@ -6,7 +6,6 @@ from pettingzoo.utils import parallel_to_aec
 import numpy as np
 import random
 import src.analysis.utils as U
-import src.analysis.plots as P
 
 # azione 1 e` cooperativa
 
@@ -143,7 +142,6 @@ class parallel_env(ParallelEnv):
                 mut_info += U.calc_mutinfo(actions[agent], messages[agent1], self.n_actions, self.n_messages)
             mut_infos[agent] = mut_info
          
-
     def step(self, actions):
         '''
         step(action) takes in an action for each agent and should return the
@@ -168,7 +166,7 @@ class parallel_env(ParallelEnv):
         for agent in self.agents:
             rewards[agent] = common_pot/self.n_agents*self.current_multiplier + \
                 (self.coins[agent]-self.coins[agent]*actions[agent])
-            self.coins[agent] = rewards[agent]
+            #self.coins[agent] = rewards[agent]
 
         self.num_moves += 1
         env_done = self.num_moves >= self.num_iterations
