@@ -52,6 +52,8 @@ class parallel_env(ParallelEnv):
         '''
         self.n_agents = n_agents
         self.coins_per_agent = coins_per_agent
+        self.coins_mean = 4
+        self.coins_var = 2
         self.fraction = fraction
         self.mult_fact = mult_fact if mult_fact != None else 1
         if hasattr(mult_fact, '__len__'):
@@ -120,8 +122,14 @@ class parallel_env(ParallelEnv):
             self.current_multiplier = self.mult_fact
 
         self.state = {agent: None for agent in self.agents}
-        # every agent has the same amount of coins
-        self.coins = {agent: self.coins_per_agent for agent in self.agents} 
+        
+        self.coins = {}
+        for agent in self.agents:
+            coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
+            if coin < 0.:
+                coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
+            self.coins[agent] = coin
+        #self.coins = {agent: self.coins_per_agent for agent in self.agents} 
         self.num_moves = 0
 
         self.observations = {}
