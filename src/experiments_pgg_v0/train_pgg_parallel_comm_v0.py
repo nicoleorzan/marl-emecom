@@ -17,7 +17,7 @@ hyperparameter_defaults = dict(
     uncertainties = [3., 3., 3.],
     coins_per_agent = 4,
     mult_fact = [1.,5.],         # list givin min and max value of mult factor
-    num_game_iterations = 10,
+    num_game_iterations = 1,
     obs_dim = 2,                 # we observe coins we have, and multiplier factor with uncertainty
     action_space = 2,
     K_epochs = 40,               # update policy for K epochs
@@ -25,8 +25,8 @@ hyperparameter_defaults = dict(
     gamma = 0.99,                # discount factor
     c1 = 0.5,
     c2 = -0.01,
-    c3 = 0,
-    c4 = 0.5,
+    c3 = 0.1,
+    c4 = -0.01,
     lr_actor = 0.001,            # learning rate for actor network
     lr_critic = 0.001,           # learning rate for critic network
     fraction = True,
@@ -36,7 +36,8 @@ hyperparameter_defaults = dict(
     save_data = True,
     save_interval = 50,
     print_freq = 300,
-    mex_space = 2
+    mex_space = 2,
+    random_baseline = False
 )
 
 wandb.init(project="pgg_v0_parallel_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
@@ -44,9 +45,9 @@ config = wandb.config
 
 
 if (config.mult_fact[0] != config.mult_fact[1]):
-    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/parallel/comm/"
+    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/"
 else: 
-    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/parallel/comm/"
+    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/"
 
 path = "data/pgg_v0/"+folder
 if not os.path.exists(path):
@@ -76,7 +77,8 @@ def train(config):
         for idx in range(config.n_agents):
             agents_dict['agent_'+str(idx)] = PPOcomm2(config.n_agents, config.obs_dim, config.action_space, \
                 config.mex_space, config.lr_actor, config.lr_critic, config.gamma, \
-                config.K_epochs, config.eps_clip, config.c1, config.c2, config.c3, config.c4)
+                config.K_epochs, config.eps_clip, config.c1, config.c2, config.c3, config.c4,
+                config.random_baseline)
             agent_to_idx['agent_'+str(idx)] = idx
 
         #### TRAINING LOOP

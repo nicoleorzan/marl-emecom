@@ -17,7 +17,7 @@ hyperparameter_defaults = dict(
     uncertainties = [3., 3., 3.],
     coins_per_agent = 4,
     mult_fact = [1.,5.],         # list givin min and max value of mult factor
-    num_game_iterations = 10,
+    num_game_iterations = 1,
     obs_dim = 2,                 # we observe coins we have, and multiplier factor with uncertainty
     action_space = 2,
     K_epochs = 40,               # update policy for K epochs
@@ -41,9 +41,9 @@ wandb.init(project="pgg_v0_parallel", entity="nicoleorzan", config=hyperparamete
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
-    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/parallel/"
+    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/"
 else: 
-    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/parallel/"
+    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/"
 
 path = "data/pgg_v0/"+folder
 if not os.path.exists(path):

@@ -1,6 +1,8 @@
 from src.environments import pgg_parallel_v1
-from src.algos.PPOcomm2 import PPOcomm2
+from src.algos.RecurrentPPO import RecurrentPPO
+from src.nets.ActorCriticRNN import ActorCriticRNN
 import numpy as np
+import torch.nn.functional as F
 import torch
 import wandb
 import json
@@ -8,47 +10,42 @@ import pandas as pd
 import os
 import src.analysis.utils as U
 
-
 hyperparameter_defaults = dict(
     n_experiments = 1,
     threshold = 2,
-    episodes_per_experiment = 2000,
-    update_timestep = 40,        # update policy every n timesteps
+    episodes_per_experiment = 5000,
+    update_timestep = 4,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
-    #uncertainties = [0., 0., 0., 0., 0.],# uncertainty on the observation of your own coins
-    num_game_iterations = 1,
-    obs_dim = 1,                 # we observe coins we have
-    action_space = 2,
-    K_epochs = 40,               # update policy for K epochs5
+    num_game_iterations = 3,
+    obs_size = 1,                 # we observe coins we have + actions of all other agents
+    hidden_size = 23,
+    num_rnn_layers = 1,
+    action_size = 2,
+    K_epochs = 40,               # update policy for K epochs
     eps_clip = 0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
     c1 = 0.5,
-    c2 = -0.001,
-    lr_actor = 0.002, # 0.001,            # learning rate for actor network
-    lr_critic = 0.01, # 0.001,           # learning rate for critic network
+    c2 = -0.01,
+    lr = 0.002, #0.001,            # learning rate
     comm = False,
     plots = False,
     save_models = True,
     save_data = True,
-    save_interval = 50,
-    print_freq = 300,
-    mex_space = 2,
-    c3 = 0.8,
-    c4 = -0.003,
-    random_baseline = False
+    save_interval = 10,
+    print_freq = 10,
+    recurrent = True
 )
 
-wandb.init(project="pgg_v1_parallel_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
+
+
+
+wandb.init(project="pgg_v1_memory", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
 config = wandb.config
 
-folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/"
+folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/"
 
 path = "data/pgg_v1/"+folder
-
-if (hyperparameter_defaults['random_baseline'] == True):
-    path = path+"random_baseline/"
-
 if not os.path.exists(path):
     os.makedirs(path)
     print("New directory is created!")
@@ -62,7 +59,7 @@ def train(config):
 
     parallel_env = pgg_parallel_v1.parallel_env(n_agents=config.n_agents, threshold=config.threshold, \
         num_iterations=config.num_game_iterations, uncertainties=config.uncertainties)
-    
+
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
             ["ret_ag"+str(i) for i in range(config.n_agents)] + \
@@ -73,10 +70,10 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = PPOcomm2(config.n_agents, config.obs_dim, config.action_space, \
-                config.mex_space, config.lr_actor, config.lr_critic, config.gamma, \
-                config.K_epochs, config.eps_clip, config.c1, config.c2, config.c3, config.c4, \
-                config.random_baseline)
+            model = ActorCriticRNN(config)
+            optimizer = torch.optim.Adam([{'params': model.parameters(), 'lr': config.lr} ])
+
+            agents_dict['agent_'+str(idx)] = RecurrentPPO(model, optimizer, config)
 
         #### TRAINING LOOP
         for ep_in in range(config.episodes_per_experiment):
@@ -85,23 +82,20 @@ def train(config):
             observations = parallel_env.reset()
             i_internal_loop = 0
                 
-            for ag_idx, agent in agents_dict.items():
-                agent.tmp_return = 0
-                agent.tmp_actions = []
+            [agent.reset() for ag_idx, agent in agents_dict.items()]
 
             done = False
+            actions_cat = torch.zeros((config.n_agents*config.action_size), dtype=torch.int64)
+            #print("actions_in0", actions_cat)
             while not done:
 
-                if (config.random_baseline):
-                    messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
-                    #print("messages=", messages)                    
-                else:
-                    messages = {agent: agents_dict[agent].select_mex(observations[agent]) for agent in parallel_env.agents}
-                    #print("messages=", messages)                    
-                message = torch.stack([v for _, v in messages.items()]).view(-1)
-                actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
+                #print('tensor=', torch.cat((torch.Tensor(observations['agent_0']), actions_cat)))
+                actions = {agent: agents_dict[agent].select_action(torch.cat((torch.Tensor(observations[agent]), actions_cat))) for agent in parallel_env.agents}
+                #print("actions=", actions)
                 observations, rewards, done, _ = parallel_env.step(actions)
-                #print("observations, rewards, done=", observations, rewards, done)
+
+                actions_cat = torch.stack([F.one_hot(torch.Tensor([v.item()]).long(), num_classes=config.action_size)[0] for _, v in actions.items()]).view(-1)
+                #print("actions_cat=", actions_cat)
 
                 for ag_idx, agent in agents_dict.items():
                     
@@ -154,14 +148,13 @@ def train(config):
             U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
     if (config.save_data == True):
-        df.to_csv(path+'data_comm_single.csv')
+        df.to_csv(path+'data_no_comm_single_memory.csv')
     
     # save models
     print("Saving models...")
     if (config.save_models == True):
         for ag_idx, ag in agents_dict.items():
-            torch.save(ag.policy_comm.state_dict(), path+"policy_comm_"+str(ag_idx))
-            torch.save(ag.policy_act.state_dict(), path+"policy_act_"+str(ag_idx))
+            torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
 
 
 if __name__ == "__main__":

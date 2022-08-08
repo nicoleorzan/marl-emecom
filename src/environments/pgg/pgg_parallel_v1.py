@@ -114,7 +114,8 @@ class parallel_env(ParallelEnv):
                 a = [random.randint(0,10) for i in range(self.n_agents)]
             sum_a = np.sum(a)
             coins = a/sum_a
-        self.coins = {agent: coins[idx] for idx, agent in enumerate(self.agents)}
+        self.coins = {agent: coins[idx]*1.5 for idx, agent in enumerate(self.agents)}
+        #print("coins=", self.coins)
         self.observations = {agent: None for agent in self.agents}
         self.num_moves = 0
  
@@ -125,6 +126,7 @@ class parallel_env(ParallelEnv):
         return observations    
 
     def step(self, actions):
+
         '''
         step(action) takes in an action for each agent and should return the
         - observations
@@ -154,6 +156,7 @@ class parallel_env(ParallelEnv):
                 rewards[agent] = 1.
             elif (actions[agent] == 1 and (num_contributors-1) < self.threshold-1):
                 rewards[agent] = 0.
+            #self.coins[agent] = self.rewards[agent]
 
         self.num_moves += 1
         env_done = self.num_moves >= self.num_iterations

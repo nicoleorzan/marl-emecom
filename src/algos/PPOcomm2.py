@@ -4,6 +4,7 @@ from src.nets.ActorCritic import ActorCriticDiscrete
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 #https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
 
@@ -53,7 +54,8 @@ class RolloutBufferComm:
 
 class PPOcomm2():
 
-    def __init__(self, n_agents, obs_dim, action_dim, mex_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, c1, c2, c3, c4):
+    def __init__(self, n_agents, obs_dim, action_dim, mex_dim, lr_actor, lr_critic, gamma, 
+        K_epochs, eps_clip, c1, c2, c3, c4, random_baseline):
 
         self.n_agents = n_agents
         self.obs_dim = obs_dim
@@ -68,6 +70,9 @@ class PPOcomm2():
         self.c2 = c2
         self.c3 = c3
         self.c4 = c4
+        self.random_baseline = random_baseline
+        self.hloss_lambda = 0.01
+        self.htarget = np.log(self.action_dim)/2.
 
         self.buffer = RolloutBufferComm()
     
@@ -104,6 +109,8 @@ class PPOcomm2():
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             message, message_logprob = self.policy_comm_old.act(state)
+            #print("message=", message)
+            #print("mex logp=", message_logprob)
 
             self.buffer.states.append(state)
             self.buffer.messages_out.append(message)
@@ -111,7 +118,24 @@ class PPOcomm2():
 
         message = torch.Tensor([message.item()]).long()
         message = F.one_hot(message, num_classes=self.mex_dim)[0]
-        return message  
+        #print("message fater=", message)
+        return message
+
+    def random_messages(self, state):
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(device)
+            message = torch.randint(0, self.mex_dim, (self.mex_dim-1,))[0]
+            #print("message=", message)
+
+            self.buffer.states.append(state)
+            self.buffer.messages_out.append(message)
+            #print("mex logp=", torch.tensor(0.0001))
+            self.buffer.comm_logprobs.append(torch.tensor(0.0001))
+
+        message = torch.Tensor([message.item()]).long()
+        message = F.one_hot(message, num_classes=self.mex_dim)[0]
+        #print("message fater=", message)
+        return message
 
     def select_action(self, state, message):
     
@@ -212,6 +236,13 @@ class PPOcomm2():
             loss = (-torch.min(surr12, surr3) + \
                 self.c1*self.MseLoss(state_values_act, rewards) + self.c2*dist_entropy_act + \
                 self.c3*self.MseLoss(state_values_comm, rewards) + self.c4*dist_entropy_mex)
+
+            # add term to compute signaling entropy loss
+            entropy = torch.FloatTensor([self.policy_act_old.get_dist_entropy(state).detach()  for state in old_states_mex])
+            hloss =  (torch.full(entropy.size(), self.htarget) - entropy)* (torch.full(entropy.size(), self.htarget) - entropy)
+            #print("hloss=", hloss, hloss.size())
+
+            loss = loss + self.hloss_lambda*hloss
 
             self.optimizer.zero_grad()
             loss.mean().backward()

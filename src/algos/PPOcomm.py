@@ -229,7 +229,8 @@ class PPOcomm():
             
             surr12 = torch.min(surr1, surr2)
             #print(surr1, surr2, surr3)
-            loss = (-torch.min(surr12, surr3) + self.c1*self.MseLoss(state_values_act, rewards) + self.c2*dist_entropy_act + self.c2*dist_entropy_mex)
+            loss = (-torch.min(surr12, surr3) + self.c1*self.MseLoss(state_values_act, rewards) + \
+                self.c2*dist_entropy_act + self.c2*dist_entropy_mex)
 
             self.optimizer.zero_grad()
             loss.mean().backward()

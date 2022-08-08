@@ -10,12 +10,13 @@ import os
 import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
-    n_experiments = 50,
+    n_experiments = 1,
     threshold = 2,
-    episodes_per_experiment = 3000,
+    episodes_per_experiment = 2000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
+    #uncertainties = [0., 0., 0., 0., 0],# uncertainty on the observation of your own coins
     num_game_iterations = 1,
     obs_dim = 1,                 # we observe coins we have
     action_space = 2,
@@ -24,14 +25,14 @@ hyperparameter_defaults = dict(
     gamma = 0.99,                # discount factor
     c1 = 0.5,
     c2 = -0.01,
-    lr_actor = 0.001,            # learning rate for actor network
-    lr_critic = 0.001,           # learning rate for critic network
+    lr_actor = 0.002, #0.001,            # learning rate for actor network
+    lr_critic = 0.01, #0.001,           # learning rate for critic network
     comm = False,
     plots = False,
-    save_models = False,
+    save_models = True,
     save_data = True,
     save_interval = 50,
-    print_freq = 100
+    print_freq = 300
 )
 
 
@@ -40,7 +41,7 @@ hyperparameter_defaults = dict(
 wandb.init(project="pgg_v1_parallel", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
 
-folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/parallel/"
+folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/"
 
 path = "data/pgg_v1/"+folder
 if not os.path.exists(path):
@@ -54,13 +55,8 @@ with open(path+'params.json', 'w') as fp:
 
 def train(config):
 
-    n_agents = config.n_agents
-
     parallel_env = pgg_parallel_v1.parallel_env(n_agents=config.n_agents, threshold=config.threshold, \
         num_iterations=config.num_game_iterations, uncertainties=config.uncertainties)
-
-    all_returns = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
-    all_coop = np.zeros((n_agents, config.n_experiments, int(config.episodes_per_experiment/config.save_interval)))
 
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
@@ -71,15 +67,13 @@ def train(config):
         #print("\nExperiment ", experiment)
 
         agents_dict = {}
-        agent_to_idx = {}
         for idx in range(config.n_agents):
             model = ActorCriticDiscrete(config.obs_dim, config.action_space)
             optimizer = torch.optim.Adam([{'params': model.actor.parameters(), 'lr': config.lr_actor},
                     {'params': model.critic.parameters(), 'lr': config.lr_critic} ])
 
-            agents_dict['agent_'+str(idx)] = PPO(model, optimizer, config.lr_actor, config.lr_critic,  \
+            agents_dict['agent_'+str(idx)] = PPO(model, optimizer,  \
             config.gamma, config.K_epochs, config.eps_clip, config.c1, config.c2)
-            agent_to_idx['agent_'+str(idx)] = idx
 
         #### TRAINING LOOP
         for ep_in in range(config.episodes_per_experiment):
@@ -141,10 +135,6 @@ def train(config):
                 df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop}
                 df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
-        for ag_idx in range(n_agents):
-            all_returns[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].train_returns[0::config.save_interval]
-            all_coop[ag_idx,experiment,:] = agents_dict['agent_'+str(ag_idx)].coop[0::config.save_interval]
-
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
             U.plot_train_returns(config, agents_dict, path, "train_returns_pgg")
@@ -153,7 +143,7 @@ def train(config):
             U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
     if (config.save_data == True):
-        df.to_csv(path+'data_no_comm.csv')
+        df.to_csv(path+'data_no_comm_single.csv')
     
     # save models
     print("Saving models...")
