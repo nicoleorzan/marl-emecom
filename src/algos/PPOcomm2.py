@@ -87,7 +87,7 @@ class PPOcomm2():
         self.policy_comm_old.load_state_dict(self.policy_comm.state_dict())
 
         # Action Policy
-        self.policy_act = ActorCriticDiscrete(obs_dim+mex_dim*n_agents, action_dim).to(device)
+        self.policy_act = ActorCriticDiscrete(obs_dim + mex_dim*n_agents, action_dim).to(device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy_act.actor.parameters(), 'lr': lr_actor},
                         {'params': self.policy_act.critic.parameters(), 'lr': lr_critic},
@@ -109,8 +109,6 @@ class PPOcomm2():
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             message, message_logprob = self.policy_comm_old.act(state)
-            #print("message=", message)
-            #print("mex logp=", message_logprob)
 
             self.buffer.states.append(state)
             self.buffer.messages_out.append(message)
@@ -118,23 +116,19 @@ class PPOcomm2():
 
         message = torch.Tensor([message.item()]).long()
         message = F.one_hot(message, num_classes=self.mex_dim)[0]
-        #print("message fater=", message)
         return message
 
     def random_messages(self, state):
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             message = torch.randint(0, self.mex_dim, (self.mex_dim-1,))[0]
-            #print("message=", message)
 
             self.buffer.states.append(state)
             self.buffer.messages_out.append(message)
-            #print("mex logp=", torch.tensor(0.0001))
             self.buffer.comm_logprobs.append(torch.tensor(0.0001))
 
         message = torch.Tensor([message.item()]).long()
         message = F.one_hot(message, num_classes=self.mex_dim)[0]
-        #print("message fater=", message)
         return message
 
     def select_action(self, state, message):
@@ -181,14 +175,11 @@ class PPOcomm2():
             if is_terminal:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
-            #discounted_reward = reward + m_info + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
-        #print("self.policy_comm.input_dim=", self.policy_comm.input_dim)
-        #print("self.policy_act.input_dim=", self.policy_act.input_dim)
         if (self.policy_comm.input_dim == 1):
             old_states = torch.stack(self.buffer.states, dim=0).detach().to(device)
             old_actions = torch.stack(self.buffer.actions, dim=0).detach().to(device)
@@ -204,27 +195,19 @@ class PPOcomm2():
             old_logprobs_act = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
             old_logprobs_comm = torch.squeeze(torch.stack(self.buffer.comm_logprobs, dim=0)).detach().to(device)
 
-        #print("actions=", old_actions.shape)
-        #print("states=", old_states.shape)
-        #print("messagess_out=", old_messages_out.shape)
-        #print("states_mex=", old_states_mex.shape)
-
         for _ in range(self.K_epochs):
   
             logprobs_comm, dist_entropy_mex, state_values_comm = self.policy_comm.evaluate(old_states, old_messages_out)
             logprobs_act, dist_entropy_act, state_values_act = self.policy_act.evaluate(old_states_mex, old_actions)
 
             state_values_act = torch.squeeze(state_values_act)
-            #print("states values act", state_values_act.shape)
             state_values_comm = torch.squeeze(state_values_comm)
-            #print("states values comm", state_values_comm.shape)
-            #print("rewards=", rewards.shape)
 
             ratios_act = torch.exp(logprobs_act - old_logprobs_act.detach())
             ratios_comm = torch.exp(logprobs_comm - old_logprobs_comm.detach())
 
             advantages_act = rewards - state_values_act.detach()
-            # here I have to undrstand if it is better to use rewards or the entropy distribution as "communication reward"
+            # here I have to understand if it is better to use rewards or the entropy distribution as "communication reward"
             advantages_comm = -dist_entropy_mex - state_values_comm.detach()
 
             surr1 = ratios_act*advantages_act + ratios_comm*advantages_comm
@@ -240,7 +223,6 @@ class PPOcomm2():
             # add term to compute signaling entropy loss
             entropy = torch.FloatTensor([self.policy_act_old.get_dist_entropy(state).detach()  for state in old_states_mex])
             hloss =  (torch.full(entropy.size(), self.htarget) - entropy)* (torch.full(entropy.size(), self.htarget) - entropy)
-            #print("hloss=", hloss, hloss.size())
 
             loss = loss + self.hloss_lambda*hloss
 

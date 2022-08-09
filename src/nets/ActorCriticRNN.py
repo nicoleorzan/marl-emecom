@@ -25,7 +25,6 @@ class ActorCriticRNN(nn.Module):
         self.softmax = nn.Softmax(dim=0)
 
         # net that embeds the actions f all other agents
-        #self.fc1 = nn.Linear(self.n_agents + self.action_size, self.hidden_size)
         self.input_size = self.obs_size + self.n_agents*self.action_size
         self.fc1 = nn.Linear(self.obs_size + self.n_agents*self.action_size, self.hidden_size)
         self.lstm = nn.LSTMCell(self.hidden_size, self.hidden_size)

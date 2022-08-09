@@ -5,6 +5,7 @@ import torch.nn as nn
 from torch.distributions import Categorical
 import torch.nn.functional as F
 
+
 #https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
 
 # set device to cpu or cuda
@@ -228,7 +229,6 @@ class PPOcomm():
             surr3 = torch.clamp(ratios_comm, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_comm
             
             surr12 = torch.min(surr1, surr2)
-            #print(surr1, surr2, surr3)
             loss = (-torch.min(surr12, surr3) + self.c1*self.MseLoss(state_values_act, rewards) + \
                 self.c2*dist_entropy_act + self.c2*dist_entropy_mex)
 

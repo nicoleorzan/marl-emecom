@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch
 from torch.distributions import Categorical, Normal
 
+# check hidden layer
 class ActorCriticDiscrete(nn.Module):
 
     def __init__(self, input_dim, action_dim):
@@ -37,6 +38,12 @@ class ActorCriticDiscrete(nn.Module):
 
         return act.detach(), logprob.detach()
 
+    def get_dist_entropy(self, state):
+        action_probs = self.actor(state)
+        dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
+        dist_entropy = dist.entropy()
+        return dist_entropy
+    
     def evaluate(self, state, action):
         action_probs = self.actor(state)
         dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
@@ -44,6 +51,14 @@ class ActorCriticDiscrete(nn.Module):
         dist_entropy = dist.entropy()
         state_values = self.critic(state)
         return action_logprob, dist_entropy, state_values
+
+    def get_distribution(self, state, greedy=False):
+        out = self.actor(state)
+        m = nn.Softmax(dim=0)
+        out = m(out)
+
+        return out
+
 
 
 

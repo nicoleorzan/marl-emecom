@@ -94,11 +94,9 @@ class PPO():
             discounted_reward = reward + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
         # Normalizing the rewards
-        #print("\nrewards=", rewards)
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
-        #print("self.policy.input_dim=", self.policy.input_dim)
         if (self.policy.input_dim == 1):
             old_states = torch.stack(self.buffer.states, dim=0).detach().to(device)
             old_actions = torch.stack(self.buffer.actions, dim=0).detach().to(device)
@@ -108,31 +106,17 @@ class PPO():
             old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
             old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
 
-        #print("actions=", old_actions.shape)
-        #print("states=", old_states.shape)
-
         for _ in range(self.K_epochs):
-            #print("old states=", old_states)
-            #print("old_states=", old_states.shape)
-            #print("old_actions=", old_actions.shape)
 
             logprobs, dist_entropy, state_values = self.policy.evaluate(old_states, old_actions)
-            #print("logprobs, dist_entropy, state_values", logprobs, dist_entropy, state_values)
 
             state_values = torch.squeeze(state_values)
-            #print("states values act", state_values.shape)
-            #print("rewards=", rewards.shape)
-            #print("state_values=", state_values)
-            #print("rewards=", rewards)
-
             ratios = torch.exp(logprobs - old_logprobs.detach())
-            #print("ratios=", ratios)
 
             advantages = rewards - state_values.detach()
             surr1 = ratios*advantages
             surr2 = torch.clamp(ratios, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages
 
-            #print("surr1, surr2",surr1, surr2)
             loss = (-torch.min(surr1, surr2) + self.c1*self.MseLoss(state_values, rewards) + self.c2*dist_entropy)
 
             self.optimizer.zero_grad()
