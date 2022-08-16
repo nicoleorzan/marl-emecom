@@ -1,5 +1,5 @@
 from src.environments import pgg_parallel_v1
-from src.nets.ActorCritic import ActorCriticDiscrete
+from src.nets.ActorCritic import ActorCritic
 import numpy as np
 import torch
 import json
@@ -47,10 +47,10 @@ class MiniAgent():
 
 agents_dict = {}
 for idx in range(config.n_agents):
-    policy_act = ActorCriticDiscrete(config.obs_dim + config.mex_space*config.n_agents, config.action_space)
+    policy_act = ActorCritic(config.obs_dim + config.mex_space*config.n_agents, config.action_space)
     policy_act.load_state_dict(torch.load(path+"policy_act_agent_"+str(idx)))
     policy_act.eval()
-    policy_comm = ActorCriticDiscrete(config.obs_dim, config.action_space)
+    policy_comm = ActorCritic(config.obs_dim, config.action_space)
     policy_comm.load_state_dict(torch.load(path+"policy_comm_agent_"+str(idx)))
     policy_comm.eval()
     agents_dict['agent_'+str(idx)] = MiniAgent(policy_comm, policy_act) #{"policy_comm": policy_comm, "policy_act": policy_act}

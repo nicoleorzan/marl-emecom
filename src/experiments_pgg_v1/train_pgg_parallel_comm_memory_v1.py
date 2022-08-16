@@ -1,6 +1,5 @@
 from src.environments import pgg_parallel_v1
-from src.algos.RecurrentPPO import RecurrentPPO
-from src.nets.ActorCriticRNN import ActorCriticRNN
+from src.algos.PPOcomm_recurrent import PPOcomm_recurrent
 import numpy as np
 import torch.nn.functional as F
 import torch
@@ -13,12 +12,13 @@ import src.analysis.utils as U
 hyperparameter_defaults = dict(
     n_experiments = 1,
     threshold = 2,
-    episodes_per_experiment = 5000,
-    update_timestep = 4,        # update policy every n timesteps
+    episodes_per_experiment = 1000,
+    update_timestep = 23,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
-    num_game_iterations = 3,
-    obs_size = 1,                 # we observe coins we have + actions of all other agents
+    num_game_iterations = 1,
+    communication_loops = 2,
+    obs_size = 1,                # we observe coins we have (+ actions of all other agents)
     hidden_size = 23,
     num_rnn_layers = 1,
     action_size = 2,
@@ -27,20 +27,24 @@ hyperparameter_defaults = dict(
     gamma = 0.99,                # discount factor
     c1 = 0.5,
     c2 = -0.01,
-    lr = 0.002, #0.001,            # learning rate
+    lr = 0.002, #0.001,     con 0.002 andava         # learning rate
     comm = False,
-    plots = False,
+    plots = True,
     save_models = True,
     save_data = True,
     save_interval = 10,
     print_freq = 10,
-    recurrent = True
+    recurrent = True,
+    mex_size = 2,
+    c3 = 0.8,
+    c4 = -0.003,
+    random_baseline = False
 )
 
 
 
 
-wandb.init(project="pgg_v1_memory", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
+wandb.init(project="pgg_v1_memory_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
 config = wandb.config
 
 folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/"
@@ -57,6 +61,10 @@ with open(path+'params.json', 'w') as fp:
 
 def train(config):
 
+    mut01 = []; mut12 = []; mut20 = []
+    sc0 = []; sc1 = []; sc2 = []
+    h0 = []; h1 = []; h2  =[]
+
     parallel_env = pgg_parallel_v1.parallel_env(n_agents=config.n_agents, threshold=config.threshold, \
         num_iterations=config.num_game_iterations, uncertainties=config.uncertainties)
 
@@ -70,32 +78,29 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            model = ActorCriticRNN(config)
-            optimizer = torch.optim.Adam([{'params': model.parameters(), 'lr': config.lr} ])
-
-            agents_dict['agent_'+str(idx)] = RecurrentPPO(model, optimizer, config)
+            agents_dict['agent_'+str(idx)] = PPOcomm_recurrent(config)
 
         #### TRAINING LOOP
         for ep_in in range(config.episodes_per_experiment):
             #print("\nEpisode=", ep_in)
 
             observations = parallel_env.reset()
-            i_internal_loop = 0
                 
-            [agent.reset() for ag_idx, agent in agents_dict.items()]
+            [agent.reset() for _, agent in agents_dict.items()]
 
             done = False
-            actions_cat = torch.zeros((config.n_agents*config.action_size), dtype=torch.int64)
-            #print("actions_in0", actions_cat)
+            messages_cat = torch.zeros((config.n_agents*config.action_size), dtype=torch.int64)
             while not done:
 
-                #print('tensor=', torch.cat((torch.Tensor(observations['agent_0']), actions_cat)))
-                actions = {agent: agents_dict[agent].select_action(torch.cat((torch.Tensor(observations[agent]), actions_cat))) for agent in parallel_env.agents}
+                for _ in range(config.communication_loops):
+
+                    messages = {agent: agents_dict[agent].select_message(torch.cat((torch.Tensor(observations[agent]), messages_cat))) for agent in parallel_env.agents}
+                    #print("messages=", messages)
+                    messages_cat = torch.stack([F.one_hot(torch.Tensor([v.item()]).long(), num_classes=config.action_size)[0] for _, v in messages.items()]).view(-1)
+                    
+                actions = {agent: agents_dict[agent].select_action(torch.cat((torch.Tensor(observations[agent]), messages_cat))) for agent in parallel_env.agents}
                 #print("actions=", actions)
                 observations, rewards, done, _ = parallel_env.step(actions)
-
-                actions_cat = torch.stack([F.one_hot(torch.Tensor([v.item()]).long(), num_classes=config.action_size)[0] for _, v in actions.items()]).view(-1)
-                #print("actions_cat=", actions_cat)
 
                 for ag_idx, agent in agents_dict.items():
                     
@@ -104,6 +109,7 @@ def train(config):
                     agent.tmp_return += rewards[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
+                        agent.train_actions.append(actions[ag_idx])
                     if done:
                         agent.train_returns.append(agent.tmp_return)
                         agent.coop.append(np.mean(agent.tmp_actions))
@@ -111,8 +117,6 @@ def train(config):
                 # break; if the episode is over
                 if done:
                     break
-
-                i_internal_loop += 1
 
             if (ep_in+1) % config.print_freq == 0:
                 print("Experiment : {} \t Episode : {} \t Iters: {} ".format(experiment, \
@@ -123,6 +127,15 @@ def train(config):
 
             # update PPO agents
             if ep_in != 0 and ep_in % config.update_timestep == 0:
+                mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                mut12.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
+                mut20.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                sc0.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                sc2.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
+                h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
+                h1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
+                h2.append(U.calc_entropy(agents_dict['agent_2'].buffer.messages, config.mex_size))
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
 
@@ -147,14 +160,23 @@ def train(config):
             # COOPERATIVITY PERCENTAGE PLOT
             U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
+            mutinfos = [mut01, mut12, mut20]
+            U.plot_info(config, mutinfos, path, "instantaneous coordination")
+
+            SCs = [sc0, sc1, sc2]
+            U.plot_info(config, SCs, path, "speaker_consistency")
+
+            Hs = [h0, h1, h2]
+            U.plot_info(config, Hs, path, "entropy")
+
     if (config.save_data == True):
-        df.to_csv(path+'data_no_comm_single_memory.csv')
+        df.to_csv(path+'data_comm_memory.csv')
     
     # save models
     print("Saving models...")
     if (config.save_models == True):
         for ag_idx, ag in agents_dict.items():
-            torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
+            torch.save(ag.policy.state_dict(), path+"model_comm_memory_"+str(ag_idx))
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 from src.environments import pgg_parallel_v1
 from src.algos.PPO import PPO
-from src.nets.ActorCritic import ActorCritic
+from src.nets.ActorCriticRNN import ActorCriticRNN
 import numpy as np
+import torch.nn.functional as F
 import torch
 import wandb
 import json
@@ -16,30 +17,30 @@ hyperparameter_defaults = dict(
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
-    num_game_iterations = 1,
-    obs_size = 1,                 # we observe coins we have
+    num_game_iterations = 3,
+    obs_size = 1,                 # we observe coins we have + actions of all other agents
     hidden_size = 23,
+    num_rnn_layers = 1,
     action_size = 2,
     K_epochs = 40,               # update policy for K epochs
     eps_clip = 0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
     c1 = 0.5,
     c2 = -0.01,
-    lr_actor = 0.002, #0.001,            # learning rate for actor network
-    lr_critic = 0.01, #0.001,           # learning rate for critic network
+    lr = 0.002, #0.001,            # learning rate
     comm = False,
     plots = False,
     save_models = True,
     save_data = True,
     save_interval = 10,
     print_freq = 10,
-    recurrent = False
+    recurrent = True
 )
 
 
 
 
-wandb.init(project="pgg_v1_parallel", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
+wandb.init(project="pgg_v1_memory", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
 config = wandb.config
 
 folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/"
@@ -69,9 +70,8 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            model = ActorCritic(config)
-            optimizer = torch.optim.Adam([{'params': model.actor.parameters(), 'lr': config.lr_actor},
-                    {'params': model.critic.parameters(), 'lr': config.lr_critic} ])
+            model = ActorCriticRNN(config)
+            optimizer = torch.optim.Adam([{'params': model.parameters(), 'lr': config.lr} ])
 
             agents_dict['agent_'+str(idx)] = PPO(model, optimizer, config)
 
@@ -84,10 +84,13 @@ def train(config):
             [agent.reset() for _, agent in agents_dict.items()]
 
             done = False
+            actions_cat = torch.zeros((config.n_agents*config.action_size), dtype=torch.int64)
             while not done:
 
-                actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
+                actions = {agent: agents_dict[agent].select_action(torch.cat((torch.Tensor(observations[agent]), actions_cat))) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)
+
+                actions_cat = torch.stack([F.one_hot(torch.Tensor([v.item()]).long(), num_classes=config.action_size)[0] for _, v in actions.items()]).view(-1)
 
                 for ag_idx, agent in agents_dict.items():
                     
@@ -138,13 +141,13 @@ def train(config):
             U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
     if (config.save_data == True):
-        df.to_csv(path+'data_no_comm_single.csv')
+        df.to_csv(path+'data_no_comm_single_memory.csv')
     
     # save models
     print("Saving models...")
     if (config.save_models == True):
         for ag_idx, ag in agents_dict.items():
-            torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
+            torch.save(ag.policy.state_dict(), path+"model_memory_"+str(ag_idx))
 
 
 if __name__ == "__main__":

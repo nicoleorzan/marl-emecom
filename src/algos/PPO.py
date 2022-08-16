@@ -3,6 +3,7 @@ from dis import disco
 import torch
 import copy
 import torch.nn as nn
+import torch.nn.functional as F
 #https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
 
 # set device to cpu or cuda
@@ -15,22 +16,33 @@ else:
     print("Device set to : cpu")
 
 class RolloutBuffer:
-    def __init__(self):
+
+    # rollout buffer with ability of saving hidden states to handle recurrent networks
+    
+    def __init__(self, recurrent = False):
         self.actions = []
         self.states = []
+        self.hstates = []
+        self.cstates = []
         self.logprobs = []
         self.rewards = []
         self.is_terminals = []
+        self.recurrent = recurrent
     
     def clear(self):
         del self.actions[:]
         del self.states[:]
+        del self.hstates[:]
+        del self.cstates[:]
         del self.logprobs[:]
         del self.rewards[:]
         del self.is_terminals[:]
 
     def __print__(self):
         print("states=", len(self.states))
+        if self.recurrent:
+            print("hstates=", len(self.hstates))
+            print("cstates=", len(self.cstates))
         print("actions=", len(self.actions))
         print("logprobs=", len(self.logprobs))
         print("rewards=", len(self.rewards))
@@ -38,19 +50,18 @@ class RolloutBuffer:
 
 class PPO():
 
-    def __init__(self, model, optimizer, gamma, K_epochs, eps_clip, c1, c2):
+    # PPo with ability of handing recurrent net or simple nets
 
-        self.gamma = gamma
-        self.eps_clip = eps_clip
-        self.K_epochs = K_epochs
-        self.c1 = c1 
-        self.c2 = c2
+    def __init__(self, model, optimizer, params):
+
+        # absorb all parameters to self
+        for key, val in params.items():  setattr(self, key, val)
 
         self.buffer = RolloutBuffer()
     
         self.policy = model.to(device)
         self.optimizer = optimizer
-
+        
         self.policy_old = copy.deepcopy(model).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
         
@@ -62,23 +73,38 @@ class PPO():
         self.tmp_actions = []
         self.coop = []
 
+    def reset(self):
+        self.policy.reset_state()
+        self.tmp_return = 0
+        self.tmp_actions = []
+
     def select_action(self, state):
-    
+
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
-            action, action_logprob = self.policy_old.act(state)
+
+            if self.recurrent:
+                self.policy_old.observe(state)
+                action, action_logprob = self.policy_old.act()
+            else:
+                action, action_logprob = self.policy_old.act(state)
+
+            if self.recurrent:
+                self.buffer.hstates.append(self.policy_old.hState)
+                self.buffer.cstates.append(self.policy_old.cState)
 
             self.buffer.states.append(state)
             self.buffer.actions.append(action)
             self.buffer.logprobs.append(action_logprob)
-        return action.item()
 
-    def eval_action(self, state, done=False):
+        return action
+
+    def eval_action(self, state):
     
         actions_logprobs = []
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
-            for action in range(self.action_dim):
+            for action in range(self.action_size):
                 a = torch.Tensor([action])
                 action_logprob, _, _ = self.policy_old.evaluate(state, a)
                 actions_logprobs.append(action_logprob.item())
@@ -93,18 +119,30 @@ class PPO():
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
+
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
-        if (self.policy.input_dim == 1):
+        if (self.policy.input_size == 1):
             old_states = torch.stack(self.buffer.states, dim=0).detach().to(device)
             old_actions = torch.stack(self.buffer.actions, dim=0).detach().to(device)
             old_logprobs = torch.stack(self.buffer.logprobs, dim=0).detach().to(device)
+            if self.recurrent:
+                old_hstates = torch.stack(self.buffer.hstates, dim=0).detach().to(device)
+                old_cstates = torch.stack(self.buffer.cstates, dim=0).detach().to(device)
+                old_states = (old_states, (old_hstates, old_cstates))
         else:
             old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
             old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
             old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
+            if self.recurrent:
+                old_hstates = torch.squeeze(torch.stack(self.buffer.hstates, dim=0)).detach().to(device)
+                old_cstates = torch.squeeze(torch.stack(self.buffer.cstates, dim=0)).detach().to(device)
+                old_states = (old_states, (old_hstates, old_cstates))
+
+        #print("actions=", old_actions.shape)
+        #print("states=", old_states.shape)
 
         for _ in range(self.K_epochs):
 

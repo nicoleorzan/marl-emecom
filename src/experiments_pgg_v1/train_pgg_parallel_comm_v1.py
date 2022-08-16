@@ -1,5 +1,5 @@
 from src.environments import pgg_parallel_v1
-from src.algos.PPOcomm2 import PPOcomm2
+from algos.PPOcomm import PPOcomm
 import numpy as np
 import torch
 import wandb
@@ -16,10 +16,10 @@ hyperparameter_defaults = dict(
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
-    #uncertainties = [0., 0., 0., 0., 0.],# uncertainty on the observation of your own coins
     num_game_iterations = 1,
-    obs_dim = 1,                 # we observe coins we have
-    action_space = 2,
+    obs_size = 1,                # we observe coins we have
+    hidden_size = 23,          
+    action_size = 2,
     K_epochs = 40,               # update policy for K epochs5
     eps_clip = 0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
@@ -33,7 +33,7 @@ hyperparameter_defaults = dict(
     save_data = True,
     save_interval = 50,
     print_freq = 300,
-    mex_space = 2,
+    mex_size = 2,
     c3 = 0.8,
     c4 = -0.003,
     random_baseline = False
@@ -73,35 +73,26 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = PPOcomm2(config.n_agents, config.obs_dim, config.action_space, \
-                config.mex_space, config.lr_actor, config.lr_critic, config.gamma, \
-                config.K_epochs, config.eps_clip, config.c1, config.c2, config.c3, config.c4, \
-                config.random_baseline)
+            agents_dict['agent_'+str(idx)] = PPOcomm(config)
 
         #### TRAINING LOOP
         for ep_in in range(config.episodes_per_experiment):
             #print("\nEpisode=", ep_in)
 
             observations = parallel_env.reset()
-            i_internal_loop = 0
                 
-            for ag_idx, agent in agents_dict.items():
-                agent.tmp_return = 0
-                agent.tmp_actions = []
+            [agent.reset() for _, agent in agents_dict.items()]
 
             done = False
             while not done:
 
                 if (config.random_baseline):
                     messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
-                    #print("messages=", messages)                    
                 else:
                     messages = {agent: agents_dict[agent].select_mex(observations[agent]) for agent in parallel_env.agents}
-                    #print("messages=", messages)                    
                 message = torch.stack([v for _, v in messages.items()]).view(-1)
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)
-                #print("observations, rewards, done=", observations, rewards, done)
 
                 for ag_idx, agent in agents_dict.items():
                     
@@ -117,8 +108,6 @@ def train(config):
                 # break; if the episode is over
                 if done:
                     break
-
-                i_internal_loop += 1
 
             if (ep_in+1) % config.print_freq == 0:
                 print("Experiment : {} \t Episode : {} \t Iters: {} ".format(experiment, \

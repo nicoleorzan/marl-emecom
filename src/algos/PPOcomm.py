@@ -1,10 +1,11 @@
 
 from dis import disco
+from src.nets.ActorCritic import ActorCritic
 import torch
 import torch.nn as nn
-from torch.distributions import Categorical
 import torch.nn.functional as F
-
+import numpy as np
+import copy
 
 #https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
 
@@ -20,175 +21,139 @@ else:
 class RolloutBufferComm:
     def __init__(self):
         self.states = []
-        self.messages = []
+        self.messages_out = []
+        self.state_mex = []
         self.actions = []
         self.act_logprobs = []
         self.comm_logprobs = []
         self.rewards = []
+        self.mut_info = []
         self.is_terminals = []
     
     def clear(self):
         del self.states[:]
-        del self.messages[:]
+        del self.messages_out[:]
+        del self.state_mex[:]
         del self.actions[:]
         del self.act_logprobs[:]
         del self.comm_logprobs[:]
         del self.rewards[:]
+        del self.mut_info[:]
         del self.is_terminals[:]
 
     def __print__(self):
         print("states=", len(self.states))
-        print("messages=", len(self.messages))
+        print("messages_out=", len(self.messages_out))
+        print("state_mex=", len(self.state_mex))
         print("actions=", len(self.actions))
         print("act logprobs=", len(self.act_logprobs))
         print("mex_logprobs=", len(self.comm_logprobs))
         print("rewards=", len(self.rewards))
+        print("mut info=", len(self.mut_info))
         print("is_terminals=", len(self.is_terminals))
-
-
-class ActorCriticComm(nn.Module):
-
-    def __init__(self, obs_dim, mex_dim, n_agents, action_dim): # input = obs + mex
-        super(ActorCriticComm, self).__init__()
-
-        self.obs_dim = obs_dim
-        self.mex_dim = mex_dim
-        self.n_agents = n_agents # how many agents will send messages to me (included myself)
-        self.input_dim = self.obs_dim + self.mex_dim*self.n_agents
-        self.hidden_dim = 64
-        self.action_dim = action_dim
-
-        self.layers = nn.Sequential(
-            nn.Linear(self.input_dim, self.hidden_dim),
-            nn.Tanh(),
-            nn.Linear(self.hidden_dim, self.hidden_dim),
-        )
-
-        self.action_actor = nn.Sequential(
-            nn.Linear(self.hidden_dim, self.hidden_dim),
-            nn.Tanh(),
-            nn.Linear(self.hidden_dim, self.action_dim),
-        )
-        self.action_critic = nn.Sequential(
-            nn.Linear(self.hidden_dim, self.hidden_dim),
-            nn.Tanh(),
-            nn.Linear(self.hidden_dim, 1),
-        )
-
-        self.comm_actor = nn.Sequential(
-            nn.Linear(self.hidden_dim, self.hidden_dim),
-            nn.Tanh(),
-            nn.Linear(self.hidden_dim, self.mex_dim),
-        )
-        self.comm_critic = nn.Sequential(
-            nn.Linear(self.hidden_dim, self.hidden_dim),
-            nn.Tanh(),
-            nn.Linear(self.hidden_dim, 1),
-        )
-
-    def act(self, state, greedy=False): # state is state + mex already concat
-
-        out = self.layers(state)
-        mex_logits = self.comm_actor(out)
-        act_logits = self.action_actor(out)
-        
-        dist_mex = Categorical(logits=mex_logits) # here I changed probs with logits!!!
-        dist_act = Categorical(logits=act_logits) # here I changed probs with logits!!!
-        
-        if (greedy):
-            mex = torch.argmax(mex_logits)
-            act = torch.argmax(act_logits)
-        else:
-            mex = dist_mex.sample()
-            act = dist_act.sample()
-        
-        logprob_mex = dist_mex.log_prob(mex)
-        logprob_act = dist_act.log_prob(act)
-
-        return act.detach(), mex.detach(), logprob_act.detach(), logprob_mex.detach()
-
-    def evaluate(self, state, mex_out, action):
-
-        out = self.layers(state)
-        mex_probs = self.comm_actor(out)
-        act_probs = self.action_actor(out)
-
-        dist_mex = Categorical(logits=mex_probs) # here I changed probs with logits!!!
-        dist_act = Categorical(logits=act_probs) # here I changed probs with logits!!!
-
-        logprob_mex = dist_mex.log_prob(mex_out)
-        logprob_act = dist_act.log_prob(action)
-
-        dist_entropy_mex = dist_mex.entropy()
-        dist_entropy_act = dist_act.entropy()
-
-        state_values_mex = self.action_critic(out)
-        state_values_act = self.comm_critic(out)
-        return logprob_mex, logprob_act, dist_entropy_mex, dist_entropy_act, state_values_mex, state_values_act
 
 
 class PPOcomm():
 
-    def __init__(self, obs_dim, action_dim, mex_dim, n_agents, lr_actor, lr_critic, gamma, K_epochs, eps_clip, c1, c2):
+    def __init__(self, params):
 
-        self.obs_dim = obs_dim
-        self.mex_dim = mex_dim
-        self.action_dim = action_dim
-        self.lr_actor = lr_actor
-        self.lr_critic = lr_critic
-        self.gamma = gamma
-        self.eps_clip = eps_clip
-        self.K_epochs = K_epochs
-        self.c1 = c1 
-        self.c2 = c2
+        for key, val in params.items():  setattr(self, key, val)
+        
+        self.hloss_lambda = 0.01
+        self.htarget = np.log(self.action_size)/2.
 
         self.buffer = RolloutBufferComm()
     
-        self.policy = ActorCriticComm(obs_dim, mex_dim, n_agents, action_dim).to(device)
+        # Communication Policy
+        self.policy_comm = ActorCritic(params).to(device)
         self.optimizer = torch.optim.Adam([
-                        {'params': self.policy.layers.parameters(), 'lr': lr_actor},
-                        {'params': self.policy.action_actor.parameters(), 'lr': lr_actor},
-                        {'params': self.policy.comm_actor.parameters(), 'lr': lr_actor},
-                        {'params': self.policy.action_critic.parameters(), 'lr': lr_critic},
-                        {'params': self.policy.comm_critic.parameters(), 'lr': lr_critic}
+                        {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor},
+                        {'params': self.policy_comm.critic.parameters(), 'lr': self.lr_critic},
                     ])
 
-        self.policy_old = ActorCriticComm(obs_dim, mex_dim, n_agents, action_dim).to(device)
-        self.policy_old.load_state_dict(self.policy.state_dict())
-        
+        self.policy_comm_old = copy.deepcopy(self.policy_comm).to(device)
+
+        # Action Policy
+        self.policy_act = ActorCritic(params, comm=True).to(device)
+        self.optimizer = torch.optim.Adam([
+                        {'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor},
+                        {'params': self.policy_act.critic.parameters(), 'lr': self.lr_critic},
+                    ])
+
+        self.policy_act_old = copy.deepcopy(self.policy_act).to(device)
+
         self.MseLoss = nn.MSELoss()
 
         self.train_returns = []
         self.tmp_return = 0
         self.train_actions = []
         self.tmp_actions = []
-        self.cooperativeness = []
+        self.coop = []
 
-    def select_action(self, state, done=False):
-    
+    def reset(self):
+        self.tmp_return = 0
+        self.tmp_actions = []
+
+    def select_mex(self, state):
+
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
-            action, message, action_logprob, message_logprob = self.policy_old.act(state)
+            message, message_logprob = self.policy_comm_old.act(state)
 
             self.buffer.states.append(state)
-            self.buffer.messages.append(message)
-            self.buffer.actions.append(action)
-            self.buffer.act_logprobs.append(action_logprob)
+            self.buffer.messages_out.append(message)
             self.buffer.comm_logprobs.append(message_logprob)
 
         message = torch.Tensor([message.item()]).long()
-        message = F.one_hot(message, num_classes=self.mex_dim)[0]
-        return action.item(), message
+        message = F.one_hot(message, num_classes=self.mex_size)[0]
+        return message
 
-    def eval_action(self, state, mex_in, done=False):
+    def random_messages(self, state):
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(device)
+            message = torch.randint(0, self.mex_size, (self.mex_size-1,))[0]
+
+            self.buffer.states.append(state)
+            self.buffer.messages_out.append(message)
+            self.buffer.comm_logprobs.append(torch.tensor(0.0001))
+
+        message = torch.Tensor([message.item()]).long()
+        message = F.one_hot(message, num_classes=self.mex_size)[0]
+        return message
+
+    def select_action(self, state, message):
+    
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(device)
+            state_mex = torch.cat((state, message))
+            action, action_logprob = self.policy_act_old.act(state_mex)
+
+            self.buffer.state_mex.append(state_mex)
+            self.buffer.actions.append(action)
+            self.buffer.act_logprobs.append(action_logprob)
+
+        return action.item()
+
+    def eval_mex(self, state):
+    
+        messages_logprobs = []
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(device)
+            for mex in range(self.mex_size):
+                m = torch.Tensor([mex])
+                _, mex_logprob, _= self.policy_comm_old.evaluate(state, m)
+                messages_logprobs.append(mex_logprob.item())
+
+        return messages_logprobs
+
+    def eval_action(self, state, message):
     
         actions_logprobs = []
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
-            for action in range(self.action_dim):
+            for action in range(self.action_size):
                 a = torch.Tensor([action])
-                _, action_logprob, _, _, _, _ = self.policy_old.evaluate(state, mex_in, a)
-                print("action_logprob=",action_logprob)
+                _, action_logprob, _= self.policy_act_old.evaluate(state, message, a)
                 actions_logprobs.append(action_logprob.item())
 
         return actions_logprobs
@@ -196,7 +161,7 @@ class PPOcomm():
     def update(self):
         rewards = []
         discounted_reward = 0
-        for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
+        for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):#, reversed(self.buffer.mut_info)):
             if is_terminal:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
@@ -205,16 +170,25 @@ class PPOcomm():
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
-        old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
-        old_messages = torch.squeeze(torch.stack(self.buffer.messages, dim=0)).detach().to(device)
-        old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
-        old_logprobs_act = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
-        old_logprobs_comm = torch.squeeze(torch.stack(self.buffer.comm_logprobs, dim=0)).detach().to(device)
+        if (self.policy_comm.input_size == 1):
+            old_states = torch.stack(self.buffer.states, dim=0).detach().to(device)
+            old_actions = torch.stack(self.buffer.actions, dim=0).detach().to(device)
+            old_messages_out = torch.stack(self.buffer.messages_out, dim=0).detach().to(device)
+            old_states_mex = torch.stack(self.buffer.state_mex, dim=0).detach().to(device)
+            old_logprobs_act = torch.stack(self.buffer.act_logprobs, dim=0).detach().to(device)
+            old_logprobs_comm = torch.stack(self.buffer.comm_logprobs, dim=0).detach().to(device)
+        else:
+            old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
+            old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
+            old_messages_out = torch.squeeze(torch.stack(self.buffer.messages_out, dim=0)).detach().to(device)
+            old_states_mex = torch.squeeze(torch.stack(self.buffer.state_mex, dim=0)).detach().to(device)
+            old_logprobs_act = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
+            old_logprobs_comm = torch.squeeze(torch.stack(self.buffer.comm_logprobs, dim=0)).detach().to(device)
 
         for _ in range(self.K_epochs):
   
-            logprobs_comm, logprobs_act, dist_entropy_mex, dist_entropy_act, state_values_comm, state_values_act = self.policy.evaluate(old_states, old_messages, old_actions)
-            #logprobs, dist_entropy, state_values = self.policy.evaluate(old_states, old_messages, old_actions)
+            logprobs_comm, dist_entropy_mex, state_values_comm = self.policy_comm.evaluate(old_states, old_messages_out)
+            logprobs_act, dist_entropy_act, state_values_act = self.policy_act.evaluate(old_states_mex, old_actions)
 
             state_values_act = torch.squeeze(state_values_act)
             state_values_comm = torch.squeeze(state_values_comm)
@@ -223,21 +197,32 @@ class PPOcomm():
             ratios_comm = torch.exp(logprobs_comm - old_logprobs_comm.detach())
 
             advantages_act = rewards - state_values_act.detach()
-            advantages_comm = rewards - state_values_comm.detach()
+            # here I have to understand if it is better to use rewards or the entropy distribution as "communication reward"
+            advantages_comm = -dist_entropy_mex - state_values_comm.detach()
+
             surr1 = ratios_act*advantages_act + ratios_comm*advantages_comm
             surr2 = torch.clamp(ratios_act, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_act
             surr3 = torch.clamp(ratios_comm, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_comm
             
             surr12 = torch.min(surr1, surr2)
-            loss = (-torch.min(surr12, surr3) + self.c1*self.MseLoss(state_values_act, rewards) + \
-                self.c2*dist_entropy_act + self.c2*dist_entropy_mex)
+
+            loss = (-torch.min(surr12, surr3) + \
+                self.c1*self.MseLoss(state_values_act, rewards) + self.c2*dist_entropy_act + \
+                self.c3*self.MseLoss(state_values_comm, rewards) + self.c4*dist_entropy_mex)
+
+            # add term to compute signaling entropy loss
+            entropy = torch.FloatTensor([self.policy_act_old.get_dist_entropy(state).detach()  for state in old_states_mex])
+            hloss =  (torch.full(entropy.size(), self.htarget) - entropy)* (torch.full(entropy.size(), self.htarget) - entropy)
+
+            loss = loss + self.hloss_lambda*hloss
 
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
 
         # Copy new weights into old policy
-        self.policy_old.load_state_dict(self.policy.state_dict())
+        self.policy_comm_old.load_state_dict(self.policy_comm.state_dict())
+        self.policy_act_old.load_state_dict(self.policy_act.state_dict())
 
         # clear buffer
         self.buffer.clear()

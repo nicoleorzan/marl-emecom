@@ -4,15 +4,34 @@ import pandas as pd
 import torch
 import math
 
+def calc_entropy(comms, n_comm):
+	# Calculates the entropy of the communication distribution
+	# p(c) is calculated by averaging over episodes
+	comms = [to_int(m) for m in comms]
+	eps = 1e-9
+
+	p_c = probs_from_counts(comms, n_comm, eps=eps)
+	entropy = 0
+	for c in range(n_comm):
+		entropy += - p_c[c] * math.log(p_c[c])
+	return entropy
+
+
 def calc_mutinfo(acts, comms, n_acts, n_comm):
     # Calculate mutual information between actions and messages
     # Joint probability p(a, c) is calculated by counting co-occurences, *not* by performing interventions
     # If the actions and messages come from the same agent, then this is the speaker consistency (SC)
     # If the actions and messages come from different agents, this is the instantaneous coordinatino (IC)
-    comms = [torch.argmax(c) for c in comms]
+    #print(acts)
+    #print(comms)
+    if (comms[0].size() != torch.Size()):
+        comms = [torch.argmax(c) for c in comms]
     comms = [to_int(m) for m in comms]
-    acts = [torch.argmax(c) for c in acts]
+    if (acts[0].size() != torch.Size()):
+        acts = [torch.argmax(c) for c in acts]
     acts = [to_int(a) for a in acts]
+    #print("acts=", acts)
+    #print("comm=", comms)
 
     # Calculate probabilities by counting co-occurrences
     p_a = probs_from_counts(acts, n_acts)
@@ -35,8 +54,8 @@ def probs_from_counts(l, ldim, eps=0):
         l_c[i] += 1. / len(l)
     return l_c
 
-#def moving_average(x, w):
-#    return np.convolve(x, np.ones(w), 'valid') / w
+def moving_average(x, w):
+    return np.convolve(x, np.ones(w), 'valid') / w
 
 # from https://github.com/facebookresearch/measuring-emergent-comm/blob/master/measuring_emergent_comm/utils.py
 
@@ -75,6 +94,17 @@ def bin_acts(comms, acts, n_comm, n_acts, b=None):
     return b
 
 
+def plot_info(config, infos, path, name):
+    # plot mutual information, entropy or speaker consistency depending on the input given
+
+    fig, ax = plt.subplots(config.n_agents)
+    fig.suptitle(name)
+    for ag_idx in range(config.n_agents):
+        ax[ag_idx].plot(np.linspace(0, len(infos[ag_idx]), len(infos[ag_idx])), infos[ag_idx])
+        ax[ag_idx].grid()
+    plt.savefig(path+name+".png")
+
+
 def plot_train_returns(config, agents_dict, path, name):
 
     num_blocks = 40
@@ -88,6 +118,7 @@ def plot_train_returns(config, agents_dict, path, name):
     for ag_idx in range(config.n_agents):
         ax[ag_idx].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(agents_dict['agent_'+str(ag_idx)].train_returns)), agents_dict['agent_'+str(ag_idx)].train_returns)
         ax[ag_idx].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].train_returns), len(moving_avgs[ag_idx])), moving_avgs[ag_idx])
+        ax[ag_idx].grid()
     plt.savefig(path+name+".png")
 
 
@@ -96,11 +127,14 @@ def cooperativity_plot(config, agents_dict, path, name):
     fig.suptitle("Train Cooperativity mean over the iteractions")
     for ag_idx in range(config.n_agents):
         train_actions = agents_dict['agent_'+str(ag_idx)].train_actions
-        print("agents_dict['agent_'+str(ag_idx)].train_actions=", agents_dict['agent_'+str(ag_idx)].train_actions)
+        #print("train_actions=", train_actions)
         train_act_array = np.array(train_actions)
-        print("train_act_array=", train_act_array.shape)
-        avgs = np.mean(train_act_array, axis=1)
+        if (train_act_array.ndim > 1):
+            avgs = np.mean(train_act_array, axis=1)
+        else: 
+            avgs = train_act_array
         ax[ag_idx].plot(np.linspace(0, len(train_actions), len(train_actions)), avgs)
+        ax[ag_idx].grid()
     plt.savefig(path+name+".png")
 
 
