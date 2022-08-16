@@ -4,25 +4,36 @@ import torch
 from torch.distributions import Categorical, Normal
 
 # check hidden layer
-class ActorCriticDiscrete(nn.Module):
+class ActorCritic(nn.Module):
 
-    def __init__(self, input_dim, action_dim):
-        super(ActorCriticDiscrete, self).__init__()
+    def __init__(self, params, comm=False):
+        super(ActorCritic, self).__init__()
 
-        self.input_dim = input_dim
-        self.hidden_dim = 64
-        self.action_dim = action_dim
+        # absorb all parameters to self
+        for key, val in params.items():  setattr(self, key, val)
+
+        self.comm = comm
+
+        if (self.comm): 
+            # in the case of communication, the input is not only the coins 
+            # but also the messages sent by the other agents
+            self.input_size = self.obs_size + self.n_agents*self.mex_size
+        else: 
+            self.input_size = self.obs_size
 
         self.actor = nn.Sequential(
-            nn.Linear(self.input_dim, self.hidden_dim),
+            nn.Linear(self.input_size, self.hidden_size),
             nn.Tanh(),
-            nn.Linear(self.hidden_dim, self.action_dim)#,
+            nn.Linear(self.hidden_size, self.action_size)
         )
         self.critic = nn.Sequential(
-            nn.Linear(self.input_dim, self.hidden_dim),
+            nn.Linear(self.input_size, self.hidden_size),
             nn.Tanh(),
-            nn.Linear(self.hidden_dim, 1),
+            nn.Linear(self.hidden_size, 1),
         )
+
+    def reset_state(self):
+        pass
 
     def act(self, state, greedy=False):
 
@@ -64,29 +75,29 @@ class ActorCriticDiscrete(nn.Module):
 
 class ActorCriticContinuous(nn.Module):
 
-    def __init__(self, input_dim, action_dim):
+    def __init__(self, params):
         super(ActorCriticContinuous, self).__init__()
 
-        self.input_dim = input_dim
-        self.hidden_dim = 64
-        self.action_dim = action_dim
+        # absorb all parameters to self
+        for key, val in params.items():  setattr(self, key, val)
+
         self.min_var = 0.001
 
         self.policy = nn.Sequential(
-            nn.Linear(self.input_dim, self.hidden_dim),
+            nn.Linear(self.input_size, self.hidden_size),
             nn.ReLU())
 
         self.critic = nn.Sequential(
-            nn.Linear(self.input_dim, self.hidden_dim),
+            nn.Linear(self.input_size, self.hidden_size),
             nn.Tanh(),
-            nn.Linear(self.hidden_dim, 1),
+            nn.Linear(self.hidden_size, 1),
         )
 
         self.mean = nn.Sequential(
-            nn.Linear(self.hidden_dim, 1),
+            nn.Linear(self.hidden_size, 1),
             nn.Sigmoid())
         self.var = nn.Sequential(
-            nn.Linear(self.hidden_dim, 1),
+            nn.Linear(self.hidden_size, 1),
             nn.ReLU())
 
     def act(self, state):
