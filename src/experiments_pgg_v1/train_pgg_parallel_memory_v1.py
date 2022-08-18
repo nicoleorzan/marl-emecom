@@ -11,12 +11,12 @@ import os
 import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
-    n_experiments = 20,
+    n_experiments = 1,
     threshold = 2,
     episodes_per_experiment = 2000,
     update_timestep = 40,        # update policy every n timesteps
-    n_agents = 3,
-    uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
+    n_agents = 2,
+    uncertainties = [0., 0.],# uncertainty on the observation of your own coins
     num_game_iterations = 3,
     obs_size = 1,                 # we observe coins we have + actions of all other agents
     hidden_size = 23,
@@ -28,12 +28,13 @@ hyperparameter_defaults = dict(
     c1 = 0.5,
     c2 = -0.01,
     lr = 0.002, #0.001,            # learning rate
+    decayRate = 0.999,
     comm = False,
     plots = False,
     save_models = True,
     save_data = True,
     save_interval = 10,
-    print_freq = 10,
+    print_freq = 100,
     recurrent = True
 )
 

@@ -5,3 +5,4 @@ pettingzoo==1.18.1
 matplotlib
 wandb
 stable-baselines3[extra]
+wandb

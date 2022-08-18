@@ -4,7 +4,7 @@ import torch
 from torch.distributions import Categorical
 from torch.autograd import Variable
 import torch.nn.functional as F
-import torch.autograd as autograd
+#import torch.autograd as autograd
 
 #https://github.com/pliang279/Competitive-Emergent-Communication/blob/master/chatbots.py
 
@@ -17,7 +17,6 @@ class ActorCriticRNN(nn.Module):
 
     def __init__(self, params):
         super(ActorCriticRNN, self).__init__()
-        print(torch.__version__) 
 
         # absorb all parameters to self
         for key, val in params.items():  setattr(self, key, val)
@@ -52,9 +51,9 @@ class ActorCriticRNN(nn.Module):
         self.cState = Variable(torch.zeros(self.hidden_size))
 
     # observe actions of all other agents
-    def observe(self, input_actions):
+    def observe(self, input):
         # embed and pass through LSTM
-        out = F.relu(self.fc1(input_actions))
+        out = F.relu(self.fc1(input))
         # now pass it through rnn
         self.hState, self.cState = self.lstm(out, (self.hState, self.cState))
 
@@ -62,9 +61,9 @@ class ActorCriticRNN(nn.Module):
         # compute softmax and choose a new action
 
         out = self.softmax(self.actor_linear(self.hState))
-        # if evaluating
         if self.evalFlag:
-            _, action = out.max(1)
+            action = out.argmax()
+            return action
         else:
             dist = Categorical(out)
             action = dist.sample()
@@ -73,7 +72,7 @@ class ActorCriticRNN(nn.Module):
         return action, act_logprob
     
     def evaluate(self, state, action):
-        # I expect a state composed of the hidden states too
+        # I expect a state composed as (state, (hstate, cstate))
 
         state, (hstate, cstate) = state
         self.hState = hstate

@@ -21,14 +21,14 @@ else:
 class RolloutBufferComm:
     def __init__(self):
         self.states = []
-        self.messages_out = []
         self.state_mex = []
+        self.messages_out = []
         self.actions = []
         self.act_logprobs = []
         self.comm_logprobs = []
         self.rewards = []
-        self.mut_info = []
         self.is_terminals = []
+        self.mut_info = []
     
     def clear(self):
         del self.states[:]
@@ -57,7 +57,7 @@ class PPOcomm():
 
     def __init__(self, params):
 
-        for key, val in params.items():  setattr(self, key, val)
+        for key, val in params.items(): setattr(self, key, val)
         
         self.hloss_lambda = 0.01
         self.htarget = np.log(self.action_size)/2.
@@ -219,6 +219,8 @@ class PPOcomm():
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
+            self.scheduler.step()
+            #print(self.scheduler.get_lr())
 
         # Copy new weights into old policy
         self.policy_comm_old.load_state_dict(self.policy_comm.state_dict())

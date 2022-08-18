@@ -22,21 +22,23 @@ class RolloutBuffer:
     def __init__(self, recurrent = False):
         self.actions = []
         self.states = []
-        self.hstates = []
-        self.cstates = []
         self.logprobs = []
         self.rewards = []
         self.is_terminals = []
         self.recurrent = recurrent
+        if self.recurrent:
+            self.hstates = []
+            self.cstates = []
     
     def clear(self):
         del self.actions[:]
         del self.states[:]
-        del self.hstates[:]
-        del self.cstates[:]
         del self.logprobs[:]
         del self.rewards[:]
         del self.is_terminals[:]
+        if self.recurrent:
+            del self.hstates[:]
+            del self.cstates[:]
 
     def __print__(self):
         print("states=", len(self.states))
@@ -50,17 +52,30 @@ class RolloutBuffer:
 
 class PPO():
 
-    # PPo with ability of handing recurrent net or simple nets
+    """
+    PPO with ability of handing recurrent net or simple nets
+
+    Non-recurrent networks need to provide:
+    - an "act" function, that takes as input a states and returns an action
+    - an "evaluate" function, that takes as input states and actions and returns the value function
+    Recurrent networks need to provide:
+    - a "reset" function, that initializes hidden states
+    - an "observe" function, that takes as input the state
+    - an "act" function, that samples an action
+    - an "evaluate" function, that takes as input states (which are couples of states and hidden states) and actions and returns the value function
+    
+    """
 
     def __init__(self, model, optimizer, params):
 
         # absorb all parameters to self
         for key, val in params.items():  setattr(self, key, val)
 
-        self.buffer = RolloutBuffer()
+        self.buffer = RolloutBuffer(self.recurrent)
     
         self.policy = model.to(device)
         self.optimizer = optimizer
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer,  gamma=self.decayRate)
         
         self.policy_old = copy.deepcopy(model).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
@@ -74,7 +89,8 @@ class PPO():
         self.coop = []
 
     def reset(self):
-        self.policy.reset_state()
+        if self.recurrent:
+            self.policy.reset_state()
         self.tmp_return = 0
         self.tmp_actions = []
 
@@ -123,7 +139,7 @@ class PPO():
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
-
+        
         if (self.policy.input_size == 1):
             old_states = torch.stack(self.buffer.states, dim=0).detach().to(device)
             old_actions = torch.stack(self.buffer.actions, dim=0).detach().to(device)
@@ -141,9 +157,7 @@ class PPO():
                 old_cstates = torch.squeeze(torch.stack(self.buffer.cstates, dim=0)).detach().to(device)
                 old_states = (old_states, (old_hstates, old_cstates))
 
-        #print("actions=", old_actions.shape)
-        #print("states=", old_states.shape)
-
+    
         for _ in range(self.K_epochs):
 
             logprobs, dist_entropy, state_values = self.policy.evaluate(old_states, old_actions)
@@ -155,11 +169,14 @@ class PPO():
             surr1 = ratios*advantages
             surr2 = torch.clamp(ratios, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages
 
-            loss = (-torch.min(surr1, surr2) + self.c1*self.MseLoss(state_values, rewards) + self.c2*dist_entropy)
+            loss = (-torch.min(surr1, surr2) + self.c1*self.MseLoss(state_values, rewards) + \
+                self.c2*dist_entropy)
 
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
+            self.scheduler.step()
+            #print(self.scheduler.get_lr())
 
         # Copy new weights into old policy
         self.policy_old.load_state_dict(self.policy.state_dict())

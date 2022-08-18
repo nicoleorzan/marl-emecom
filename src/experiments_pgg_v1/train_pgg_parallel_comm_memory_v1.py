@@ -13,21 +13,22 @@ hyperparameter_defaults = dict(
     n_experiments = 1,
     threshold = 2,
     episodes_per_experiment = 1000,
-    update_timestep = 23,        # update policy every n timesteps
+    update_timestep = 15, #23,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
     num_game_iterations = 1,
-    communication_loops = 2,
+    communication_loops = 1, #2
     obs_size = 1,                # we observe coins we have (+ actions of all other agents)
-    hidden_size = 23,
+    hidden_size = 53, #23,
     num_rnn_layers = 1,
     action_size = 2,
-    K_epochs = 40,               # update policy for K epochs
-    eps_clip = 0.2,              # clip parameter for PPO
+    K_epochs = 64, #40,               # update policy for K epochs
+    eps_clip = 0.11, #0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
-    c1 = 0.5,
-    c2 = -0.01,
-    lr = 0.002, #0.001,     con 0.002 andava         # learning rate
+    c1 = 0.4, #0.5,
+    c2 = 0.004, #-0.01,
+    lr = 0.004, #0.002, #0.001,     con 0.002 andava         # learning rate
+    decayRate = 0.999,
     comm = False,
     plots = True,
     save_models = True,
@@ -35,16 +36,16 @@ hyperparameter_defaults = dict(
     save_interval = 10,
     print_freq = 10,
     recurrent = True,
-    mex_size = 2,
-    c3 = 0.8,
-    c4 = -0.003,
+    mex_size = 4, #2,
+    c3 = 0.04, #0.8,
+    c4 = 0.009, #-0.003,
     random_baseline = False
 )
 
 
 
 
-wandb.init(project="pgg_v1_memory_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
+wandb.init(project="pgg_v1_memory_comm", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
 config = wandb.config
 
 folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/"
@@ -89,14 +90,14 @@ def train(config):
             [agent.reset() for _, agent in agents_dict.items()]
 
             done = False
-            messages_cat = torch.zeros((config.n_agents*config.action_size), dtype=torch.int64)
+            messages_cat = torch.zeros((config.n_agents*config.mex_size), dtype=torch.int64)
             while not done:
 
                 for _ in range(config.communication_loops):
 
                     messages = {agent: agents_dict[agent].select_message(torch.cat((torch.Tensor(observations[agent]), messages_cat))) for agent in parallel_env.agents}
                     #print("messages=", messages)
-                    messages_cat = torch.stack([F.one_hot(torch.Tensor([v.item()]).long(), num_classes=config.action_size)[0] for _, v in messages.items()]).view(-1)
+                    messages_cat = torch.stack([F.one_hot(torch.Tensor([v.item()]).long(), num_classes=config.mex_size)[0] for _, v in messages.items()]).view(-1)
                     
                 actions = {agent: agents_dict[agent].select_action(torch.cat((torch.Tensor(observations[agent]), messages_cat))) for agent in parallel_env.agents}
                 #print("actions=", actions)

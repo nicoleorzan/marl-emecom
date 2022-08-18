@@ -19,47 +19,52 @@ else:
     print("Device set to : cpu")
 
 class RolloutBufferComm:
-    def __init__(self):
+    def __init__(self, recurrent = False):
         self.states_c = []
         self.states_a = []
-        self.hstates_c = []
-        self.cstates_c = []
-        self.hstates_a = []
-        self.cstates_a = []
         self.messages = []
         self.actions = []
         self.act_logprobs = []
         self.comm_logprobs = []
         self.rewards = []
         self.is_terminals = []
-    
+        self.mut_info = []
+        self.recurrent = recurrent
+        if self.recurrent:
+            self.hstates_c = []
+            self.cstates_c = []
+            self.hstates_a = []
+            self.cstates_a = []
+        
     def clear(self):
         del self.states_c[:]
         del self.states_a[:]
-        del self.hstates_c[:]
-        del self.cstates_c[:]
-        del self.hstates_a[:]
-        del self.cstates_a[:]
         del self.messages[:]
         del self.actions[:]
         del self.act_logprobs[:]
         del self.comm_logprobs[:]
         del self.rewards[:]
         del self.is_terminals[:]
+        if self.recurrent:
+            del self.hstates_c[:]
+            del self.cstates_c[:]
+            del self.hstates_a[:]
+            del self.cstates_a[:]
 
     def __print__(self):
         print("states_c=", len(self.states_c))
         print("states_a=", len(self.states_a))
-        print("hstates_c=", len(self.hstates_c))
-        print("cstates_c=", len(self.cstates_c))
-        print("hstates_a=", len(self.hstates_a))
-        print("cstates_a=", len(self.cstates_a))
         print("messages_out=", len(self.messages))
         print("actions=", len(self.actions))
         print("act logprobs=", len(self.act_logprobs))
         print("mex_logprobs=", len(self.comm_logprobs))
         print("rewards=", len(self.rewards))
         print("is_terminals=", len(self.is_terminals))
+        if self.recurrent:
+            print("hstates_c=", len(self.hstates_c))
+            print("cstates_c=", len(self.cstates_c))
+            print("hstates_a=", len(self.hstates_a))
+            print("cstates_a=", len(self.cstates_a))
 
 
 class PPOcomm_recurrent():
@@ -76,6 +81,7 @@ class PPOcomm_recurrent():
         # Communication and Action Policy
         self.policy = ActorCriticRNNcomm(params).to(device)
         self.optimizer = torch.optim.Adam([{'params': self.policy.parameters(), 'lr': params.lr} ])
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
         self.policy_old = copy.deepcopy(self.policy).to(device)
 
@@ -224,7 +230,6 @@ class PPOcomm_recurrent():
             #print("surr_c = ", surr_c.shape)
             #print("surr_a = ", surr_a.shape)
 
-
             loss_a = (-surr_a + self.c1*self.MseLoss(state_values_act, rewards) + self.c2*dist_entropy_act)
             loss_c = (-surr_c + self.c3*self.MseLoss(state_values_comm, rewards_comm) + self.c4*dist_entropy_mex)
             #print("loss_a=", loss_a.shape)
@@ -233,7 +238,7 @@ class PPOcomm_recurrent():
             loss = loss_a.mean() + loss_c.mean()
 
             # add term to compute signaling entropy loss
-            #entropy = torch.FloatTensor([self.policy_old.get_actions_entropy(state).detach()  for state in old_states])
+            #entropy = torch.FloatTensor([self.policy_old.get_actions_entropy(state).detach() for state in old_states])
             #hloss =  (torch.full(entropy.size(), self.htarget) - entropy)* (torch.full(entropy.size(), self.htarget) - entropy)
 
             #loss = loss + self.hloss_lambda*hloss
@@ -241,6 +246,8 @@ class PPOcomm_recurrent():
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
+            self.scheduler.step()
+            #print(self.scheduler.get_lr())
 
         # Copy new weights into old policy
         self.policy_old.load_state_dict(self.policy.state_dict())

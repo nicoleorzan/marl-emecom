@@ -10,9 +10,9 @@ import os
 import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
-    n_experiments = 20,
+    n_experiments = 1,
     threshold = 2,
-    episodes_per_experiment = 2000,
+    episodes_per_experiment = 1000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
@@ -27,12 +27,13 @@ hyperparameter_defaults = dict(
     c2 = -0.01,
     lr_actor = 0.002, #0.001,            # learning rate for actor network
     lr_critic = 0.01, #0.001,           # learning rate for critic network
+    decayRate = 0.999,
     comm = False,
     plots = False,
     save_models = True,
     save_data = True,
     save_interval = 10,
-    print_freq = 10,
+    print_freq = 40,
     recurrent = False
 )
 

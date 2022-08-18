@@ -1,5 +1,5 @@
 from src.environments import pgg_parallel_v1
-from algos.PPOcomm import PPOcomm
+from src.algos.PPOcomm import PPOcomm
 import numpy as np
 import torch
 import wandb
@@ -27,6 +27,7 @@ hyperparameter_defaults = dict(
     c2 = -0.001,
     lr_actor = 0.002, # 0.001,            # learning rate for actor network
     lr_critic = 0.01, # 0.001,           # learning rate for critic network
+    decayRate = 0.999,
     comm = False,
     plots = False,
     save_models = True,
