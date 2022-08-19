@@ -114,7 +114,6 @@ class ActorCriticRNNcomm(nn.Module):
         return mex_logprob, mex_dist_entropy, mex_state_values
 
     def evaluate_act(self, state, action):
-        #print("EVALUATE ACTION")
         # I expect a state composed of the hidden states too
 
         state, (hstate, cstate) = state

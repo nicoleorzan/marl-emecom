@@ -1,5 +1,5 @@
 
-from dis import disco
+from src.algos.buffer import RolloutBufferComm
 from src.nets.ActorCritic import ActorCritic
 import torch
 import torch.nn as nn
@@ -18,41 +18,6 @@ if(torch.cuda.is_available()):
 else:
     print("Device set to : cpu")
 
-class RolloutBufferComm:
-    def __init__(self):
-        self.states = []
-        self.state_mex = []
-        self.messages_out = []
-        self.actions = []
-        self.act_logprobs = []
-        self.comm_logprobs = []
-        self.rewards = []
-        self.is_terminals = []
-        self.mut_info = []
-    
-    def clear(self):
-        del self.states[:]
-        del self.messages_out[:]
-        del self.state_mex[:]
-        del self.actions[:]
-        del self.act_logprobs[:]
-        del self.comm_logprobs[:]
-        del self.rewards[:]
-        del self.mut_info[:]
-        del self.is_terminals[:]
-
-    def __print__(self):
-        print("states=", len(self.states))
-        print("messages_out=", len(self.messages_out))
-        print("state_mex=", len(self.state_mex))
-        print("actions=", len(self.actions))
-        print("act logprobs=", len(self.act_logprobs))
-        print("mex_logprobs=", len(self.comm_logprobs))
-        print("rewards=", len(self.rewards))
-        print("mut info=", len(self.mut_info))
-        print("is_terminals=", len(self.is_terminals))
-
-
 class PPOcomm():
 
     def __init__(self, params):
@@ -64,9 +29,8 @@ class PPOcomm():
 
         self.buffer = RolloutBufferComm()
     
-        # Communication Policy
+        # Communication Policy and Action Policy
         self.policy_comm = ActorCritic(params).to(device)
-        # Action Policy
         self.policy_act = ActorCritic(params, comm=True).to(device)
 
         self.optimizer = torch.optim.Adam([
@@ -91,14 +55,14 @@ class PPOcomm():
         self.tmp_return = 0
         self.tmp_actions = []
 
-    def select_mex(self, state):
+    def select_message(self, state):
 
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             message, message_logprob = self.policy_comm_old.act(state)
 
-            self.buffer.states.append(state)
-            self.buffer.messages_out.append(message)
+            self.buffer.states_c.append(state)
+            self.buffer.messages.append(message)
             self.buffer.comm_logprobs.append(message_logprob)
 
         message = torch.Tensor([message.item()]).long()
@@ -110,8 +74,8 @@ class PPOcomm():
             state = torch.FloatTensor(state).to(device)
             message = torch.randint(0, self.mex_size, (self.mex_size-1,))[0]
 
-            self.buffer.states.append(state)
-            self.buffer.messages_out.append(message)
+            self.buffer.states_c.append(state)
+            self.buffer.messages.append(message)
             self.buffer.comm_logprobs.append(torch.tensor(0.0001))
 
         message = torch.Tensor([message.item()]).long()
@@ -125,7 +89,7 @@ class PPOcomm():
             state_mex = torch.cat((state, message))
             action, action_logprob = self.policy_act_old.act(state_mex)
 
-            self.buffer.state_mex.append(state_mex)
+            self.buffer.states_a.append(state_mex)
             self.buffer.actions.append(action)
             self.buffer.act_logprobs.append(action_logprob)
 
@@ -168,24 +132,24 @@ class PPOcomm():
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
         if (self.policy_comm.input_size == 1):
-            old_states = torch.stack(self.buffer.states, dim=0).detach().to(device)
+            old_states_c = torch.stack(self.buffer.states_c, dim=0).detach().to(device)
+            old_states_a = torch.stack(self.buffer.states_a, dim=0).detach().to(device)
+            old_messages = torch.stack(self.buffer.messages, dim=0).detach().to(device)
             old_actions = torch.stack(self.buffer.actions, dim=0).detach().to(device)
-            old_messages_out = torch.stack(self.buffer.messages_out, dim=0).detach().to(device)
-            old_states_mex = torch.stack(self.buffer.state_mex, dim=0).detach().to(device)
             old_logprobs_act = torch.stack(self.buffer.act_logprobs, dim=0).detach().to(device)
             old_logprobs_comm = torch.stack(self.buffer.comm_logprobs, dim=0).detach().to(device)
         else:
-            old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
+            old_states_c = torch.squeeze(torch.stack(self.buffer.states_c, dim=0)).detach().to(device)
+            old_states_a = torch.squeeze(torch.stack(self.buffer.states_a, dim=0)).detach().to(device)
+            old_messages = torch.squeeze(torch.stack(self.buffer.messages, dim=0)).detach().to(device)
             old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
-            old_messages_out = torch.squeeze(torch.stack(self.buffer.messages_out, dim=0)).detach().to(device)
-            old_states_mex = torch.squeeze(torch.stack(self.buffer.state_mex, dim=0)).detach().to(device)
             old_logprobs_act = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
             old_logprobs_comm = torch.squeeze(torch.stack(self.buffer.comm_logprobs, dim=0)).detach().to(device)
 
         for _ in range(self.K_epochs):
   
-            logprobs_comm, dist_entropy_mex, state_values_comm = self.policy_comm.evaluate(old_states, old_messages_out)
-            logprobs_act, dist_entropy_act, state_values_act = self.policy_act.evaluate(old_states_mex, old_actions)
+            logprobs_comm, dist_entropy_mex, state_values_comm = self.policy_comm.evaluate(old_states_c, old_messages)
+            logprobs_act, dist_entropy_act, state_values_act = self.policy_act.evaluate(old_states_a, old_actions)
 
             state_values_act = torch.squeeze(state_values_act)
             state_values_comm = torch.squeeze(state_values_comm)
@@ -208,7 +172,8 @@ class PPOcomm():
                 self.c3*self.MseLoss(state_values_comm, rewards) + self.c4*dist_entropy_mex)
 
             # add term to compute signaling entropy loss
-            entropy = torch.FloatTensor([self.policy_act_old.get_dist_entropy(state).detach()  for state in old_states_mex])
+            entropy = torch.FloatTensor([dist_entropy_act])
+            #entropy = torch.FloatTensor([self.policy_act_old.get_dist_entropy(state).detach() for state in old_states_a])
             hloss =  (torch.full(entropy.size(), self.htarget) - entropy)* (torch.full(entropy.size(), self.htarget) - entropy)
 
             loss = loss + self.hloss_lambda*hloss

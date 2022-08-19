@@ -1,9 +1,8 @@
 
-from dis import disco
+from src.algos.buffer import RolloutBufferComm
 from src.nets.ActorCriticRNNcomm import ActorCriticRNNcomm
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 import copy
 
@@ -18,55 +17,6 @@ if(torch.cuda.is_available()):
 else:
     print("Device set to : cpu")
 
-class RolloutBufferComm:
-    def __init__(self, recurrent = False):
-        self.states_c = []
-        self.states_a = []
-        self.messages = []
-        self.actions = []
-        self.act_logprobs = []
-        self.comm_logprobs = []
-        self.rewards = []
-        self.is_terminals = []
-        self.mut_info = []
-        self.recurrent = recurrent
-        if self.recurrent:
-            self.hstates_c = []
-            self.cstates_c = []
-            self.hstates_a = []
-            self.cstates_a = []
-        
-    def clear(self):
-        del self.states_c[:]
-        del self.states_a[:]
-        del self.messages[:]
-        del self.actions[:]
-        del self.act_logprobs[:]
-        del self.comm_logprobs[:]
-        del self.rewards[:]
-        del self.is_terminals[:]
-        if self.recurrent:
-            del self.hstates_c[:]
-            del self.cstates_c[:]
-            del self.hstates_a[:]
-            del self.cstates_a[:]
-
-    def __print__(self):
-        print("states_c=", len(self.states_c))
-        print("states_a=", len(self.states_a))
-        print("messages_out=", len(self.messages))
-        print("actions=", len(self.actions))
-        print("act logprobs=", len(self.act_logprobs))
-        print("mex_logprobs=", len(self.comm_logprobs))
-        print("rewards=", len(self.rewards))
-        print("is_terminals=", len(self.is_terminals))
-        if self.recurrent:
-            print("hstates_c=", len(self.hstates_c))
-            print("cstates_c=", len(self.cstates_c))
-            print("hstates_a=", len(self.hstates_a))
-            print("cstates_a=", len(self.cstates_a))
-
-
 class PPOcomm_recurrent():
 
     def __init__(self, params):
@@ -76,7 +26,7 @@ class PPOcomm_recurrent():
         self.hloss_lambda = 0.01
         self.htarget = np.log(self.action_size)/2.
 
-        self.buffer = RolloutBufferComm()
+        self.buffer = RolloutBufferComm(recurrent = self.recurrent)
     
         # Communication and Action Policy
         self.policy = ActorCriticRNNcomm(params).to(device)
@@ -205,7 +155,6 @@ class PPOcomm_recurrent():
 
             ratios_act = torch.exp(logprobs_act - old_logprobs_act.detach())
             ratios_comm = torch.exp(logprobs_comm - old_logprobs_comm.detach())
-            #print("rewards=", rewards.shape)
 
             advantages_act = rewards - state_values_act.detach()
             # here I have to understand if it is better to use rewards or the entropy distribution as "communication reward"
@@ -224,10 +173,10 @@ class PPOcomm_recurrent():
             loss = loss_a.mean() + loss_c.mean()
 
             # add term to compute signaling entropy loss
-            #entropy = torch.FloatTensor([self.policy_old.get_actions_entropy(state).detach() for state in old_states])
-            #hloss =  (torch.full(entropy.size(), self.htarget) - entropy)* (torch.full(entropy.size(), self.htarget) - entropy)
+            entropy = torch.FloatTensor([dist_entropy_act])
+            hloss =  (torch.full(entropy.size(), self.htarget) - entropy)* (torch.full(entropy.size(), self.htarget) - entropy)
 
-            #loss = loss + self.hloss_lambda*hloss
+            loss = loss + self.hloss_lambda*hloss
 
             self.optimizer.zero_grad()
             loss.mean().backward()

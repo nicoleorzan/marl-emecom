@@ -90,7 +90,7 @@ def train(config):
                 if (config.random_baseline):
                     messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
                 else:
-                    messages = {agent: agents_dict[agent].select_mex(observations[agent]) for agent in parallel_env.agents}
+                    messages = {agent: agents_dict[agent].select_message(observations[agent]) for agent in parallel_env.agents}
                 message = torch.stack([v for _, v in messages.items()]).view(-1)
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)

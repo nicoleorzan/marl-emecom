@@ -1,9 +1,9 @@
 
-from dis import disco
+from src.algos.buffer import RolloutBuffer
 import torch
 import copy
 import torch.nn as nn
-import torch.nn.functional as F
+
 #https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
 
 # set device to cpu or cuda
@@ -14,41 +14,6 @@ if(torch.cuda.is_available()):
     print("Device set to : " + str(torch.cuda.get_device_name(device)))
 else:
     print("Device set to : cpu")
-
-class RolloutBuffer:
-
-    # rollout buffer with ability of saving hidden states to handle recurrent networks
-    
-    def __init__(self, recurrent = False):
-        self.actions = []
-        self.states = []
-        self.logprobs = []
-        self.rewards = []
-        self.is_terminals = []
-        self.recurrent = recurrent
-        if self.recurrent:
-            self.hstates = []
-            self.cstates = []
-    
-    def clear(self):
-        del self.actions[:]
-        del self.states[:]
-        del self.logprobs[:]
-        del self.rewards[:]
-        del self.is_terminals[:]
-        if self.recurrent:
-            del self.hstates[:]
-            del self.cstates[:]
-
-    def __print__(self):
-        print("states=", len(self.states))
-        if self.recurrent:
-            print("hstates=", len(self.hstates))
-            print("cstates=", len(self.cstates))
-        print("actions=", len(self.actions))
-        print("logprobs=", len(self.logprobs))
-        print("rewards=", len(self.rewards))
-        print("is_terminals=", len(self.is_terminals))
 
 class PPO():
 
@@ -68,7 +33,6 @@ class PPO():
 
     def __init__(self, model, optimizer, params):
 
-        # absorb all parameters to self
         for key, val in params.items():  setattr(self, key, val)
 
         self.buffer = RolloutBuffer(self.recurrent)
