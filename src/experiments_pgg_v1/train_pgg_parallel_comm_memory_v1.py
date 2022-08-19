@@ -12,7 +12,7 @@ import src.analysis.utils as U
 hyperparameter_defaults = dict(
     n_experiments = 1,
     threshold = 2,
-    episodes_per_experiment = 1000,
+    episodes_per_experiment = 5000,
     update_timestep = 15, #23,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
@@ -31,10 +31,10 @@ hyperparameter_defaults = dict(
     decayRate = 0.999,
     comm = False,
     plots = True,
-    save_models = True,
-    save_data = True,
+    save_models = False,
+    save_data = False,
     save_interval = 10,
-    print_freq = 10,
+    print_freq = 1000,
     recurrent = True,
     mex_size = 4, #2,
     c3 = 0.04, #0.8,
@@ -82,6 +82,7 @@ def train(config):
             agents_dict['agent_'+str(idx)] = PPOcomm_recurrent(config)
 
         #### TRAINING LOOP
+        avg_coop_time = []
         for ep_in in range(config.episodes_per_experiment):
             #print("\nEpisode=", ep_in)
 
@@ -141,12 +142,14 @@ def train(config):
                     agent.update()
 
             if (config.n_experiments == 1 and ep_in%10 == 0):
+                avg_coop_time.append(np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()]))
                 for ag_idx, agent in agents_dict.items():
                     wandb.log({ag_idx+"_return": agent.tmp_return}, step=ep_in)
                     wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
                 wandb.log({"episode": ep_in}, step=ep_in)
                 wandb.log({"avg_return": np.mean([agent.tmp_return for _, agent in agents_dict.items()])}, step=ep_in)
-                wandb.log({"avg_coop": np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()])}, step=ep_in)
+                wandb.log({"avg_coop": avg_coop_time[-1]}, step=ep_in)
+                wandb.log({"avg_coop_time": np.mean(avg_coop_time[-10:])}, step=ep_in)
 
             if (config.save_data == True and ep_in%config.save_interval == 0):
                 df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
