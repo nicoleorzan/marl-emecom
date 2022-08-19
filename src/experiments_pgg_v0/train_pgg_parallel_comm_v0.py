@@ -1,5 +1,5 @@
 from src.environments import pgg_parallel_v0
-from src.algos.PPOcomm2 import PPOcomm2
+from src.algos.PPOcomm import PPOcomm
 import numpy as np
 import torch
 import wandb
@@ -18,8 +18,9 @@ hyperparameter_defaults = dict(
     coins_per_agent = 4,
     mult_fact = [1.,5.],         # list givin min and max value of mult factor
     num_game_iterations = 1,
-    obs_dim = 2,                 # we observe coins we have, and multiplier factor with uncertainty
-    action_space = 2,
+    obs_size = 2,                 # we observe coins we have, and multiplier factor with uncertainty
+    action_size = 2,
+    hidden_size = 23,
     K_epochs = 40,               # update policy for K epochs
     eps_clip = 0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
@@ -29,6 +30,7 @@ hyperparameter_defaults = dict(
     c4 = -0.01,
     lr_actor = 0.001,            # learning rate for actor network
     lr_critic = 0.001,           # learning rate for critic network
+    decayRate = 0.999,
     fraction = True,
     comm = False,
     plots = False,
@@ -36,8 +38,9 @@ hyperparameter_defaults = dict(
     save_data = True,
     save_interval = 50,
     print_freq = 300,
-    mex_space = 2,
-    random_baseline = False
+    mex_size = 2,
+    random_baseline = False,
+    recurrent = False
 )
 
 wandb.init(project="pgg_v0_parallel_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode="offline")
@@ -75,10 +78,7 @@ def train(config):
         agents_dict = {}
         agent_to_idx = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = PPOcomm2(config.n_agents, config.obs_dim, config.action_space, \
-                config.mex_space, config.lr_actor, config.lr_critic, config.gamma, \
-                config.K_epochs, config.eps_clip, config.c1, config.c2, config.c3, config.c4,
-                config.random_baseline)
+            agents_dict['agent_'+str(idx)] = PPOcomm(config)
             agent_to_idx['agent_'+str(idx)] = idx
 
         #### TRAINING LOOP

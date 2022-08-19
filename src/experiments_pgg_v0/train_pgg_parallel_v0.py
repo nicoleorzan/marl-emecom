@@ -1,6 +1,6 @@
 from src.environments import pgg_parallel_v0
 from src.algos.PPO import PPO
-from src.nets.ActorCritic import ActorCriticDiscrete
+from src.nets.ActorCritic import ActorCritic
 import numpy as np
 import torch
 import wandb
@@ -11,15 +11,16 @@ import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 1000,
+    episodes_per_experiment = 3000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [3., 3., 3.],
+    uncertainties = [0., 0., 0.],
     coins_per_agent = 4,
-    mult_fact = [1.,5.],         # list givin min and max value of mult factor
+    mult_fact = [5.,5.],         # list givin min and max value of mult factor
     num_game_iterations = 1,
-    obs_dim = 2,                 # we observe coins we have, and multiplier factor with uncertainty
-    action_space = 2,
+    obs_size = 2,                 # we observe coins we have, and multiplier factor with uncertainty
+    hidden_size = 23,
+    action_size = 2,
     K_epochs = 40,               # update policy for K epochs
     eps_clip = 0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
@@ -27,13 +28,15 @@ hyperparameter_defaults = dict(
     c2 = -0.01,
     lr_actor = 0.001,            # learning rate for actor network
     lr_critic = 0.001,           # learning rate for critic network
+    decayRate = 0.999,
     fraction = True,
     comm = False,
     plots = False,
     save_models = False,
     save_data = True,
     save_interval = 50,
-    print_freq = 300
+    print_freq = 30,
+    recurrent = False
 )
 
 
@@ -72,12 +75,11 @@ def train(config):
         agents_dict = {}
         agent_to_idx = {}
         for idx in range(config.n_agents):
-            model = ActorCriticDiscrete(config.obs_dim, config.action_space)
+            model = ActorCritic(config)
             optimizer = torch.optim.Adam([{'params': model.actor.parameters(), 'lr': config.lr_actor},
                     {'params': model.critic.parameters(), 'lr': config.lr_critic} ])
 
-            agents_dict['agent_'+str(idx)] = PPO(model, optimizer, config.lr_actor, config.lr_critic,  \
-            config.gamma, config.K_epochs, config.eps_clip, config.c1, config.c2)
+            agents_dict['agent_'+str(idx)] = PPO(model, optimizer, config)
             agent_to_idx['agent_'+str(idx)] = idx
 
         #### TRAINING LOOP
