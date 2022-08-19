@@ -99,8 +99,6 @@ class PPOcomm_recurrent():
         self.tmp_actions = []
 
     def select_message(self, state):
-        #print("SELECT MESSAGE")
-        #print("state=", state)
 
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
@@ -113,8 +111,6 @@ class PPOcomm_recurrent():
             self.buffer.messages.append(message)
             self.buffer.comm_logprobs.append(message_logprob)
 
-        #message = torch.Tensor([message.item()]).long()
-        #message = F.one_hot(message, num_classes=self.mex_size)[0]
         return message
 
     def random_messages(self, state):
@@ -128,12 +124,9 @@ class PPOcomm_recurrent():
             self.buffer.messages.append(message)
             self.buffer.comm_logprobs.append(torch.tensor(0.0001))
 
-        #message = torch.Tensor([message.item()]).long()
-        #message = F.one_hot(message, num_classes=self.mex_size)[0]
         return message
 
     def select_action(self, state):
-        #print("SELECT ACTION")
     
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
@@ -174,7 +167,6 @@ class PPOcomm_recurrent():
         return actions_logprobs
 
     def update(self):
-        #print("UPDATE")
         rewards = []
         discounted_reward = 0
         for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
@@ -187,8 +179,6 @@ class PPOcomm_recurrent():
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
         rewards_comm = torch.unsqueeze(rewards, dim=1).repeat(1, self.communication_loops).view(-1)
-        #print("rewards=", rewards)
-        #print("rewards_comm=", rewards_comm)
 
         old_states_c = torch.squeeze(torch.stack(self.buffer.states_c, dim=0)).detach().to(device)
         old_hstates_c = torch.squeeze(torch.stack(self.buffer.hstates_c, dim=0)).detach().to(device)
@@ -227,13 +217,9 @@ class PPOcomm_recurrent():
             surr1_c = ratios_comm*advantages_comm
             surr2_c = torch.clamp(ratios_comm, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_comm
             surr_c = torch.min(surr1_c, surr2_c)
-            #print("surr_c = ", surr_c.shape)
-            #print("surr_a = ", surr_a.shape)
 
             loss_a = (-surr_a + self.c1*self.MseLoss(state_values_act, rewards) + self.c2*dist_entropy_act)
             loss_c = (-surr_c + self.c3*self.MseLoss(state_values_comm, rewards_comm) + self.c4*dist_entropy_mex)
-            #print("loss_a=", loss_a.shape)
-            #print("loss_c=", loss_c.shape)
 
             loss = loss_a.mean() + loss_c.mean()
 
@@ -247,7 +233,6 @@ class PPOcomm_recurrent():
             loss.mean().backward()
             self.optimizer.step()
             self.scheduler.step()
-            #print(self.scheduler.get_lr())
 
         # Copy new weights into old policy
         self.policy_old.load_state_dict(self.policy.state_dict())

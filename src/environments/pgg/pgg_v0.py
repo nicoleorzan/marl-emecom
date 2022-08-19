@@ -93,10 +93,8 @@ class raw_env(AECEnv):
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
         if (self.fraction == True):
-            print("Box")
             return Box(low=np.array([-0.001],dtype=np.float32), high=np.array([1.001],dtype=np.float32))            
         else:
-            print("Discrete")
             return Discrete(self.n_actions)
     
     def observe(self, agent):
@@ -135,6 +133,7 @@ class raw_env(AECEnv):
         self.iter = 0
 
     def step(self, action):
+        print("action=", action)
 
         if self.dones[self.agent_selection]:
             # handles stepping an agent which is already done

@@ -66,20 +66,17 @@ class PPOcomm():
     
         # Communication Policy
         self.policy_comm = ActorCritic(params).to(device)
+        # Action Policy
+        self.policy_act = ActorCritic(params, comm=True).to(device)
+
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor},
                         {'params': self.policy_comm.critic.parameters(), 'lr': self.lr_critic},
-                    ])
+                        {'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor},
+                        {'params': self.policy_act.critic.parameters(), 'lr': self.lr_critic}])
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
         self.policy_comm_old = copy.deepcopy(self.policy_comm).to(device)
-
-        # Action Policy
-        self.policy_act = ActorCritic(params, comm=True).to(device)
-        self.optimizer = torch.optim.Adam([
-                        {'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor},
-                        {'params': self.policy_act.critic.parameters(), 'lr': self.lr_critic},
-                    ])
-
         self.policy_act_old = copy.deepcopy(self.policy_act).to(device)
 
         self.MseLoss = nn.MSELoss()
