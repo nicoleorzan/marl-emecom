@@ -10,33 +10,33 @@ import os
 import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
-    n_experiments = 1,
+    n_experiments = 5,
     threshold = 2,
     episodes_per_experiment = 5000,
-    update_timestep = 15, #23,        # update policy every n timesteps
+    update_timestep = 35, #23,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
+    uncertainties = [0., 0., 0.], # uncertainty on the observation of your own coins
     num_game_iterations = 1,
     communication_loops = 1, #2
     obs_size = 1,                # we observe coins we have (+ actions of all other agents)
-    hidden_size = 53, #23,
+    hidden_size = 100, #23,
     num_rnn_layers = 1,
     action_size = 2,
     K_epochs = 64, #40,               # update policy for K epochs
-    eps_clip = 0.11, #0.2,              # clip parameter for PPO
+    eps_clip = 0.26, #0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
-    c1 = 0.4, #0.5,
-    c2 = 0.004, #-0.01,
-    lr = 0.004, #0.002, #0.001,     con 0.002 andava         # learning rate
-    decayRate = 0.999,
-    comm = False,
+    c1 = 0.1, #0.5,
+    c2 = 0.002, #-0.01,
+    lr = 0.05, #0.002, #0.001,     con 0.002 andava         # learning rate
+    decayRate = 0.98,
+    comm = True,
     plots = True,
     save_models = False,
-    save_data = False,
-    save_interval = 10,
+    save_data = True,
+    save_interval = 20,
     print_freq = 1000,
     recurrent = True,
-    mex_size = 4, #2,
+    mex_size = 6, #2,
     c3 = 0.04, #0.8,
     c4 = 0.009, #-0.003,
     random_baseline = False
@@ -154,7 +154,8 @@ def train(config):
             if (config.save_data == True and ep_in%config.save_interval == 0):
                 df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
                 df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
-                df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop}
+                df_avg_coop = {"avg_coop": avg_coop_time[-1]}
+                df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop}
                 df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
         if (config.plots == True):

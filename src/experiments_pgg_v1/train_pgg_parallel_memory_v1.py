@@ -11,13 +11,13 @@ import os
 import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
-    n_experiments = 1,
+    n_experiments = 5,
     threshold = 2,
     episodes_per_experiment = 5000,
     update_timestep = 40,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
-    num_game_iterations = 3,
+    num_game_iterations = 1,
     obs_size = 1,                 # we observe coins we have + actions of all other agents
     hidden_size = 23,
     num_rnn_layers = 1,
@@ -32,8 +32,8 @@ hyperparameter_defaults = dict(
     comm = False,
     plots = False,
     save_models = False,
-    save_data = False,
-    save_interval = 10,
+    save_data = True,
+    save_interval = 20,
     print_freq = 1000,
     recurrent = True
 )
@@ -134,7 +134,8 @@ def train(config):
             if (config.save_data == True and ep_in%config.save_interval == 0):
                 df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
                 df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
-                df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop}
+                df_avg_coop = {"avg_coop": avg_coop_time[-1]}
+                df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop}
                 df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
         if (config.plots == True):
