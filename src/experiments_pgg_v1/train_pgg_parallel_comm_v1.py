@@ -31,7 +31,7 @@ hyperparameter_defaults = dict(
     comm = True,
     plots = False,
     save_models = False,
-    save_data = False,
+    save_data = True,
     save_interval = 20,
     print_freq = 1000,
     mex_size = 2,
@@ -136,7 +136,7 @@ def train(config):
             if (config.save_data == True and ep_in%config.save_interval == 0):
                 df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
                 df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
-                df_avg_coop = {"avg_coop": avg_coop_time[-1]}
+                df_avg_coop = {"avg_coop": np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()])}
                 df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop}
                 df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
