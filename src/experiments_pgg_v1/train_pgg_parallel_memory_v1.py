@@ -11,24 +11,24 @@ import os
 import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
-    n_experiments = 5,
+    n_experiments = 50,
     threshold = 2,
     episodes_per_experiment = 5000,
-    update_timestep = 40,        # update policy every n timesteps
+    update_timestep = 47,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
     num_game_iterations = 1,
     obs_size = 1,                 # we observe coins we have + actions of all other agents
-    hidden_size = 23,
+    hidden_size = 16,
     num_rnn_layers = 1,
     action_size = 2,
-    K_epochs = 40,               # update policy for K epochs
-    eps_clip = 0.2,              # clip parameter for PPO
+    K_epochs = 33,               # update policy for K epochs
+    eps_clip = 0.347,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
-    c1 = 0.5,
-    c2 = -0.01,
-    lr = 0.002, #0.001,            # learning rate
-    decayRate = 0.999,
+    c1 = 0.59,
+    c2 = -0.009,
+    lr = 0.0023 #0.001,            # learning rate
+    decayRate = 0.998,
     comm = False,
     plots = False,
     save_models = False,
