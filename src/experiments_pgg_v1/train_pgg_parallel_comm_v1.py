@@ -10,33 +10,33 @@ import src.analysis.utils as U
 
 
 hyperparameter_defaults = dict(
-    n_experiments = 5,
+    n_experiments = 50,
     threshold = 2,
     episodes_per_experiment = 5000,
-    update_timestep = 40,        # update policy every n timesteps
+    update_timestep = 20,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
     num_game_iterations = 1,
     obs_size = 1,                # we observe coins we have
-    hidden_size = 23,          
+    hidden_size = 53,          
     action_size = 2,
-    K_epochs = 40,               # update policy for K epochs5
-    eps_clip = 0.2,              # clip parameter for PPO
+    K_epochs = 34,               # update policy for K epochs5
+    eps_clip = 0.28,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
-    c1 = 0.5,
+    c1 = 0.35,
     c2 = -0.001,
-    lr_actor = 0.002, # 0.001,            # learning rate for actor network
-    lr_critic = 0.01, # 0.001,           # learning rate for critic network
-    decayRate = 0.999,
+    lr_actor = 0.003, # 0.001,            # learning rate for actor network
+    lr_critic = 0.003, # 0.001,           # learning rate for critic network
+    decayRate = 0.980,
     comm = True,
     plots = False,
     save_models = False,
     save_data = True,
     save_interval = 20,
     print_freq = 1000,
-    mex_size = 2,
-    c3 = 0.8,
-    c4 = -0.003,
+    mex_size = 5,
+    c3 = 0.39,
+    c4 = -0.0004,
     random_baseline = False
 )
 
