@@ -10,7 +10,7 @@ import os
 import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
-    n_experiments = 5,
+    n_experiments = 50,
     threshold = 2,
     episodes_per_experiment = 5000,
     update_timestep = 35, #23,        # update policy every n timesteps
@@ -22,23 +22,23 @@ hyperparameter_defaults = dict(
     hidden_size = 100, #23,
     num_rnn_layers = 1,
     action_size = 2,
-    K_epochs = 64, #40,               # update policy for K epochs
+    K_epochs = 62, #40,               # update policy for K epochs
     eps_clip = 0.26, #0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
-    c1 = 0.1, #0.5,
+    c1 = 0.63, #0.5,
     c2 = 0.002, #-0.01,
-    lr = 0.05, #0.002, #0.001,     con 0.002 andava         # learning rate
+    lr = 0.089, #0.002, #0.001,     con 0.002 andava         # learning rate
     decayRate = 0.98,
     comm = True,
-    plots = True,
+    plots = False,
     save_models = False,
     save_data = True,
     save_interval = 20,
     print_freq = 1000,
     recurrent = True,
-    mex_size = 6, #2,
-    c3 = 0.04, #0.8,
-    c4 = 0.009, #-0.003,
+    mex_size = 7, #2,
+    c3 = 0.005, #0.8,
+    c4 = 0.003, #-0.003,
     random_baseline = False
 )
 
