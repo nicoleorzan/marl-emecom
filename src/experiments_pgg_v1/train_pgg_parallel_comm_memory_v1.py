@@ -10,42 +10,43 @@ import os
 import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
-    n_experiments = 50,
+    n_experiments = 1,
     threshold = 2,
-    episodes_per_experiment = 5000,
-    update_timestep = 35, #23,        # update policy every n timesteps
+    episodes_per_experiment = 3000,
+    update_timestep = 36, #23,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.], # uncertainty on the observation of your own coins
     num_game_iterations = 1,
     communication_loops = 1, #2
     obs_size = 1,                # we observe coins we have (+ actions of all other agents)
-    hidden_size = 100, #23,
+    hidden_size = 95, #23,
     num_rnn_layers = 1,
     action_size = 2,
     K_epochs = 62, #40,               # update policy for K epochs
-    eps_clip = 0.26, #0.2,              # clip parameter for PPO
+    eps_clip = 0.26746, #0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
-    c1 = 0.63, #0.5,
-    c2 = 0.002, #-0.01,
-    lr = 0.089, #0.002, #0.001,     con 0.002 andava         # learning rate
-    decayRate = 0.98,
+    c1 = 0.630756, #0.5,
+    c2 = 0.002114, #-0.01,
+    lr = 0.08908, #0.002, #0.001,     con 0.002 andava         # learning rate
+    decayRate = 0.98507,
     comm = True,
     plots = False,
     save_models = False,
     save_data = True,
-    save_interval = 20,
+    save_interval = 10,
     print_freq = 1000,
     recurrent = True,
     mex_size = 7, #2,
-    c3 = 0.005, #0.8,
-    c4 = 0.003, #-0.003,
-    random_baseline = False
+    c3 = 0.005766, #0.8,
+    c4 = 0.002900, #-0.003,
+    random_baseline = False,
+    wandb_mode = "online" #"offline"
 )
 
 
 
 
-wandb.init(project="pgg_v1_memory_comm", entity="nicoleorzan", config=hyperparameter_defaults)#, mode="offline")
+wandb.init(project="pgg_v1_memory_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
 folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/"
@@ -141,22 +142,25 @@ def train(config):
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
 
-            if (config.n_experiments == 1 and ep_in%10 == 0):
-                avg_coop_time.append(np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()]))
-                for ag_idx, agent in agents_dict.items():
-                    wandb.log({ag_idx+"_return": agent.tmp_return}, step=ep_in)
-                    wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
-                wandb.log({"episode": ep_in}, step=ep_in)
-                wandb.log({"avg_return": np.mean([agent.tmp_return for _, agent in agents_dict.items()])}, step=ep_in)
-                wandb.log({"avg_coop": avg_coop_time[-1]}, step=ep_in)
-                wandb.log({"avg_coop_time": np.mean(avg_coop_time[-10:])}, step=ep_in)
+            if (ep_in%config.save_interval == 0):
 
-            if (config.save_data == True and ep_in%config.save_interval == 0):
-                df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
-                df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
-                df_avg_coop = {"avg_coop": np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()])}
-                df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop}
-                df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
+                avg_coop_time.append(np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()]))
+                if (config.wandb_mode == "online"):
+                    for ag_idx, agent in agents_dict.items():
+                        wandb.log({ag_idx+"_return": agent.tmp_return}, step=ep_in)
+                        wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
+                    wandb.log({"episode": ep_in}, step=ep_in)
+                    wandb.log({"avg_return": np.mean([agent.tmp_return for _, agent in agents_dict.items()])}, step=ep_in)
+                    wandb.log({"avg_coop": avg_coop_time[-1]}, step=ep_in)
+                    wandb.log({"avg_coop_time": np.mean(avg_coop_time[-10:])}, step=ep_in)
+
+                if (config.save_data == True):
+                    df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
+                    df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
+                    df_avg_coop = {"avg_coop": avg_coop_time[-1]}
+                    df_avg_coop_time = {"avg_coop_time": np.mean(avg_coop_time[-10:])}
+                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop, **df_avg_coop_time}
+                    df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
