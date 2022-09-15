@@ -20,6 +20,7 @@ class ActorCritic(nn.Module):
             self.input_size = self.obs_size + self.n_agents*self.mex_size
         else: 
             self.input_size = self.obs_size
+            self.action_size = self.mex_size # <=====================================
 
         self.actor = nn.Sequential(
             nn.Linear(self.input_size, self.hidden_size),
@@ -56,8 +57,12 @@ class ActorCritic(nn.Module):
         return dist_entropy
     
     def evaluate(self, state, action):
+        #print(state.shape)
+        #print(action)
         action_probs = self.actor(state)
+        #print("action_probs=", action_probs)
         dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
+        #print(dist)
         action_logprob = dist.log_prob(action)
         dist_entropy = dist.entropy()
         state_values = self.critic(state)
