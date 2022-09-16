@@ -14,7 +14,7 @@ class ActorCritic(nn.Module):
 
         self.input_size = input_size
         self.output_size = output_size
-        
+
         self.actor = nn.Sequential(
             nn.Linear(self.input_size, self.hidden_size),
             nn.Tanh(),
@@ -34,10 +34,13 @@ class ActorCritic(nn.Module):
         out = self.actor(state)
         dist = Categorical(logits=out)
 
-        if (greedy):
-            act = torch.argmax(out)
+        if (self.random_baseline == True): 
+            act = torch.randint(0, self.action_size, (1,))[0]
         else:
-            act = dist.sample()
+            if (greedy):
+                act = torch.argmax(out)
+            else:
+                act = dist.sample()
 
         logprob = dist.log_prob(act)
 

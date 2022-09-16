@@ -36,7 +36,8 @@ hyperparameter_defaults = dict(
     save_interval = 10,
     print_freq = 1000,
     recurrent = False,
-    wandb_mode = "online" #"offline"
+    random_baseline = True,
+    wandb_mode = "online" #"offline",
 )
 
 
@@ -89,6 +90,7 @@ def train(config):
             while not done:
 
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
+
                 observations, rewards, done, _ = parallel_env.step(actions)
 
                 for ag_idx, agent in agents_dict.items():
@@ -146,7 +148,10 @@ def train(config):
             U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
     if (config.save_data == True):
-        df.to_csv(path+'data_simple.csv')
+        if (config.random_baseline == True):
+            df.to_csv(path+'data_simple_RND.csv')
+        else: 
+            df.to_csv(path+'data_simple.csv')
     
     # save models
     print("Saving models...")
