@@ -6,26 +6,19 @@ from torch.distributions import Categorical, Normal
 # check hidden layer
 class ActorCritic(nn.Module):
 
-    def __init__(self, params, comm=False):
+    def __init__(self, params, input_size, output_size):
         super(ActorCritic, self).__init__()
 
         # absorb all parameters to self
         for key, val in params.items():  setattr(self, key, val)
 
-        self.comm = comm
-
-        if (self.comm): 
-            # in the case of communication, the input is not only the coins 
-            # but also the messages sent by the other agents
-            self.input_size = self.obs_size + self.n_agents*self.mex_size
-        else: 
-            self.input_size = self.obs_size
-            self.action_size = self.mex_size # <=====================================
-
+        self.input_size = input_size
+        self.output_size = output_size
+        
         self.actor = nn.Sequential(
             nn.Linear(self.input_size, self.hidden_size),
             nn.Tanh(),
-            nn.Linear(self.hidden_size, self.action_size)
+            nn.Linear(self.hidden_size, self.output_size)
         )
         self.critic = nn.Sequential(
             nn.Linear(self.input_size, self.hidden_size),

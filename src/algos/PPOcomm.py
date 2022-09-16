@@ -30,8 +30,12 @@ class PPOcomm():
         self.buffer = RolloutBufferComm()
     
         # Communication Policy and Action Policy
-        self.policy_comm = ActorCritic(params).to(device)
-        self.policy_act = ActorCritic(params, comm=True).to(device)
+        input_comm = self.obs_size
+        output_comm = self.mex_size
+        self.policy_comm = ActorCritic(params, input_comm, output_comm).to(device)
+        input_act = self.obs_size + self.n_agents*self.mex_size
+        output_act = self.action_size
+        self.policy_act = ActorCritic(params, input_act, output_act).to(device)
 
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor},

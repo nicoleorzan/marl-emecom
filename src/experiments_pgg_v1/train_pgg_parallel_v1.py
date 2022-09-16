@@ -18,11 +18,11 @@ hyperparameter_defaults = dict(
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
     num_game_iterations = 1,
-    obs_size = 1,                 # we observe coins we have
+    obs_size = 1,                # we observe coins we have
     hidden_size = 40,
     action_size = 2,
     K_epochs = 25,               # update policy for K epochs
-    eps_clip = 0.192,              # clip parameter for PPO
+    eps_clip = 0.192,            # clip parameter for PPO
     gamma = 0.99,                # discount factor
     c1 = 0.019,
     c2 = -0.01,
@@ -70,7 +70,7 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            model = ActorCritic(config)
+            model = ActorCritic(config, config.obs_size, config.action_size)
             optimizer = torch.optim.Adam([{'params': model.actor.parameters(), 'lr': config.lr_actor},
                     {'params': model.critic.parameters(), 'lr': config.lr_critic} ])
 

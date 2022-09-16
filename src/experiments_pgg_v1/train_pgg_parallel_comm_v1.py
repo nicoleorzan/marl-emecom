@@ -12,13 +12,13 @@ import src.analysis.utils as U
 hyperparameter_defaults = dict(
     n_experiments = 1,
     threshold = 2,
-    episodes_per_experiment = 3000,
+    episodes_per_experiment = 2000,
     update_timestep = 20,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
+    uncertainties = [0., 0., 0.],# uncertainty on the observation of your own c$
     num_game_iterations = 1,
     obs_size = 1,                # we observe coins we have
-    hidden_size = 53,          
+    hidden_size = 53,
     action_size = 2,
     K_epochs = 34,               # update policy for K epochs5
     eps_clip = 0.28079,              # clip parameter for PPO
@@ -29,16 +29,16 @@ hyperparameter_defaults = dict(
     lr_critic = 0.00335, # 0.001,           # learning rate for critic network
     decayRate = 0.98093,
     comm = True,
-    plots = False,
-    save_models = False,
+    plots = True,
+    save_models = True,
     save_data = True,
-    save_interval = 10,
-    print_freq = 1000,
+    save_interval = 20,
+    print_freq = 100,
     mex_size = 5,
     c3 = 0.39374,
     c4 = -0.00045,
     random_baseline = False,
-    wandb_mode = "online" #"offline"
+    wandb_mode ="offline"
 )
 
 wandb.init(project="pgg_v1_parallel_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
@@ -61,6 +61,10 @@ with open(path+'params.json', 'w') as fp:
     json.dump(hyperparameter_defaults, fp)
 
 def train(config):
+
+    mut01 = []; mut12 = []; mut20 = []
+    sc0 = []; sc1 = []; sc2 = []
+    h0 = []; h1 = []; h2  =[]
 
     parallel_env = pgg_parallel_v1.parallel_env(n_agents=config.n_agents, threshold=config.threshold, \
         num_iterations=config.num_game_iterations, uncertainties=config.uncertainties)
@@ -121,6 +125,15 @@ def train(config):
 
             # update PPO agents
             if ep_in != 0 and ep_in % config.update_timestep == 0:
+                mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                mut12.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
+                mut20.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                sc0.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                sc2.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
+                h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
+                h1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
+                h2.append(U.calc_entropy(agents_dict['agent_2'].buffer.messages, config.mex_size))
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
 
@@ -150,6 +163,15 @@ def train(config):
 
             # COOPERATIVITY PERCENTAGE PLOT
             U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
+
+            mutinfos = [mut01, mut12, mut20]
+            U.plot_info(config, mutinfos, path, "instantaneous coordination")
+
+            SCs = [sc0, sc1, sc2]
+            U.plot_info(config, SCs, path, "speaker_consistency")
+
+            Hs = [h0, h1, h2]
+            U.plot_info(config, Hs, path, "entropy")
 
     if (config.save_data == True):
         df.to_csv(path+'data_comm.csv')
