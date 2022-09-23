@@ -92,7 +92,21 @@ class parallel_env(ParallelEnv):
     def close(self):
         pass
 
-    def reset(self, coins=None, seed=123):
+    def assign_coins(self):
+        #agent get a random amount of coin that represents part of the state
+        #if coins is not None:
+        #    self.coins = coins
+        #else:
+        a = [random.randint(0,10) for i in range(self.n_agents)]
+        while (all(elem == a[0] for elem in a)):
+            a = [random.randint(0,10) for i in range(self.n_agents)]
+        sum_a = np.sum(a)
+        coins = a/sum_a
+        self.coins = {agent: coins[idx]*1.5 for idx, agent in enumerate(self.agents)}
+        #print("coins=", self.coins)
+
+
+    def reset(self, seed=123):
 
         self.seed = seed
         self.agents = self.possible_agents[:]
@@ -105,17 +119,8 @@ class parallel_env(ParallelEnv):
         else:
             self.comm_step = False
 
-        # agent get a random amount of coin that represents part of the state
-        if coins is not None:
-            self.coins = coins
-        else:
-            a = [random.randint(0,10) for i in range(self.n_agents)]
-            while (all(elem == a[0] for elem in a)):
-                a = [random.randint(0,10) for i in range(self.n_agents)]
-            sum_a = np.sum(a)
-            coins = a/sum_a
-        self.coins = {agent: coins[idx]*1.5 for idx, agent in enumerate(self.agents)}
-        #print("coins=", self.coins)
+        self.assign_coins()
+
         self.observations = {agent: None for agent in self.agents}
         self.num_moves = 0
  
@@ -144,6 +149,8 @@ class parallel_env(ParallelEnv):
         rewards = {}
 
         num_contributors = np.sum([actions[agent] for agent in self.agents])
+        #print("coins=", self.coins)
+        #print("actions=", actions)
 
         for agent in self.agents:
             # defect
@@ -156,18 +163,31 @@ class parallel_env(ParallelEnv):
                 rewards[agent] = 1.
             elif (actions[agent] == 1 and (num_contributors-1) < self.threshold-1):
                 rewards[agent] = 0.
-            self.coins[agent] = rewards[agent]
+            #self.coins[agent] = rewards[agent]
 
         self.num_moves += 1
         env_done = self.num_moves >= self.num_iterations
         # The dones dictionary must be updated for all players.
         self.dones = {agent: self.num_moves >= self.num_iterations for agent in self.agents}
+        #print(self.dones)
 
         observations = {}
-        for agent in self.agents:
-            obs_coins = np.random.normal(self.coins[agent], self.uncertainties[agent], 1)[0]
-            observations[agent] = np.array(([obs_coins]))
+        #print("rewards=", rewards)
 
+        # assign new amoung of coins
+        if (self.num_iterations > 1):
+
+            # assign new amount of coins for next round
+            self.assign_coins()
+
+            observations = {}
+            for agent in self.agents:
+                obs_coins = np.random.normal(self.coins[agent], self.uncertainties[agent], 1)[0]
+                observations[agent] = np.array(([obs_coins]))
+
+            #print("coins=", self.coins)
+
+        
         infos = {agent: {} for agent in self.agents}
 
         if env_done:

@@ -176,11 +176,16 @@ class PPOcomm():
                 self.c3*self.MseLoss(state_values_comm, rewards) + self.c4*dist_entropy_mex)
 
             # add term to compute signaling entropy loss
+            # introducing bias for positive signaling
             #entropy = torch.FloatTensor([dist_entropy_act])
             entropy = torch.FloatTensor([self.policy_act_old.get_dist_entropy(state).detach() for state in old_states_a])
             hloss =  (torch.full(entropy.size(), self.htarget) - entropy)* (torch.full(entropy.size(), self.htarget) - entropy)
 
             loss = loss + self.hloss_lambda*hloss
+
+            print(loss.shape)
+
+            #loss = loss + mutinfo
 
             self.optimizer.zero_grad()
             loss.mean().backward()

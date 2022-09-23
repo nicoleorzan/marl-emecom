@@ -11,24 +11,24 @@ import src.analysis.utils as U
 
 
 hyperparameter_defaults = dict(
-    n_experiments = 1,
+    n_experiments = 50,
     threshold = 2,
-    episodes_per_experiment = 3000,
-    update_timestep = 43,        # update policy every n timesteps
+    episodes_per_experiment = 4000,
+    update_timestep = 50,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
-    num_game_iterations = 1,
+    num_game_iterations = 2,
     obs_size = 1,                # we observe coins we have
-    hidden_size = 40,
+    hidden_size = 60,
     action_size = 2,
-    K_epochs = 25,               # update policy for K epochs
-    eps_clip = 0.192,            # clip parameter for PPO
+    K_epochs = 60,               # update policy for K epochs
+    eps_clip = 0.2,            # clip parameter for PPO
     gamma = 0.99,                # discount factor
     c1 = 0.019,
     c2 = -0.01,
     lr_actor = 0.002, #0.001,            # learning rate for actor network
     lr_critic = 0.013, #0.001,           # learning rate for critic network
-    decayRate = 0.971,
+    decayRate = 0.999,
     comm = False,
     plots = False,
     save_models = False,
@@ -36,8 +36,8 @@ hyperparameter_defaults = dict(
     save_interval = 10,
     print_freq = 1000,
     recurrent = False,
-    random_baseline = True,
-    wandb_mode = "online" #"offline",
+    random_baseline = False,
+    wandb_mode = "offline",
 )
 
 
@@ -87,9 +87,12 @@ def train(config):
             [agent.reset() for _, agent in agents_dict.items()]
 
             done = False
+            #ii = 0
             while not done:
+                #ii+=1
 
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
+                #print("actions=", actions)
 
                 observations, rewards, done, _ = parallel_env.step(actions)
 
@@ -98,10 +101,14 @@ def train(config):
                     agent.buffer.rewards.append(rewards[ag_idx])
                     agent.buffer.is_terminals.append(done)
                     agent.tmp_return += rewards[ag_idx]
+                    #if (ag_idx == 0):
+                    #    print(agent.tmp_return)
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
                     if done:
                         agent.train_returns.append(agent.tmp_return)
+                        #if (ag_idx == 0):
+                        #    print(agent.train_returns)
                         agent.coop.append(np.mean(agent.tmp_actions))
 
                 # break; if the episode is over

@@ -11,13 +11,13 @@ import os
 import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
-    n_experiments = 1,
+    n_experiments = 50,
     threshold = 2,
-    episodes_per_experiment = 3000,
+    episodes_per_experiment = 4000,
     update_timestep = 36,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],# uncertainty on the observation of your own coins
-    num_game_iterations = 1,
+    num_game_iterations = 2,
     obs_size = 1,                 # we observe coins we have + actions of all other agents
     hidden_size = 40,
     num_rnn_layers = 1,
@@ -36,7 +36,7 @@ hyperparameter_defaults = dict(
     save_interval = 10,
     print_freq = 1000,
     recurrent = True,
-    wandb_mode = "online" #"offline"
+    wandb_mode = "offline"
 )
 
 

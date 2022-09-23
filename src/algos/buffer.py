@@ -59,6 +59,7 @@ class RolloutBufferComm:
         del self.comm_logprobs[:]
         del self.rewards[:]
         del self.is_terminals[:]
+        del self.mut_info[:]
         if self.recurrent:
             del self.hstates_c[:]
             del self.cstates_c[:]
@@ -74,6 +75,7 @@ class RolloutBufferComm:
         print("mex_logprobs=", len(self.comm_logprobs))
         print("rewards=", len(self.rewards))
         print("is_terminals=", len(self.is_terminals))
+        print("mutinfo:", len(self.mut_info))
         if self.recurrent:
             print("hstates_c=", len(self.hstates_c))
             print("cstates_c=", len(self.cstates_c))
