@@ -26,6 +26,7 @@ class PPOcomm():
         
         self.hloss_lambda = 0.01
         self.htarget = np.log(self.action_size)/2.
+        self.sc_target = 0.4
 
         self.buffer = RolloutBufferComm()
     
@@ -126,7 +127,7 @@ class PPOcomm():
     def update(self):
         rewards = []
         discounted_reward = 0
-        for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):#, reversed(self.buffer.mut_info)):
+        for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
             if is_terminal:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
@@ -134,6 +135,8 @@ class PPOcomm():
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
+        #print("len rews", len(rewards))
+        #print("len mutinfo=", len(self.buffer.mut_info))
 
         if (self.policy_comm.input_size == 1):
             old_states_c = torch.stack(self.buffer.states_c, dim=0).detach().to(device)
@@ -150,7 +153,7 @@ class PPOcomm():
             old_logprobs_act = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
             old_logprobs_comm = torch.squeeze(torch.stack(self.buffer.comm_logprobs, dim=0)).detach().to(device)
 
-        for _ in range(self.K_epochs):
+        for _ in range(self.K_epochs):#
   
             logprobs_comm, dist_entropy_mex, state_values_comm = self.policy_comm.evaluate(old_states_c, old_messages)
             logprobs_act, dist_entropy_act, state_values_act = self.policy_act.evaluate(old_states_a, old_actions)
@@ -163,7 +166,8 @@ class PPOcomm():
 
             advantages_act = rewards - state_values_act.detach()
             # here I have to understand if it is better to use rewards or the entropy distribution as "communication reward"
-            advantages_comm = -dist_entropy_mex - state_values_comm.detach()
+            advantages_comm = rewards - state_values_comm.detach()
+            #advantages_comm = -dist_entropy_mex - state_values_comm.detach()
 
             surr1 = ratios_act*advantages_act + ratios_comm*advantages_comm
             surr2 = torch.clamp(ratios_act, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_act
@@ -179,11 +183,14 @@ class PPOcomm():
             # introducing bias for positive signaling
             #entropy = torch.FloatTensor([dist_entropy_act])
             entropy = torch.FloatTensor([self.policy_act_old.get_dist_entropy(state).detach() for state in old_states_a])
-            hloss =  (torch.full(entropy.size(), self.htarget) - entropy)* (torch.full(entropy.size(), self.htarget) - entropy)
+            hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
 
-            loss = loss + self.hloss_lambda*hloss
+            mutinfo = torch.tensor(self.buffer.mut_info, dtype=torch.float32).to(device)
+            mutinfo_loss = (torch.full(mutinfo.size(), self.sc_target) - mutinfo) * (torch.full(mutinfo.size(), self.sc_target) - mutinfo)
+            loss = loss + self.hloss_lambda*hloss + self.c5*mutinfo_loss
 
-            print(loss.shape)
+            #print("loss shape", loss)
+            #print("mutinfo=", mutinfo)
 
             #loss = loss + mutinfo
 

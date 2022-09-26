@@ -10,38 +10,39 @@ import src.analysis.utils as U
 
 
 hyperparameter_defaults = dict(
-    n_experiments = 1,
+    n_experiments = 20,
     threshold = 2,
-    episodes_per_experiment = 2000,
-    update_timestep = 20,        # update policy every n timesteps
+    episodes_per_experiment = 3000,
+    update_timestep = 60,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 0.],# uncertainty on the observation of your own c$
+    uncertainties = [0., 0., 0.],# uncertainty on the observation of your own c
     num_game_iterations = 1,
     obs_size = 1,                # we observe coins we have
-    hidden_size = 53,
+    hidden_size = 100,
     action_size = 2,
-    K_epochs = 34,               # update policy for K epochs5
-    eps_clip = 0.28079,              # clip parameter for PPO
+    K_epochs = 60,               # update policy for K epochs5
+    eps_clip = 0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
     c1 = 0.35762,
     c2 = -0.00155,
-    lr_actor = 0.00300, # 0.001,            # learning rate for actor network
+    lr_actor = 0.003, # 0.001,            # learning rate for actor network
     lr_critic = 0.00335, # 0.001,           # learning rate for critic network
-    decayRate = 0.98093,
+    decayRate = 0.9999,
     comm = True,
     plots = True,
     save_models = True,
     save_data = True,
     save_interval = 20,
     print_freq = 100,
-    mex_size = 5,
+    mex_size = 8,
     c3 = 0.39374,
     c4 = -0.00045,
+    c5 = 1.,
     random_baseline = False,
     wandb_mode ="offline"
 )
 
-wandb.init(project="pgg_v1_parallel_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="pgg_v1_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
 folder = str(config.n_agents)+"agents/"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/"
@@ -62,7 +63,7 @@ with open(path+'params.json', 'w') as fp:
 
 def train(config):
 
-    mut01 = []; mut12 = []; mut20 = []
+    mut01 = []; mut10 = []; mut12 = []; mut21 = []; mut20 = []; mut02 = []
     sc0 = []; sc1 = []; sc2 = []
     h0 = []; h1 = []; h2  =[]
 
@@ -112,6 +113,18 @@ def train(config):
                         agent.train_returns.append(agent.tmp_return)
                         agent.coop.append(np.mean(agent.tmp_actions))
 
+                # mut 01 is how much the messages of agent 1 influenced the actions of agent 0 in the last buffer (group of episodes on which I want to learn)
+                mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                mut10.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                mut12.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
+                mut21.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                mut20.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                mut02.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
+                # voglio salvare dati relativi a quanto gli aenti SONO INFLUENZATI
+                agents_dict['agent_0'].buffer.mut_info.append(np.mean([mut01[-1], mut02[-1]]))
+                agents_dict['agent_1'].buffer.mut_info.append(np.mean([mut10[-1], mut12[-1]]))
+                agents_dict['agent_2'].buffer.mut_info.append(np.mean([mut21[-1], mut20[-1]]))
+
                 # break; if the episode is over
                 if done:
                     break
@@ -123,17 +136,15 @@ def train(config):
                 for ag_idx, agent in agents_dict.items():
                     print("Agent=", ag_idx, "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 
-            # update PPO agents
-            if ep_in != 0 and ep_in % config.update_timestep == 0:
-                mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
-                mut12.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
-                mut20.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+            if (ep_in%config.save_interval == 0):
                 sc0.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
                 sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
                 sc2.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
                 h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
                 h1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
                 h2.append(U.calc_entropy(agents_dict['agent_2'].buffer.messages, config.mex_size))
+            # update PPO agents     
+            if ep_in != 0 and ep_in % config.update_timestep == 0:
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
 
@@ -164,7 +175,7 @@ def train(config):
             # COOPERATIVITY PERCENTAGE PLOT
             U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
-            mutinfos = [mut01, mut12, mut20]
+            mutinfos = [agents_dict['agent_0'].buffer.mut_info, agents_dict['agent_1'].buffer.mut_info, agents_dict['agent_2'].buffer.mut_info]
             U.plot_info(config, mutinfos, path, "instantaneous coordination")
 
             SCs = [sc0, sc1, sc2]
