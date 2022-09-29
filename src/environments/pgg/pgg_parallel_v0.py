@@ -97,6 +97,15 @@ class parallel_env(ParallelEnv):
     def close(self):
         pass
 
+    def assign_coins(self):
+        self.coins = {}
+        for agent in self.agents:
+            coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
+            if coin < 0.:
+                coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
+            self.coins[agent] = coin
+        #self.coins = {agent: self.coins_per_agent for agent in self.agents} 
+        
     def reset(self, seed=123):
         """
         Reset needs to initialize the `agents` attribute and must set up the
@@ -111,10 +120,6 @@ class parallel_env(ParallelEnv):
         self.agents = self.possible_agents[:]
         self.dones = {agent: False for agent in self.agents}
         self.infos = {agent: {} for agent in self.agents}
-        if (self.comm):
-            self.comm_step = True
-        else:
-            self.comm_step = False
 
         if hasattr(self.mult_fact, '__len__'):
             self.current_multiplier = random.uniform(self.min_mult, self.max_mult)
@@ -122,14 +127,9 @@ class parallel_env(ParallelEnv):
             self.current_multiplier = self.mult_fact
 
         self.state = {agent: None for agent in self.agents}
+
+        self.assign_coins()
         
-        self.coins = {}
-        for agent in self.agents:
-            coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
-            if coin < 0.:
-                coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
-            self.coins[agent] = coin
-        #self.coins = {agent: self.coins_per_agent for agent in self.agents} 
         self.num_moves = 0
 
         self.observations = {}
@@ -182,11 +182,23 @@ class parallel_env(ParallelEnv):
         self.dones = {agent: self.num_moves >= self.num_iterations for agent in self.agents}
 
         observations = {}
-        for agent in self.agents:
-            obs_multiplier = np.random.normal(self.current_multiplier, self.uncertainties[agent], 1)[0]
-            if obs_multiplier < 0.:
-                obs_multiplier = 0.
-            observations[agent] = np.array((self.coins[agent], obs_multiplier))
+        #print("rewards=", rewards)
+
+        # assign new amoung of coins
+        if (self.num_iterations > 1):
+
+            # assign new amount of coins for next round
+            self.assign_coins()
+
+            observations = {}
+            for agent in self.agents:
+                obs_multiplier = np.random.normal(self.current_multiplier, self.uncertainties[agent], 1)[0]
+                if obs_multiplier < 0.:
+                    obs_multiplier = 0.
+                observations[agent] = np.array((self.coins[agent], obs_multiplier))
+
+            #print("coins=", self.coins)
+
 
         infos = {agent: {} for agent in self.agents}
 
