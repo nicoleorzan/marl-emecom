@@ -139,7 +139,7 @@ class PPO():
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
-            self.scheduler.step()
+            #self.scheduler.step()
             #print(self.scheduler.get_lr())
 
         # Copy new weights into old policy
