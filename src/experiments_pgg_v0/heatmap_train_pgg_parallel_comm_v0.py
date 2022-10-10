@@ -10,60 +10,61 @@ import os
 import src.analysis.utils as U
 import matplotlib.pyplot as plt
 
-hyperparameter_defaults = dict(
-    n_experiments = 1,
-    episodes_per_experiment = 100,
-    update_timestep = 100,        # update policy every n timesteps
-    n_agents = 3,
-    unc = 1.0, #[0.1, 0.2, 0.5, 1.],
-    coins_mean = 4,
-    mult_factors = [0., 0.1, 0.2, 0.5, 0.7, 1., 2., 3., 6., 8., 10.],
-    num_game_iterations = 1,
-    obs_size = 2,                 # we observe coins we have, and multiplier factor with uncertainty
-    action_size = 2,
-    hidden_size = 50,
-    K_epochs = 40,               # update policy for K epochs
-    eps_clip = 0.2,              # clip parameter for PPO
-    gamma = 0.99,                # discount factor
-    c1 = -0.3,#-1,
-    c2 = 0.1,# 0.01,
-    c3 = -0.5,#-1,
-    c4 = 0.001, #.01, # governa entropy comm
-    lr_actor = 0.1,            # learning rate for actor network
-    lr_critic = 0.001,           # learning rate for critic network
-    lr_actor_comm = 0.05,            # learning rate for actor network
-    lr_critic_comm = 0.001,           # learning rate for critic network
-    decayRate = 0.9999,
-    fraction = False,
-    comm = True,
-    plots = False,
-    save_models = False,
-    save_data = True,
-    save_interval = 1,
-    print_freq = 500,
-    mex_size = 7,
-    random_baseline = False,
-    recurrent = False,
-    wandb_mode ="offline"
-)
+
+def train(unc1):
+
+    hyperparameter_defaults = dict(
+        n_experiments = 1,
+        episodes_per_experiment = 100,
+        update_timestep = 100,        # update policy every n timesteps
+        n_agents = 3,
+        unc = unc1, #[0.1, 0.2, 0.5, 1.],
+        coins_mean = 4,
+        mult_factors = [0., 0.1, 0.2, 0.5, 0.7, 1., 2., 3., 6., 8., 10.],
+        num_game_iterations = 1,
+        obs_size = 2,                 # we observe coins we have, and multiplier factor with uncertainty
+        action_size = 2,
+        hidden_size = 50,
+        K_epochs = 40,               # update policy for K epochs
+        eps_clip = 0.2,              # clip parameter for PPO
+        gamma = 0.99,                # discount factor
+        c1 = -0.3,#-1,
+        c2 = 0.1,# 0.01,
+        c3 = -0.5,#-1,
+        c4 = 0.001, #.01, # governa entropy comm
+        lr_actor = 0.1,            # learning rate for actor network
+        lr_critic = 0.001,           # learning rate for critic network
+        lr_actor_comm = 0.05,            # learning rate for actor network
+        lr_critic_comm = 0.001,           # learning rate for critic network
+        decayRate = 0.9999,
+        fraction = False,
+        comm = True,
+        plots = False,
+        save_models = False,
+        save_data = True,
+        save_interval = 1,
+        print_freq = 500,
+        mex_size = 7,
+        random_baseline = False,
+        recurrent = False,
+        wandb_mode ="offline"
+    )
 
 
-wandb.init(project="pgg_v0_parallel_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
-config = wandb.config
+    wandb.init(project="pgg_v0_parallel_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+    config = wandb.config
 
-folder = str(config.n_agents)+"agents/heatmap/variating_m/comm/"
+    folder = str(config.n_agents)+"agents/heatmap/variating_m/comm/"
 
-path = "data/pgg_v0/"+folder
-if not os.path.exists(path):
-    os.makedirs(path)
-    print("New directory is created!")
+    path = "data/pgg_v0/"+folder
+    if not os.path.exists(path):
+        os.makedirs(path)
+        print("New directory is created!")
 
-print("path=", path)
+    print("path=", path)
 
-with open(path+'params.json', 'w') as fp:
-    json.dump(hyperparameter_defaults, fp)
-
-def train(config):
+    with open(path+'params.json', 'w') as fp:
+        json.dump(hyperparameter_defaults, fp)
 
     mut01 = []; mut10 = []; mut12 = []; mut21 = []; mut20 = []; mut02 = []
     mut0_avg = []; mut1_avg = []; mut2_avg = []
@@ -221,6 +222,6 @@ def train(config):
 if __name__ == "__main__":
 
     print('cmd entry:', sys.argv)
-    unc1 = sys.argv[1]
-    print("unc1=", unc1)
-    train(config)
+    unc1 = float(sys.argv[1])
+    print("unc1=", unc1, type(unc1))
+    train(unc1)
