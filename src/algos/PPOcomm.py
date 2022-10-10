@@ -34,13 +34,14 @@ class PPOcomm():
         input_comm = self.obs_size
         output_comm = self.mex_size
         self.policy_comm = ActorCritic(params, input_comm, output_comm).to(device)
+
         input_act = self.obs_size + self.n_agents*self.mex_size
         output_act = self.action_size
         self.policy_act = ActorCritic(params, input_act, output_act).to(device)
 
         self.optimizer = torch.optim.Adam([
-                        {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor},
-                        {'params': self.policy_comm.critic.parameters(), 'lr': self.lr_critic},
+                        {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm},
+                        {'params': self.policy_comm.critic.parameters(), 'lr': self.lr_critic_comm},
                         {'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor},
                         {'params': self.policy_act.critic.parameters(), 'lr': self.lr_critic}])
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
@@ -153,9 +154,9 @@ class PPOcomm():
             old_logprobs_act = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
             old_logprobs_comm = torch.squeeze(torch.stack(self.buffer.comm_logprobs, dim=0)).detach().to(device)
 
-        for _ in range(self.K_epochs):#
+        for _ in range(self.K_epochs): #
   
-            logprobs_comm, dist_entropy_mex, state_values_comm = self.policy_comm.evaluate(old_states_c, old_messages)
+            logprobs_comm, dist_entropy_comm, state_values_comm = self.policy_comm.evaluate(old_states_c, old_messages)
             logprobs_act, dist_entropy_act, state_values_act = self.policy_act.evaluate(old_states_a, old_actions)
 
             state_values_act = torch.squeeze(state_values_act)
@@ -165,19 +166,42 @@ class PPOcomm():
             ratios_comm = torch.exp(logprobs_comm - old_logprobs_comm.detach())
 
             advantages_act = rewards - state_values_act.detach()
+
+            mutinfo = torch.tensor(self.buffer.mut_info, dtype=torch.float32).to(device)
+            #mutinfo_loss = (torch.full(mutinfo.size(), self.sc_target) - mutinfo) * (torch.full(mutinfo.size(), self.sc_target) - mutinfo)
+            
             # here I have to understand if it is better to use rewards or the entropy distribution as "communication reward"
-            advantages_comm = rewards - state_values_comm.detach()
+            #advantages_comm = rewards - state_values_comm.detach()
+            
+            # the rewards of the comm are the mutual information:
+            # the more information in the channel, the higher the rew
+            advantages_comm = mutinfo - state_values_comm.detach()
             #advantages_comm = -dist_entropy_mex - state_values_comm.detach()
 
-            surr1 = ratios_act*advantages_act + ratios_comm*advantages_comm
+            surr1a = ratios_act*advantages_act
+            surr1b = ratios_comm*advantages_comm
+
+            surr2a = torch.clamp(ratios_act, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_act
+            surr2b = torch.clamp(ratios_comm, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_comm
+
+            loss_a = (-torch.min(surr1a, surr2a) + self.c1*self.MseLoss(state_values_act, rewards) + \
+                self.c2*dist_entropy_act)
+
+            #loss_b = (-torch.min(surr1b, surr2b) + 
+            loss_b = (self.c3*self.MseLoss(state_values_comm, mutinfo) + \
+               self.c4*dist_entropy_comm)
+            #print("lossb=",loss_b)
+
+            loss = loss_a + loss_b
+            """surr1 = ratios_act*advantages_act + ratios_comm*advantages_comm
             surr2 = torch.clamp(ratios_act, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_act
             surr3 = torch.clamp(ratios_comm, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_comm
             
             surr12 = torch.min(surr1, surr2)
 
-            loss = (-torch.min(surr12, surr3) + \
-                self.c1*self.MseLoss(state_values_act, rewards) + self.c2*dist_entropy_act + \
-                self.c3*self.MseLoss(state_values_comm, rewards) + self.c4*dist_entropy_mex)
+            loss = (-torch.min(surr12, surr3))# + \
+            #    self.c1*self.MseLoss(state_values_act, rewards) + self.c2*dist_entropy_act + \
+            #    self.c3*self.MseLoss(state_values_comm, rewards) + self.c4*dist_entropy_mex)"""
 
             # add term to compute signaling entropy loss
             # introducing bias for positive signaling
@@ -185,9 +209,13 @@ class PPOcomm():
             entropy = torch.FloatTensor([self.policy_act_old.get_dist_entropy(state).detach() for state in old_states_a])
             hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
 
-            mutinfo = torch.tensor(self.buffer.mut_info, dtype=torch.float32).to(device)
-            mutinfo_loss = (torch.full(mutinfo.size(), self.sc_target) - mutinfo) * (torch.full(mutinfo.size(), self.sc_target) - mutinfo)
-            loss = loss + self.hloss_lambda*hloss + self.c5*mutinfo_loss
+            #mutinfo = torch.tensor(self.buffer.mut_info, dtype=torch.float32).to(device)
+            #mutinfo_loss = (torch.full(mutinfo.size(), self.sc_target) - mutinfo) * (torch.full(mutinfo.size(), self.sc_target) - mutinfo)
+            #loss = loss + self.hloss_lambda*hloss #+ self.c5*mutinfo_loss*logprobs_comm
+            #print("logprobs_comm=", logprobs_comm.shape) 46
+            #print("los com=", logprobs_comm)
+            #print("mutin=", mutinfo_loss)
+            # print("mutinfo=", mutinfo_loss.shape) 46
 
             #print("loss shape", loss)
             #print("mutinfo=", mutinfo)
@@ -197,7 +225,7 @@ class PPOcomm():
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
-            self.scheduler.step()
+            #self.scheduler.step()
             #print(self.scheduler.get_lr())
 
         # Copy new weights into old policy
