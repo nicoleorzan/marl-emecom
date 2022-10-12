@@ -39,7 +39,7 @@ class PPO():
     
         self.policy = model.to(device)
         self.optimizer = optimizer
-        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer,  gamma=self.decayRate)
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.decayRate)
         
         self.policy_old = copy.deepcopy(model).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
@@ -75,7 +75,7 @@ class PPO():
 
             self.buffer.states.append(state)
             self.buffer.actions.append(action)
-            self.buffer.logprobs.append(action_logprob)
+            self.buffer.logprobs.append(action_logprob.detach())
 
         return action
 
@@ -125,22 +125,25 @@ class PPO():
         for _ in range(self.K_epochs):
 
             logprobs, dist_entropy, state_values = self.policy.evaluate(old_states, old_actions)
-
+            #print("logporbs=", logprobs)
             state_values = torch.squeeze(state_values)
             ratios = torch.exp(logprobs - old_logprobs.detach())
 
             advantages = rewards - state_values.detach()
             surr1 = ratios*advantages
             surr2 = torch.clamp(ratios, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages
+            #print("state values=", state_values)
 
             loss = (-torch.min(surr1, surr2) + self.c1*self.MseLoss(state_values, rewards) + \
                 self.c2*dist_entropy)
+            #print("loss=", loss)
 
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
-            #self.scheduler.step()
             #print(self.scheduler.get_lr())
+
+        self.scheduler.step()
 
         # Copy new weights into old policy
         self.policy_old.load_state_dict(self.policy.state_dict())

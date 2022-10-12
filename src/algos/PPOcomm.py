@@ -69,7 +69,7 @@ class PPOcomm():
 
             self.buffer.states_c.append(state)
             self.buffer.messages.append(message)
-            self.buffer.comm_logprobs.append(message_logprob)
+            self.buffer.comm_logprobs.append(message_logprob.detach())
 
         message = torch.Tensor([message.item()]).long()
         message = F.one_hot(message, num_classes=self.mex_size)[0]
@@ -97,7 +97,7 @@ class PPOcomm():
 
             self.buffer.states_a.append(state_mex)
             self.buffer.actions.append(action)
-            self.buffer.act_logprobs.append(action_logprob)
+            self.buffer.act_logprobs.append(action_logprob.detach())
 
         return action.item()
 
@@ -136,8 +136,6 @@ class PPOcomm():
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
-        #print("len rews", len(rewards))
-        #print("len mutinfo=", len(self.buffer.mut_info))
 
         if (self.policy_comm.input_size == 1):
             old_states_c = torch.stack(self.buffer.states_c, dim=0).detach().to(device)
@@ -184,7 +182,8 @@ class PPOcomm():
             surr2a = torch.clamp(ratios_act, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_act
             surr2b = torch.clamp(ratios_comm, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_comm
 
-            loss_a = (-torch.min(surr1a, surr2a) + self.c1*self.MseLoss(state_values_act, rewards) + \
+            loss_a = (-torch.min(surr1a, surr2a) + \
+                self.c1*self.MseLoss(state_values_act, rewards) + \
                 self.c2*dist_entropy_act)
 
             #loss_b = (-torch.min(surr1b, surr2b) + 
@@ -225,8 +224,9 @@ class PPOcomm():
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
-            #self.scheduler.step()
-            #print(self.scheduler.get_lr())
+
+        self.scheduler.step()
+        print(self.scheduler.get_lr())
 
         # Copy new weights into old policy
         self.policy_comm_old.load_state_dict(self.policy_comm.state_dict())

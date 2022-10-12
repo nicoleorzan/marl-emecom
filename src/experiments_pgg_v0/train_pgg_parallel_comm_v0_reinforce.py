@@ -1,5 +1,5 @@
 from src.environments import pgg_parallel_v0
-from src.algos.PPOcomm import PPOcomm
+from src.algos.ReinforceComm import ReinforceComm
 import numpy as np
 import torch
 import wandb
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 hyperparameter_defaults = dict(
     n_experiments = 1,
     episodes_per_experiment = 2000,
-    update_timestep = 100,       # update policy every n timesteps
+    update_timestep = 30,       # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0.5, 0.5, 0.5],
     coins_per_agent = 10,
@@ -24,13 +24,9 @@ hyperparameter_defaults = dict(
     K_epochs = 40,               # update policy for K epochs
     eps_clip = 0.2,              # clip parameter for PPO
     gamma = 0.99,                # discount factor
-    c1 = -1., #-1,
-    c2 = 0.1, # 0.01,
-    c3 = -0.5, #-0.5, # -0.5, #-1,
-    c4 = 0.01, #0.01, #0.001, #.01,     # governs comm entropy
     lr_actor = 0.01,             # learning rate for actor network
     lr_critic = 0.001,           # learning rate for critic network
-    lr_actor_comm = 0.05,        # learning rate for actor network
+    lr_actor_comm = 0.01,        # learning rate for actor network
     lr_critic_comm = 0.001,      # learning rate for critic network
     decayRate = 0.9,
     fraction = True,
@@ -51,9 +47,9 @@ wandb.init(project="pgg_v0_parallel_comm", entity="nicoleorzan", config=hyperpar
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
-    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/PPO/"
+    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/REINFORCE/"
 else: 
-    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/PPO/"
+    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/REINFORCE/"
 
 path = "data/pgg_v0/"+folder
 if not os.path.exists(path):
@@ -86,7 +82,7 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = PPOcomm(config)
+            agents_dict['agent_'+str(idx)] = ReinforceComm(config)
 
         #### TRAINING LOOP
         avg_coop_time = []
@@ -94,11 +90,9 @@ def train(config):
             #print("\nEpisode=", ep_in)
 
             observations = parallel_env.reset()
-            print("obs=", observations)
             mult_factors.append(parallel_env.current_multiplier)
-            print("mult=",parallel_env.current_multiplier)
                 
-            [agent.reset() for _, agent in agents_dict.items()]
+            [agent.reset_episode() for _, agent in agents_dict.items()]
 
             done = False
             while not done:
@@ -113,14 +107,12 @@ def train(config):
 
                 for ag_idx, agent in agents_dict.items():
                     
-                    agent.buffer.rewards.append(rewards[ag_idx])
-                    agent.buffer.is_terminals.append(done)
-                    agent.tmp_return += rewards[ag_idx]
+                    agent.rewards.append(rewards[ag_idx])
+                    agent.return_episode += rewards[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
-                        #agent.tmp_messages.append(messages[ag_idx])
                     if done:
-                        agent.train_returns.append(agent.tmp_return)
+                        agent.train_returns.append(agent.return_episode)
                         agent.coop.append(np.mean(agent.tmp_actions))
 
                 # mut 01 is how much the messages of agent 1 influenced the actions of agent 0 in the last buffer (group of episodes on which I want to learn)
@@ -172,15 +164,15 @@ def train(config):
                 avg_coop_time.append(np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()]))
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
-                        wandb.log({ag_idx+"_return": agent.tmp_return}, step=ep_in)
+                        wandb.log({ag_idx+"_return": agent.return_episode}, step=ep_in)
                         wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
                     wandb.log({"episode": ep_in}, step=ep_in)
-                    wandb.log({"avg_return": np.mean([agent.tmp_return for _, agent in agents_dict.items()])}, step=ep_in)
+                    wandb.log({"avg_return": np.mean([agent.return_episode for _, agent in agents_dict.items()])}, step=ep_in)
                     wandb.log({"avg_coop": avg_coop_time[-1]}, step=ep_in)
                     wandb.log({"avg_coop_time": np.mean(avg_coop_time[-10:])}, step=ep_in)
 
                 if (config.save_data == True):
-                    df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].tmp_return for i in range(config.n_agents)}
+                    df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].return_episode for i in range(config.n_agents)}
                     df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
                     df_avg_coop = {"avg_coop": avg_coop_time[-1]}
                     df_avg_coop_time = {"avg_coop_time": np.mean(avg_coop_time[-10:])}
