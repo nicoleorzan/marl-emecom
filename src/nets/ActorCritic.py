@@ -30,7 +30,7 @@ class ActorCritic(nn.Module):
     def reset_state(self):
         pass
 
-    def act(self, state, greedy=False):
+    def act(self, state, ent=False, greedy=False):
 
         out = self.actor(state)
         dist = Categorical(logits=out)
@@ -45,13 +45,15 @@ class ActorCritic(nn.Module):
 
         logprob = dist.log_prob(act)
 
+        if (ent):
+            return act.detach(), logprob, dist.entropy().detach()
+
         return act.detach(), logprob #.detach() --> moved from here be necessary for REINFORCE,put it in PPo code
 
     def get_dist_entropy(self, state):
-        action_probs = self.actor(state)
-        dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
-        dist_entropy = dist.entropy()
-        return dist_entropy
+        out = self.actor(state)
+        dist = Categorical(logits=out)  # here I changed probs with logits!!!
+        return dist.entropy()
     
     def evaluate(self, state, action):
         action_probs = self.actor(state)

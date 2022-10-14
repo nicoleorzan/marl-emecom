@@ -42,9 +42,13 @@ class ReinforceComm():
         self.coop = []
         self.reset()
 
+        self.ent = True
+
     def reset(self):
         self.comm_logprobs = []
         self.act_logprobs = []
+        self.comm_entropy = []
+        self.act_entropy = []
         self.rewards = []
         self.mutinfo = []
 
@@ -55,12 +59,15 @@ class ReinforceComm():
     def select_message(self, state):
 
         state = torch.FloatTensor(state).to(device)
-        message, message_logprob = self.policy_comm.act(state)
+        message, message_logprob, entropy = self.policy_comm.act(state, self.ent)
 
         self.buffer.states_c.append(state)
         self.buffer.messages.append(message)
 
+        #print("mex logp=", message_logprob)
+        #print("ent=", entropy)
         self.comm_logprobs.append(message_logprob)
+        self.comm_entropy.append(entropy)
 
         message = torch.Tensor([message.item()]).long()
         message = F.one_hot(message, num_classes=self.mex_size)[0]
@@ -85,25 +92,28 @@ class ReinforceComm():
     
         state = torch.FloatTensor(state).to(device)
         state_mex = torch.cat((state, message))
-        action, action_logprob = self.policy_act.act(state_mex)
+        action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
         self.buffer.states_a.append(state)
         self.buffer.actions.append(action)
 
         self.act_logprobs.append(action_logprob)
-
+        self.act_entropy.append(entropy)
+        
         return action
 
     def update(self):
     
         for i in range(len(self.comm_logprobs)):
-            self.comm_logprobs[i] = -self.comm_logprobs[i] * self.rewards[i]
-            self.act_logprobs[i] = -self.act_logprobs[i] * self.mutinfo[i] #self.rewards[i]
+            self.comm_logprobs[i] = -self.comm_logprobs[i] * self.mutinfo[i] - self.comm_entropy[i]
+            self.act_logprobs[i] = -self.act_logprobs[i] * self.rewards[i]
 
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.comm_logprobs]
         autograd.backward(self.comm_logprobs, tmp, retain_graph=True)
-        autograd.backward(self.act_logprobs, tmp, retain_graph=True)
+
+        tmp1 = [torch.ones(a.data.shape) for a in self.act_logprobs]
+        autograd.backward(self.act_logprobs, tmp1, retain_graph=True)
         self.optimizer.step()
 
         #diminish learning rate
