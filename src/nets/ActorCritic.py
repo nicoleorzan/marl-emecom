@@ -14,10 +14,11 @@ class ActorCritic(nn.Module):
 
         self.input_size = input_size
         self.output_size = output_size
+        self.bottleneck_size = 8
 
         self.actor = nn.Sequential(
             nn.Linear(self.input_size, self.hidden_size),
-            nn.Tanh(),
+            nn.Tanh(), # try out other activation function?
             nn.Linear(self.hidden_size, self.output_size)
         )
         self.critic = nn.Sequential(
@@ -44,7 +45,7 @@ class ActorCritic(nn.Module):
 
         logprob = dist.log_prob(act)
 
-        return act.detach(), logprob.detach()
+        return act.detach(), logprob #.detach() --> moved from here be necessary for REINFORCE,put it in PPo code
 
     def get_dist_entropy(self, state):
         action_probs = self.actor(state)
@@ -53,12 +54,8 @@ class ActorCritic(nn.Module):
         return dist_entropy
     
     def evaluate(self, state, action):
-        #print(state.shape)
-        #print(action)
         action_probs = self.actor(state)
-        #print("action_probs=", action_probs)
         dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
-        #print(dist)
         action_logprob = dist.log_prob(action)
         dist_entropy = dist.entropy()
         state_values = self.critic(state)

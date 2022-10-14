@@ -226,7 +226,7 @@ class PPOcomm():
             self.optimizer.step()
 
         self.scheduler.step()
-        print(self.scheduler.get_lr())
+        #print(self.scheduler.get_lr())
 
         # Copy new weights into old policy
         self.policy_comm_old.load_state_dict(self.policy_comm.state_dict())

@@ -9,29 +9,29 @@ import src.analysis.utils as U
 
 # azione 1 e` cooperativa
 
-def env(n_agents, coins_per_agent, num_iterations=1, mult_fact=None, uncertainties=None, fraction=False, comm=False):
+def env(config):
     """
     The env function often wraps the environment in wrappers by default.
     You can find full documentation for these methods
     elsewhere in the developer documentation.
     """
-    env = raw_env(n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties, fraction, comm)
+    env = raw_env(config)
     # This wrapper is only for environments which print results to the terminal
     # env = wrappers.CaptureStdoutWrapper(env)
     # this wrapper helps error handling for discrete action spaces
-    if (fraction == False):
+    if (config.fraction == False):
         env = wrappers.AssertOutOfBoundsWrapper(env)
     # Provides a wide vareity of helpful user errors
     # Strongly recommended
     env = wrappers.OrderEnforcingWrapper(env)
     return env
 
-def raw_env(n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties, fraction, comm):
+def raw_env(config):
     '''
     To support the AEC API, the raw_env() function just uses the from_parallel
     function to convert from a ParallelEnv to an AEC env
     '''
-    env = parallel_env(n_agents, coins_per_agent, num_iterations, mult_fact, uncertainties, fraction, comm)
+    env = parallel_env(config)
     env = parallel_to_aec(env)
     return env
 
@@ -41,7 +41,7 @@ class parallel_env(ParallelEnv):
         "name": "pgg_parallel_v0"
         }
 
-    def __init__(self, n_agents, coins_per_agent, num_iterations, mult_fact=None, uncertainties=None, fraction=False, comm=False):
+    def __init__(self, config):
         '''
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -49,32 +49,48 @@ class parallel_env(ParallelEnv):
         - observation_spaces
 
         These attributes should not be changed after initialization.
+
+        In config we need:
+        - n_agents
+        - n_game_iterations
+        - mult_factor (list with two numers, bounduaries or the same: [0., 5.] or [1., 1.])
+        - uncertainies (list with uncertainty for every agent)
         '''
-        self.n_agents = n_agents
-        self.coins_per_agent = coins_per_agent
+
+        for key, val in config.items(): setattr(self, key, val)
+
         self.coins_mean = 4
-        self.coins_var = 2
-        self.fraction = fraction
-        self.mult_fact = mult_fact if mult_fact != None else 1
-        if hasattr(mult_fact, '__len__'):
-            self.min_mult = mult_fact[0]
-            self.max_mult = mult_fact[1]
+        self.coins_var = 1
+
+        self.z_value = 4 # max numer of sigma that I want to check if I am away from the mean
+        self.coins_min = -self.z_value*np.sqrt(self.coins_var) + self.coins_mean
+        self.coins_max = self.z_value*np.sqrt(self.coins_var) + self.coins_mean
+        
+        if hasattr(self.mult_fact, '__len__'):
+            self.min_mult = self.mult_fact[0]
+            self.max_mult = self.mult_fact[1]
         else: 
-            self.min_mult = mult_fact
-            self.max_mult = mult_fact
-        self.num_iterations = num_iterations
+            self.min_mult = self.mult_fact
+            self.max_mult = self.mult_fact
+        self.mean_mult = (self.min_mult + self.max_mult)/2.
+
         self.possible_agents = ["agent_" + str(r) for r in range(self.n_agents)]
         self.agents = self.possible_agents[:]
         self.agent_name_mapping = dict(zip(self.possible_agents, list(range(len(self.possible_agents)))))
-        self.comm = comm
 
-        if (uncertainties is not None):
-            assert (self.n_agents == len(uncertainties))
-            self.uncertainties = {}
+        if (self.uncertainties is not None):
+            assert (self.n_agents == len(self.uncertainties))
+            self.uncertainties_dict = {}
+            self.min_observable_mult = {}
+            self.max_observable_mult = {}
             for idx, agent in enumerate(self.agents):
-                self.uncertainties[agent] = uncertainties[idx]
+                self.uncertainties_dict[agent] = self.uncertainties[idx]
+                self.min_observable_mult[agent] = self.min_mult - \
+                    self.z_value*self.uncertainties_dict[agent]
+                self.max_observable_mult[agent] = self.max_mult + \
+                    self.z_value*self.uncertainties_dict[agent]
         else: 
-            self.uncertainties = {agent: 0 for agent in self.agents}
+            self.uncertainties_dict = {agent: 0 for agent in self.agents}
         self.n_actions = 2 # give money, keep money
         self.obs_space_size = 2 # I can observe the amount of money I have (precisely), and the multiplicative fctor (with uncertaity)
 
@@ -97,16 +113,48 @@ class parallel_env(ParallelEnv):
     def close(self):
         pass
 
-    def assign_coins(self):
+    def assign_coins_normal(self):
         self.coins = {}
+        self.normalized_coins = {}
         for agent in self.agents:
             coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
             if coin < 0.:
                 coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
             self.coins[agent] = coin
-        #self.coins = {agent: self.coins_per_agent for agent in self.agents} 
+            #print("coins=", coin)
+            self.normalized_coins[agent] = (self.coins[agent] - self.coins_min)/(self.coins_max - self.coins_min)
+            #print("norm coin=", self.normalized_coins[agent])
+
+    def assign_coins2(self, coins):
+        for i, agent in enumerate(self.agents):
+            self.coins[agent] = coins[i]
         
-    def reset(self, seed=123):
+    def observe(self):
+        #print("\ncoins=", self.coins)
+        #print("normalized coins=", self.normalized_coins)
+        #print("Mult factor=", self.current_multiplier)
+        self.observations = {}
+        for agent in self.agents:
+            obs_multiplier = np.random.normal(self.current_multiplier, self.uncertainties_dict[agent], 1)[0]
+            #print("obs mult=", obs_multiplier)
+            if obs_multiplier < 0.:
+                obs_multiplier = 0.
+
+            # normalize the observed mutiplier (after this has been observed with uncertainty)
+            if self.normalize_nn_inputs == True:
+                if (self.min_mult == self.max_mult):
+                    obs_multiplier_norm = 0.
+                else:
+                    obs_multiplier_norm = (obs_multiplier - self.min_observable_mult[agent])/(self.max_observable_mult[agent] - self.min_observable_mult[agent])
+                self.observations[agent] = np.array((self.normalized_coins[agent], obs_multiplier_norm))
+            # or if I don't normalize
+            else:
+                self.observations[agent] = np.array((self.coins[agent], obs_multiplier))
+            #print("obs_mult_norm=", obs_multiplier_norm)
+        
+        #print("observations=", self.observations)
+        
+    def reset(self, coins=None, unc=None, mult_in=None, seed=123):
         """
         Reset needs to initialize the `agents` attribute and must set up the
         environment so that render(), and step() can be called without issues.
@@ -121,25 +169,30 @@ class parallel_env(ParallelEnv):
         self.dones = {agent: False for agent in self.agents}
         self.infos = {agent: {} for agent in self.agents}
 
-        if hasattr(self.mult_fact, '__len__'):
-            self.current_multiplier = random.uniform(self.min_mult, self.max_mult)
-        else: 
-            self.current_multiplier = self.mult_fact
+        if (mult_in is not None):
+            self.current_multiplier = mult_in
+        else:
+            if hasattr(self.mult_fact, '__len__'):
+                self.current_multiplier = random.uniform(self.min_mult, self.max_mult)
+            else: 
+                self.current_multiplier = self.mult_fact
 
         self.state = {agent: None for agent in self.agents}
 
-        self.assign_coins()
+        if (coins is not None):
+            self.assign_coins2(coins)
+        else:
+            self.assign_coins_normal()
+
+        if (unc is not None):
+            for agent in self.agents:
+                self.uncertainties_dict[agent] = unc
         
         self.num_moves = 0
 
-        self.observations = {}
-        for agent in self.agents:
-            obs_multiplier = np.random.normal(self.current_multiplier, self.uncertainties[agent], 1)[0]
-            if obs_multiplier < 0.:
-                obs_multiplier = 0.
-            self.observations[agent] = np.array((self.coins[agent], obs_multiplier))
+        self.observe()
 
-        return self.observations  
+        return self.observations
 
     def communication_rewards(self, messages, actions):
 
@@ -177,28 +230,20 @@ class parallel_env(ParallelEnv):
             #self.coins[agent] = rewards[agent]
 
         self.num_moves += 1
-        env_done = self.num_moves >= self.num_iterations
+        env_done = self.num_moves >= self.num_game_iterations
         # The dones dictionary must be updated for all players.
-        self.dones = {agent: self.num_moves >= self.num_iterations for agent in self.agents}
+        self.dones = {agent: self.num_moves >= self.num_game_iterations for agent in self.agents}
 
         observations = {}
         #print("rewards=", rewards)
 
         # assign new amoung of coins
-        if (self.num_iterations > 1):
+        if (self.num_game_iterations > 1):
 
             # assign new amount of coins for next round
-            self.assign_coins()
+            self.assign_coins_normal()
 
-            observations = {}
-            for agent in self.agents:
-                obs_multiplier = np.random.normal(self.current_multiplier, self.uncertainties[agent], 1)[0]
-                if obs_multiplier < 0.:
-                    obs_multiplier = 0.
-                observations[agent] = np.array((self.coins[agent], obs_multiplier))
-
-            #print("coins=", self.coins)
-
+            self.observe()
 
         infos = {agent: {} for agent in self.agents}
 

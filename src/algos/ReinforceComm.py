@@ -46,6 +46,7 @@ class ReinforceComm():
         self.comm_logprobs = []
         self.act_logprobs = []
         self.rewards = []
+        self.mutinfo = []
 
     def reset_episode(self):
         self.return_episode = 0
@@ -56,6 +57,7 @@ class ReinforceComm():
         state = torch.FloatTensor(state).to(device)
         message, message_logprob = self.policy_comm.act(state)
 
+        self.buffer.states_c.append(state)
         self.buffer.messages.append(message)
 
         self.comm_logprobs.append(message_logprob)
@@ -69,6 +71,7 @@ class ReinforceComm():
         state = torch.FloatTensor(state).to(device)
         message = torch.randint(0, self.mex_size, (self.mex_size-1,))[0]
 
+        self.buffer.states_c.append(state)
         self.buffer.messages.append(message)
 
         self.comm_logprobs.append(torch.tensor(0.0001))
@@ -84,6 +87,7 @@ class ReinforceComm():
         state_mex = torch.cat((state, message))
         action, action_logprob = self.policy_act.act(state_mex)
 
+        self.buffer.states_a.append(state)
         self.buffer.actions.append(action)
 
         self.act_logprobs.append(action_logprob)
@@ -94,7 +98,7 @@ class ReinforceComm():
     
         for i in range(len(self.comm_logprobs)):
             self.comm_logprobs[i] = -self.comm_logprobs[i] * self.rewards[i]
-            self.act_logprobs[i] = -self.act_logprobs[i] * self.rewards[i]
+            self.act_logprobs[i] = -self.act_logprobs[i] * self.mutinfo[i] #self.rewards[i]
 
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.comm_logprobs]
