@@ -12,41 +12,41 @@ import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 2000,
-    update_timestep = 30,        # update policy every n timesteps: same as batch side in this case
+    episodes_per_experiment = 40000,
+    update_timestep = 64, #60,        # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
-    uncertainties = [0.5, 0.5, 0.5],
-    coins_per_agent = 10,
-    mult_fact = [0.,7.],         # list givin min and max value of mult factor
+    uncertainties = [0., 0., 5.],
+    mult_fact = [0.,7.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
-    hidden_size = 64, # power of two!
+    hidden_size = 32, # power of two!
     action_size = 2,
-    eps_clip = 0.2,              # clip parameter for PPO
-    gamma = 0.99,                # discount factor
-    lr_actor = 0.01,              # learning rate for actor network
-    lr_critic = 0.001,           # learning rate for critic network
+    lr_actor = 0.005,              # learning rate for actor network
+    lr_critic = 0.01,           # learning rate for critic network
     decayRate = 0.99,
     fraction = False,
     comm = False,
     plots = True,
-    save_models = False,
+    save_models = True,
     save_data = True,
     save_interval = 20,
-    print_freq = 3000,
+    print_freq = 500,
     recurrent = False,
     random_baseline = False,
-    wandb_mode = "offline"
+    wandb_mode = "offline",
+    normalize_nn_inputs = True
 )
 
 
-wandb.init(project="pgg_v0_parallel_reinforce", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="reinforce_pgg_v0", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
     folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/REINFORCE/"
 else: 
     folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/REINFORCE/"
+if (config.normalize_nn_inputs == True):
+    folder = folder + "normalized/"
 
 path = "data/pgg_v0/"+folder
 if not os.path.exists(path):
@@ -60,10 +60,8 @@ with open(path+'params.json', 'w') as fp:
 
 def train(config):
 
-    parallel_env = pgg_parallel_v0.parallel_env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, \
-        num_iterations=config.num_game_iterations, mult_fact=config.mult_fact, \
-        uncertainties=config.uncertainties, fraction=config.fraction, comm=config.comm)
-
+    parallel_env = pgg_parallel_v0.parallel_env(config)
+    
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
             ["ret_ag"+str(i) for i in range(config.n_agents)] + \
@@ -94,10 +92,13 @@ def train(config):
             done = False
             while not done:
 
+                #print(observations)
+                obs_old = observations
+
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
-
+                #print("rews=", rewards)
                 for ag_idx, agent in agents_dict.items():
                     
                     agent.rewards.append(rewards[ag_idx])
@@ -115,9 +116,10 @@ def train(config):
             if (ep_in) % config.print_freq == 0:
                 print("Experiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, config.num_game_iterations))
+                coins = parallel_env.get_coins()
                 print("Episodic Reward:")
                 for ag_idx, agent in agents_dict.items():
-                    print("Agent=", ag_idx, "action=", actions[ag_idx], "rew=", rewards[ag_idx])
+                    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 
             # update agents with REINFORCE
             if ep_in != 0 and ep_in % config.update_timestep == 0:
@@ -150,6 +152,8 @@ def train(config):
 
             # COOPERATIVITY PERCENTAGE PLOT
             U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
+
+            U.plot_losses(config, agents_dict, path, "losses")
 
     if (config.save_data == True):
         if (config.random_baseline == True):

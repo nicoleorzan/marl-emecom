@@ -59,12 +59,14 @@ class parallel_env(ParallelEnv):
 
         for key, val in config.items(): setattr(self, key, val)
 
-        self.coins_mean = 4
-        self.coins_var = 1
+        #self.coins_mean = 4
+        #self.coins_var = 1
+        #self.coins_min = 1.
+        #self.coins_max = 5.
 
         self.z_value = 4 # max numer of sigma that I want to check if I am away from the mean
-        self.coins_min = -self.z_value*np.sqrt(self.coins_var) + self.coins_mean
-        self.coins_max = self.z_value*np.sqrt(self.coins_var) + self.coins_mean
+        #self.coins_min = -self.z_value*np.sqrt(self.coins_var) + self.coins_mean
+        #self.coins_max = self.z_value*np.sqrt(self.coins_var) + self.coins_mean
         
         if hasattr(self.mult_fact, '__len__'):
             self.min_mult = self.mult_fact[0]
@@ -72,7 +74,6 @@ class parallel_env(ParallelEnv):
         else: 
             self.min_mult = self.mult_fact
             self.max_mult = self.mult_fact
-        self.mean_mult = (self.min_mult + self.max_mult)/2.
 
         self.possible_agents = ["agent_" + str(r) for r in range(self.n_agents)]
         self.agents = self.possible_agents[:]
@@ -113,6 +114,21 @@ class parallel_env(ParallelEnv):
     def close(self):
         pass
 
+    def assign_coins_fixed(self):
+        self.coins = {}
+        self.normalized_coins = {}
+        for agent in self.agents:
+            self.coins[agent] = 4. # what they have
+            self.normalized_coins[agent] = 0. # what they see
+
+
+    def assign_coins_uniform(self):
+        self.coins = {}
+        self.normalized_coins = {}
+        for agent in self.agents:
+            self.coins[agent] = np.random.uniform(self.coins_min, self.coins_max, 1)[0]
+            self.normalized_coins[agent] = (self.coins[agent] - self.coins_min)/(self.coins_max - self.coins_min)
+
     def assign_coins_normal(self):
         self.coins = {}
         self.normalized_coins = {}
@@ -121,22 +137,13 @@ class parallel_env(ParallelEnv):
             if coin < 0.:
                 coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
             self.coins[agent] = coin
-            #print("coins=", coin)
             self.normalized_coins[agent] = (self.coins[agent] - self.coins_min)/(self.coins_max - self.coins_min)
-            #print("norm coin=", self.normalized_coins[agent])
-
-    def assign_coins2(self, coins):
-        for i, agent in enumerate(self.agents):
-            self.coins[agent] = coins[i]
         
     def observe(self):
-        #print("\ncoins=", self.coins)
-        #print("normalized coins=", self.normalized_coins)
-        #print("Mult factor=", self.current_multiplier)
+
         self.observations = {}
         for agent in self.agents:
             obs_multiplier = np.random.normal(self.current_multiplier, self.uncertainties_dict[agent], 1)[0]
-            #print("obs mult=", obs_multiplier)
             if obs_multiplier < 0.:
                 obs_multiplier = 0.
 
@@ -149,10 +156,7 @@ class parallel_env(ParallelEnv):
                 self.observations[agent] = np.array((self.normalized_coins[agent], obs_multiplier_norm))
             # or if I don't normalize
             else:
-                self.observations[agent] = np.array((self.coins[agent], obs_multiplier))
-            #print("obs_mult_norm=", obs_multiplier_norm)
-        
-        #print("observations=", self.observations)
+                self.observations[agent] = np.array((self.coins[agent], obs_multiplier))        
         
     def reset(self, coins=None, unc=None, mult_in=None, seed=123):
         """
@@ -174,6 +178,7 @@ class parallel_env(ParallelEnv):
         else:
             if hasattr(self.mult_fact, '__len__'):
                 self.current_multiplier = random.uniform(self.min_mult, self.max_mult)
+                #self.current_multiplier = random.sample([0,1,2,3,4,5,6], 1)[0]
             else: 
                 self.current_multiplier = self.mult_fact
 
@@ -182,7 +187,7 @@ class parallel_env(ParallelEnv):
         if (coins is not None):
             self.assign_coins2(coins)
         else:
-            self.assign_coins_normal()
+            self.assign_coins_fixed()
 
         if (unc is not None):
             for agent in self.agents:
@@ -193,6 +198,9 @@ class parallel_env(ParallelEnv):
         self.observe()
 
         return self.observations
+
+    def get_coins(self):
+        return self.coins
 
     def communication_rewards(self, messages, actions):
 
@@ -241,7 +249,7 @@ class parallel_env(ParallelEnv):
         if (self.num_game_iterations > 1):
 
             # assign new amount of coins for next round
-            self.assign_coins_normal()
+            self.assign_coins_fixed()
 
             self.observe()
 

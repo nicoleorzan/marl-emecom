@@ -11,45 +11,45 @@ import matplotlib.pyplot as plt
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 2000,
-    update_timestep = 30,       # update policy every n timesteps
+    episodes_per_experiment = 10000,
+    update_timestep = 64, #128,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0.5, 0.5, 0.5],
-    coins_per_agent = 10,
-    mult_fact = [0.,7.],       # list givin min and max value of mult factor
+    uncertainties = [0., 0., 0.],#, 0.],
+    mult_fact = [0.,0.],         # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
-    hidden_size = 64,
-    K_epochs = 40,               # update policy for K epochs
-    eps_clip = 0.2,              # clip parameter for PPO
+    hidden_size = 62,
     gamma = 0.99,                # discount factor
-    lr_actor = 0.01,             # learning rate for actor network
+    lr_actor = 0.005,             # learning rate for actor network
     lr_critic = 0.001,           # learning rate for critic network
-    lr_actor_comm = 0.01,        # learning rate for actor network
+    lr_actor_comm = 0.005,        # learning rate for actor network
     lr_critic_comm = 0.001,      # learning rate for critic network
     decayRate = 0.9,
     fraction = True,
     comm = True,
     plots = True,
-    save_models = False,
+    save_models = True,
     save_data = True,
-    save_interval = 1,
-    print_freq = 500,
-    mex_size = 7,
+    save_interval = 30,
+    print_freq = 100,
+    mex_size = 5,
     random_baseline = False,
     recurrent = False,
-    wandb_mode ="offline"
+    wandb_mode ="offline",
+    normalize_nn_inputs = True
 )
 
 
-wandb.init(project="pgg_v0_parallel_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
     folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/REINFORCE/"
 else: 
     folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/REINFORCE/"
+if (config.normalize_nn_inputs == True):
+    folder = folder + "normalized/"
 
 path = "data/pgg_v0/"+folder
 if not os.path.exists(path):
@@ -69,8 +69,7 @@ def train(config):
     h0 = []; h1 = []; h2  = []
     mult_factors = []
 
-    parallel_env = pgg_parallel_v0.parallel_env(n_agents=config.n_agents, coins_per_agent=config.coins_per_agent, \
-        num_iterations=config.num_game_iterations, mult_fact=config.mult_fact, uncertainties=config.uncertainties)
+    parallel_env = pgg_parallel_v0.parallel_env(config)
 
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
@@ -102,6 +101,7 @@ def train(config):
                 else:
                     messages = {agent: agents_dict[agent].select_message(observations[agent]) for agent in parallel_env.agents}
                 message = torch.stack([v for _, v in messages.items()]).view(-1)
+                #print("mex=", message)
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)
 
@@ -114,27 +114,43 @@ def train(config):
                     if done:
                         agent.train_returns.append(agent.return_episode)
                         agent.coop.append(np.mean(agent.tmp_actions))
+                if (config.n_agents == 2):
+                    mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                    mut10.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                    sc0.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                    sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                    # voglio salvare dati relativi a quanto gli aenti SONO INFLUENZATI
+                    agents_dict['agent_0'].mutinfo.append(np.mean([mut01[-1], mut10[-1]]))
+                    agents_dict['agent_1'].mutinfo.append(np.mean([mut01[-1], mut10[-1]]))
 
-                # mut 01 is how much the messages of agent 1 influenced the actions of agent 0 in the last buffer (group of episodes on which I want to learn)
-                mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
-                mut10.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
-                mut12.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
-                mut21.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
-                mut20.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
-                mut02.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
-                #print("sc0=", U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size), "mut=", np.mean([mut01[-1], mut02[-1]]))
-                sc0.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
-                sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
-                sc2.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
-                
-                # voglio salvare dati relativi a quanto gli aenti SONO INFLUENZATI
-                agents_dict['agent_0'].buffer.mut_info.append(np.mean([mut01[-1], mut02[-1]]))
-                #print("sc0=", sc0[-1])
-                agents_dict['agent_1'].buffer.mut_info.append(np.mean([mut10[-1], mut12[-1]]))
-                agents_dict['agent_2'].buffer.mut_info.append(np.mean([mut21[-1], mut20[-1]]))
-                mut0_avg.append(np.mean([mut01[-1], mut02[-1]]))
-                mut1_avg.append(np.mean([mut10[-1], mut12[-1]]))
-                mut2_avg.append(np.mean([mut21[-1], mut20[-1]]))
+                    agents_dict['agent_0'].sc.append(sc0)
+                    agents_dict['agent_1'].sc.append(sc1)
+                    mut0_avg.append(mut01[-1])
+                    mut1_avg.append(mut10[-1])
+                else: 
+                    # mut 01 is how much the messages of agent 1 influenced the actions of agent 0 in the last buffer (group of episodes on which I want to learn)
+                    mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                    mut10.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                    mut12.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
+                    mut21.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                    mut20.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                    mut02.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
+                    #print("sc0=", U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size), "mut=", np.mean([mut01[-1], mut02[-1]]))
+                    sc0.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                    sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
+                    sc2.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
+                    
+                    # voglio salvare dati relativi a quanto gli aenti SONO INFLUENZATI
+                    agents_dict['agent_0'].mutinfo.append(np.mean([mut01[-1], mut02[-1]]))
+                    agents_dict['agent_1'].mutinfo.append(np.mean([mut10[-1], mut12[-1]]))
+                    agents_dict['agent_2'].mutinfo.append(np.mean([mut21[-1], mut20[-1]]))
+
+                    agents_dict['agent_0'].sc.append(sc0)
+                    agents_dict['agent_1'].sc.append(sc1)
+                    agents_dict['agent_2'].sc.append(sc2)
+                    mut0_avg.append(np.mean([mut01[-1], mut02[-1]]))
+                    mut1_avg.append(np.mean([mut10[-1], mut12[-1]]))
+                    mut2_avg.append(np.mean([mut21[-1], mut20[-1]]))
 
                 # break; if the episode is over
                 if done:
@@ -145,15 +161,21 @@ def train(config):
                     ep_in, parallel_env.current_multiplier, config.num_game_iterations))
                 print("Episodic Reward:")
                 for ag_idx, agent in agents_dict.items():
-                    print("Agent=", ag_idx, "action=", actions[ag_idx], "rew=", rewards[ag_idx])
+                    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', parallel_env.coins[ag_idx]),\
+                        "obs=", agent.buffer.states_a[-1], "action=", actions[ag_idx], "rew=", rewards[ag_idx],\
+                        "mutinfo=", agent.mutinfo[-1], "comm entropy=",  str.format('{0:.3f}', agent.comm_entropy[-1].detach().item()))
 
             if (ep_in%config.save_interval == 0):
                 #sc0.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
                 #sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
                 #sc2.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
-                h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
-                h1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
-                h2.append(U.calc_entropy(agents_dict['agent_2'].buffer.messages, config.mex_size))
+                if (config.n_agents == 2):
+                    h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
+                    h1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
+                else:
+                    h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
+                    h1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
+                    h2.append(U.calc_entropy(agents_dict['agent_2'].buffer.messages, config.mex_size))
             # update PPO agents     
             if ep_in != 0 and ep_in % config.update_timestep == 0:
                 for ag_idx, agent in agents_dict.items():
@@ -195,6 +217,10 @@ def train(config):
 
             Hs = [h0, h1, h2]
             U.plot_info(config, Hs, path, "entropy")
+
+            U.plot_losses(config, agents_dict, path, "losses")
+
+            U.plot_losses(config, agents_dict, path, "losses_comm", True)
 
             plt.figure(0)
             n, bins, patches = plt.hist(mult_factors)

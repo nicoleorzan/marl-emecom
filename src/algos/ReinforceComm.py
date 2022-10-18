@@ -4,6 +4,7 @@ from src.nets.ActorCritic import ActorCritic
 import torch
 import torch.nn.functional as F
 import torch.autograd as autograd
+import numpy as np
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -43,6 +44,10 @@ class ReinforceComm():
         self.reset()
 
         self.ent = True
+        self.mutinfo_param = 2.
+
+        self.saved_losses_comm = []
+        self.saved_losses = []
 
     def reset(self):
         self.comm_logprobs = []
@@ -51,6 +56,7 @@ class ReinforceComm():
         self.act_entropy = []
         self.rewards = []
         self.mutinfo = []
+        self.sc = []
 
     def reset_episode(self):
         self.return_episode = 0
@@ -103,10 +109,22 @@ class ReinforceComm():
         return action
 
     def update(self):
+
+        # should I normalize the rewards????????
+        #print("rewards=", self.rewards)
+        #rewards = torch.tensor(self.rewards, dtype=torch.float32).to(device)
+        #print("mean rws=", torch.mean(rewards))
+        #rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
+        #print("mean of normalized rewards=",torch.mean(rewards))
+        rewards =  self.rewards
+        rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards)) for i in rewards]
     
         for i in range(len(self.comm_logprobs)):
-            self.comm_logprobs[i] = -self.comm_logprobs[i] * self.mutinfo[i] - self.comm_entropy[i]
-            self.act_logprobs[i] = -self.act_logprobs[i] * self.rewards[i]
+            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i] + self.mutinfo[i]*self.mutinfo_param - self.comm_entropy[i]
+            self.act_logprobs[i] = -self.act_logprobs[i] * rew_norm[i] # rewards[i]
+
+        self.saved_losses_comm.append(np.mean([i.detach() for i in self.comm_logprobs]))
+        self.saved_losses.append(np.mean([i.detach() for i in self.act_logprobs]))
 
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.comm_logprobs]

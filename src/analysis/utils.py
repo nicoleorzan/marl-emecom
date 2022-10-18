@@ -5,16 +5,16 @@ import torch
 import math
 
 def calc_entropy(comms, n_comm):
-	# Calculates the entropy of the communication distribution
-	# p(c) is calculated by averaging over episodes
-	comms = [to_int(m) for m in comms]
-	eps = 1e-9
+    # Calculates the entropy of the communication distribution
+    # p(c) is calculated by averaging over episodes
+    comms = [to_int(m) for m in comms]
+    eps = 1e-9
 
-	p_c = probs_from_counts(comms, n_comm, eps=eps)
-	entropy = 0
-	for c in range(n_comm):
-		entropy += - p_c[c] * math.log(p_c[c])
-	return entropy
+    p_c = probs_from_counts(comms, n_comm, eps=eps)
+    entropy = 0
+    for c in range(n_comm):
+        entropy += - p_c[c] * math.log(p_c[c])
+    return entropy
 
 
 def calc_mutinfo(acts, comms, n_acts, n_comm):
@@ -95,6 +95,7 @@ def bin_acts(comms, acts, n_comm, n_acts, b=None):
 
 
 def plot_info(config, infos, path, name):
+    #print(infos)
     # plot mutual information, entropy or speaker consistency depending on the input given
 
     fig, ax = plt.subplots(config.n_agents)
@@ -122,18 +123,26 @@ def plot_train_returns(config, agents_dict, path, name):
     plt.savefig(path+name+".png")
 
 
+def plot_losses(config, agents_dict, path, name, comm=False):
+
+    fig, ax = plt.subplots(config.n_agents)
+    fig.suptitle("Train Losses")
+    for ag_idx in range(config.n_agents):
+        if (comm == True):
+            ax[ag_idx].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].saved_losses_comm), len(agents_dict['agent_'+str(ag_idx)].saved_losses_comm)), agents_dict['agent_'+str(ag_idx)].saved_losses_comm)
+        else:
+            ax[ag_idx].plot(np.linspace(0, len(agents_dict['agent_'+str(ag_idx)].saved_losses), len(agents_dict['agent_'+str(ag_idx)].saved_losses)), agents_dict['agent_'+str(ag_idx)].saved_losses)
+        ax[ag_idx].grid()
+    plt.savefig(path+name+".png")
+
+
 def cooperativity_plot(config, agents_dict, path, name):
     fig, ax = plt.subplots(config.n_agents)
-    fig.suptitle("Train Cooperativity mean over the iteractions")
+    fig.suptitle("Train Cooperativity")
     for ag_idx in range(config.n_agents):
-        train_actions = agents_dict['agent_'+str(ag_idx)].train_actions
-        #print("train_actions=", train_actions)
+        train_actions = agents_dict['agent_'+str(ag_idx)].coop
         train_act_array = np.array(train_actions)
-        if (train_act_array.ndim > 1):
-            avgs = np.mean(train_act_array, axis=1)
-        else: 
-            avgs = train_act_array
-        ax[ag_idx].plot(np.linspace(0, len(train_actions), len(train_actions)), avgs)
+        ax[ag_idx].plot(np.linspace(0, len(train_actions), len(train_actions)), train_act_array)
         ax[ag_idx].grid()
     plt.savefig(path+name+".png")
 

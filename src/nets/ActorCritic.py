@@ -16,16 +16,35 @@ class ActorCritic(nn.Module):
         self.output_size = output_size
         self.bottleneck_size = 8
 
-        self.actor = nn.Sequential(
-            nn.Linear(self.input_size, self.hidden_size),
-            nn.Tanh(), # try out other activation function?
-            nn.Linear(self.hidden_size, self.output_size)
-        )
-        self.critic = nn.Sequential(
-            nn.Linear(self.input_size, self.hidden_size),
-            nn.Tanh(),
-            nn.Linear(self.hidden_size, 1),
-        )
+        if (self.comm == True): 
+            self.actor = nn.Sequential(
+                nn.Linear(self.input_size, self.bottleneck_size),
+                nn.Tanh(), # try out other activation function?
+                nn.Linear(self.bottleneck_size, self.hidden_size),
+                nn.Tanh(),
+                nn.Linear(self.hidden_size, self.output_size),
+                nn.Softmax(dim=0)
+            )
+            self.critic = nn.Sequential(
+                nn.Linear(self.input_size, self.bottleneck_size),
+                nn.Tanh(), # try out other activation function?
+                nn.Linear(self.bottleneck_size, self.hidden_size),
+                nn.Tanh(),
+                nn.Linear(self.hidden_size, 1),
+            )
+        
+        else:
+            self.actor = nn.Sequential(
+                nn.Linear(self.input_size, self.hidden_size),
+                nn.Tanh(), # try out other activation function?
+                nn.Linear(self.hidden_size, self.output_size),
+                nn.Softmax(dim=0)
+            )
+            self.critic = nn.Sequential(
+                nn.Linear(self.input_size, self.hidden_size),
+                nn.Tanh(),
+                nn.Linear(self.hidden_size, 1),
+            )
 
     def reset_state(self):
         pass
@@ -33,7 +52,9 @@ class ActorCritic(nn.Module):
     def act(self, state, ent=False, greedy=False):
 
         out = self.actor(state)
-        dist = Categorical(logits=out)
+        #print("out=", out)
+        #dist = Categorical(logits=out)
+        dist = Categorical(out)
 
         if (self.random_baseline == True): 
             act = torch.randint(0, self.action_size, (1,))[0]
@@ -43,7 +64,8 @@ class ActorCritic(nn.Module):
             else:
                 act = dist.sample()
 
-        logprob = dist.log_prob(act)
+        logprob = dist.log_prob(act) # negativi
+        #print("logp=", logprob)
 
         if (ent):
             return act.detach(), logprob, dist.entropy().detach()
@@ -52,12 +74,12 @@ class ActorCritic(nn.Module):
 
     def get_dist_entropy(self, state):
         out = self.actor(state)
-        dist = Categorical(logits=out)  # here I changed probs with logits!!!
+        dist = Categorical(out)
         return dist.entropy()
     
     def evaluate(self, state, action):
         action_probs = self.actor(state)
-        dist = Categorical(logits=action_probs)  # here I changed probs with logits!!!
+        dist = Categorical(action_probs)
         action_logprob = dist.log_prob(action)
         dist_entropy = dist.entropy()
         state_values = self.critic(state)
@@ -65,9 +87,6 @@ class ActorCritic(nn.Module):
 
     def get_distribution(self, state, greedy=False):
         out = self.actor(state)
-        m = nn.Softmax(dim=0)
-        out = m(out)
-
         return out
 
 
