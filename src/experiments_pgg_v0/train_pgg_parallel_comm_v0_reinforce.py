@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 10000,
+    episodes_per_experiment = 1000,
     update_timestep = 64, #128,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],#, 0.],
@@ -36,7 +36,7 @@ hyperparameter_defaults = dict(
     mex_size = 5,
     random_baseline = False,
     recurrent = False,
-    wandb_mode ="offline",
+    wandb_mode ="online",
     normalize_nn_inputs = True
 )
 
@@ -181,19 +181,21 @@ def train(config):
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
 
-            if (ep_in%config.save_interval == 0):
+            if ( ep_in != 0 and ep_in%config.save_interval == 0 ):
 
                 avg_coop_time.append(np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()]))
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return": agent.return_episode}, step=ep_in)
                         wandb.log({ag_idx+"_coop_level": np.mean(agent.tmp_actions)}, step=ep_in)
-                        wandb.log({ag_idx+"_loss": agent.saved_losses[-1]}, step=ep_in)
-                        wandb.log({ag_idx+"_loss_comm": agent.saved_losses_comm[-1]}, step=ep_in)
+                        if ( ep_in%config.update_timestep == 0):
+                            wandb.log({ag_idx+"_loss": agent.saved_losses[-1]}, step=ep_in)
+                            wandb.log({ag_idx+"_loss_comm": agent.saved_losses_comm[-1]}, step=ep_in)
                     wandb.log({"episode": ep_in}, step=ep_in)
                     wandb.log({"avg_return": np.mean([agent.return_episode for _, agent in agents_dict.items()])}, step=ep_in)
-                    wandb.log({"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()])}, step=ep_in)
-                    wandb.log({"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()])}, step=ep_in)
+                    if ( ep_in%config.update_timestep == 0):
+                        wandb.log({"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()])}, step=ep_in)
+                        wandb.log({"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()])}, step=ep_in)
                     wandb.log({"avg_coop": avg_coop_time[-1]}, step=ep_in)
                     wandb.log({"avg_coop_time": np.mean(avg_coop_time[-10:])}, step=ep_in)
 
