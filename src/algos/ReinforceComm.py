@@ -44,10 +44,11 @@ class ReinforceComm():
         self.reset()
 
         self.ent = True
-        self.mutinfo_param = 2.
 
         self.saved_losses_comm = []
         self.saved_losses = []
+
+        self.param_entropy = 0.1
 
     def reset(self):
         self.comm_logprobs = []
@@ -120,7 +121,7 @@ class ReinforceComm():
         rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards)) for i in rewards]
     
         for i in range(len(self.comm_logprobs)):
-            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i] + self.mutinfo[i]*self.mutinfo_param - self.comm_entropy[i]
+            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i]# + self.mutinfo[i] - self.param_entropy*self.comm_entropy[i]
             self.act_logprobs[i] = -self.act_logprobs[i] * rew_norm[i] # rewards[i]
 
         self.saved_losses_comm.append(np.mean([i.detach() for i in self.comm_logprobs]))
