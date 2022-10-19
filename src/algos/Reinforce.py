@@ -27,6 +27,8 @@ class Reinforce():
         self.reset()
         self.saved_losses = []
 
+        self.eps_norm = 0.0001
+
     def reset(self):
         self.logprobs = []
         self.rewards = []
@@ -50,9 +52,10 @@ class Reinforce():
         #rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
         #print("\nUpdate")
         rewards =  self.rewards
-        rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards)) for i in rewards]
+        rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
         #print("logps=", self.logprobs)
         #print("rews=", rewards)
+        #print("rews_norm=", rew_norm)
 
         for i in range(len(self.logprobs)):
             self.logprobs[i] = -self.logprobs[i] * rew_norm[i] #rewards[i]
@@ -64,5 +67,7 @@ class Reinforce():
         tmp = [torch.ones(a.data.shape) for a in self.logprobs]
         autograd.backward(self.logprobs, tmp, retain_graph=True)
         self.optimizer.step()
+        #print("lin1 grad=",self.policy.lin1.weight.grad) 
+        #print("lin2 grad=",self.policy.lin2.weight.grad) 
 
         self.reset()

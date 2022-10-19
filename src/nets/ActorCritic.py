@@ -18,33 +18,34 @@ class ActorCritic(nn.Module):
 
         if (self.comm == True): 
             self.actor = nn.Sequential(
-                nn.Linear(self.input_size, self.bottleneck_size),
+                nn.Linear(self.input_size, self.hidden_size),
                 nn.Tanh(), # try out other activation function?
-                nn.Linear(self.bottleneck_size, self.hidden_size),
+                nn.Linear(self.hidden_size, self.hidden_size),
                 nn.Tanh(),
                 nn.Linear(self.hidden_size, self.output_size),
                 nn.Softmax(dim=0)
             )
             self.critic = nn.Sequential(
-                nn.Linear(self.input_size, self.bottleneck_size),
+                nn.Linear(self.input_size, self.hidden_size),
                 nn.Tanh(), # try out other activation function?
-                nn.Linear(self.bottleneck_size, self.hidden_size),
+                nn.Linear(self.hidden_size, self.hidden_size),
                 nn.Tanh(),
                 nn.Linear(self.hidden_size, 1),
-            )
+        )
         
-        else:
-            self.actor = nn.Sequential(
-                nn.Linear(self.input_size, self.hidden_size),
-                nn.Tanh(), # try out other activation function?
-                nn.Linear(self.hidden_size, self.output_size),
-                nn.Softmax(dim=0)
-            )
-            self.critic = nn.Sequential(
-                nn.Linear(self.input_size, self.hidden_size),
-                nn.Tanh(),
-                nn.Linear(self.hidden_size, 1),
-            )
+        
+        self.actor = nn.Sequential(
+            nn.Linear(self.input_size, self.hidden_size),
+            nn.Tanh(),
+            nn.Linear(self.hidden_size, self.output_size),
+            nn.Softmax(dim=0)
+        )
+        
+        self.critic = nn.Sequential(
+            nn.Linear(self.input_size, self.hidden_size),
+            nn.Tanh(),
+            nn.Linear(self.hidden_size, 1),
+        )
 
     def reset_state(self):
         pass
@@ -52,7 +53,6 @@ class ActorCritic(nn.Module):
     def act(self, state, ent=False, greedy=False):
 
         out = self.actor(state)
-        print("out=", out)
         #dist = Categorical(logits=out)
         dist = Categorical(out)
 

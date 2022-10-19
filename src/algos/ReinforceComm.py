@@ -50,6 +50,8 @@ class ReinforceComm():
 
         self.param_entropy = 0.1
 
+        self.eps_norm = 0.0001
+
     def reset(self):
         self.comm_logprobs = []
         self.act_logprobs = []
@@ -64,8 +66,8 @@ class ReinforceComm():
         self.tmp_actions = []
 
     def select_message(self, state, eval=False):
-        print("select mex")
-        print("state=", state)
+        #print("select mex")
+        #print("state=", state)
 
         if (eval == True):
             with torch.no_grad():
@@ -104,20 +106,20 @@ class ReinforceComm():
         return message
 
     def select_action(self, state, message, eval=False):
-        print("select act")
-        print("state=", state, "mex=", message)
+        #print("select act")
+        #print("state=", state, "mex=", message)
     
         if (eval == True):
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(device)
                 state_mex = torch.cat((state, message))
-                print("statemex=",state_mex)
+                #print("statemex=",state_mex)
                 action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
         if (eval == False):
             state = torch.FloatTensor(state).to(device)
             state_mex = torch.cat((state, message))
-            print("statemex=",state_mex)
+            #print("statemex=",state_mex)
             action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
             
             self.buffer.states_a.append(state)
@@ -137,7 +139,7 @@ class ReinforceComm():
         #rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
         #print("mean of normalized rewards=",torch.mean(rewards))
         rewards =  self.rewards
-        rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards)) for i in rewards]
+        rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
     
         for i in range(len(self.comm_logprobs)):
             self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i]# + self.mutinfo[i] - self.param_entropy*self.comm_entropy[i]

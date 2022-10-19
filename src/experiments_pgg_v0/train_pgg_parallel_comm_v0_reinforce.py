@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 5000,
-    update_timestep = 64,        # update policy every n timesteps
+    episodes_per_experiment = 40000,
+    update_timestep = 32,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 0.],#, 0.],
+    uncertainties = [0., 0., 0.],
     mult_fact = [0.,7.],         # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
@@ -41,7 +41,7 @@ hyperparameter_defaults = dict(
 )
 
 
-wandb.init(project="reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"], sync_tensorboard=True)
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -62,9 +62,9 @@ with open(path+'params.json', 'w') as fp:
     json.dump(hyperparameter_defaults, fp)
 
 def wandb_eval(parallel_env, agents_dict, m, ep):
-    print("setting m=", m)
+    #print("setting m=", m)
     observations = parallel_env.reset(None, None, m)
-    print("obs=", observations)
+    #print("obs=", observations)
         
     [agent.reset_episode() for _, agent in agents_dict.items()]
 
@@ -76,7 +76,7 @@ def wandb_eval(parallel_env, agents_dict, m, ep):
         else:
             messages = {agent: agents_dict[agent].select_message(observations[agent], True) for agent in parallel_env.agents}
         message = torch.stack([v for _, v in messages.items()]).view(-1)
-        print("mex=", message)
+        #print("mex=", message)
         actions = {agent: agents_dict[agent].select_action(observations[agent], message, True) for agent in parallel_env.agents}
         observations, rewards, done, _ = parallel_env.step(actions)
     #print([actions["agent_"+str(idx)] for idx in range(config.n_agents)])
@@ -100,19 +100,20 @@ def train(config):
             ["coop_ag"+str(i) for i in range(config.n_agents)])
 
     for experiment in range(config.n_experiments):
-        print("\nExperiment ", experiment)
+        #print("\nExperiment ", experiment)
 
         agents_dict = {}
         for idx in range(config.n_agents):
             agents_dict['agent_'+str(idx)] = ReinforceComm(config)
+            wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
         avg_coop_time = []
         for ep_in in range(config.episodes_per_experiment):
-            print("\nEpisode=", ep_in)
+            #print("\nEpisode=", ep_in)
 
             observations = parallel_env.reset()
-            print("obs=", observations)
+            #print("obs=", observations)
             mult_factors.append(parallel_env.current_multiplier)
                 
             [agent.reset_episode() for _, agent in agents_dict.items()]
@@ -125,7 +126,7 @@ def train(config):
                 else:
                     messages = {agent: agents_dict[agent].select_message(observations[agent]) for agent in parallel_env.agents}
                 message = torch.stack([v for _, v in messages.items()]).view(-1)
-                print("mex=", message)
+                #print("mex=", message)
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)
 
