@@ -64,6 +64,8 @@ class ReinforceComm():
         self.tmp_actions = []
 
     def select_message(self, state):
+        print("select mex")
+        print("state=", state)
 
         state = torch.FloatTensor(state).to(device)
         message, message_logprob, entropy = self.policy_comm.act(state, self.ent)
@@ -96,9 +98,12 @@ class ReinforceComm():
         return message
 
     def select_action(self, state, message):
+        print("select act")
+        print("state=", state, "mex=", message)
     
         state = torch.FloatTensor(state).to(device)
         state_mex = torch.cat((state, message))
+        print("statemex=",state_mex)
         action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
         self.buffer.states_a.append(state)

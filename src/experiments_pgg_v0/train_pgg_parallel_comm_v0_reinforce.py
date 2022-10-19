@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 10000,
+    episodes_per_experiment = 5000,
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],#, 0.],
@@ -22,9 +22,9 @@ hyperparameter_defaults = dict(
     hidden_size = 62,
     gamma = 0.99,                # discount factor
     lr_actor = 0.005,             # learning rate for actor network
-    lr_critic = 0.001,           # learning rate for critic network
-    lr_actor_comm = 0.005,        # learning rate for actor network
-    lr_critic_comm = 0.001,      # learning rate for critic network
+    lr_critic = 0.05,           # learning rate for critic network
+    lr_actor_comm = 0.001,        # learning rate for actor network
+    lr_critic_comm = 0.5,      # learning rate for critic network
     decayRate = 0.9,
     fraction = True,
     comm = True,
@@ -33,7 +33,7 @@ hyperparameter_defaults = dict(
     save_data = True,
     save_interval = 30,
     print_freq = 100,
-    mex_size = 5,
+    mex_size = 3,
     random_baseline = False,
     recurrent = False,
     wandb_mode ="online",
@@ -77,7 +77,7 @@ def train(config):
             ["coop_ag"+str(i) for i in range(config.n_agents)])
 
     for experiment in range(config.n_experiments):
-        #print("\nExperiment ", experiment)
+        print("\nExperiment ", experiment)
 
         agents_dict = {}
         for idx in range(config.n_agents):
@@ -86,9 +86,10 @@ def train(config):
         #### TRAINING LOOP
         avg_coop_time = []
         for ep_in in range(config.episodes_per_experiment):
-            #print("\nEpisode=", ep_in)
+            print("\nEpisode=", ep_in)
 
             observations = parallel_env.reset()
+            print("ons=", observations)
             mult_factors.append(parallel_env.current_multiplier)
                 
             [agent.reset_episode() for _, agent in agents_dict.items()]
@@ -101,7 +102,7 @@ def train(config):
                 else:
                     messages = {agent: agents_dict[agent].select_message(observations[agent]) for agent in parallel_env.agents}
                 message = torch.stack([v for _, v in messages.items()]).view(-1)
-                #print("mex=", message)
+                print("mex=", message)
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)
 

@@ -52,7 +52,7 @@ class ActorCritic(nn.Module):
     def act(self, state, ent=False, greedy=False):
 
         out = self.actor(state)
-        #print("out=", out)
+        print("out=", out)
         #dist = Categorical(logits=out)
         dist = Categorical(out)
 
