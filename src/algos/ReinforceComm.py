@@ -63,20 +63,26 @@ class ReinforceComm():
         self.return_episode = 0
         self.tmp_actions = []
 
-    def select_message(self, state):
+    def select_message(self, state, eval=False):
         print("select mex")
         print("state=", state)
 
-        state = torch.FloatTensor(state).to(device)
-        message, message_logprob, entropy = self.policy_comm.act(state, self.ent)
+        if (eval == True):
+            with torch.no_grad():
+                state = torch.FloatTensor(state).to(device)
+                message, message_logprob, entropy = self.policy_comm.act(state, self.ent)
 
-        self.buffer.states_c.append(state)
-        self.buffer.messages.append(message)
+        if (eval == False):
+            state = torch.FloatTensor(state).to(device)
+            message, message_logprob, entropy = self.policy_comm.act(state, self.ent)
 
-        #print("mex logp=", message_logprob)
-        #print("ent=", entropy)
-        self.comm_logprobs.append(message_logprob)
-        self.comm_entropy.append(entropy)
+            self.buffer.states_c.append(state)
+            self.buffer.messages.append(message)
+
+            #print("mex logp=", message_logprob)
+            #print("ent=", entropy)
+            self.comm_logprobs.append(message_logprob)
+            self.comm_entropy.append(entropy)
 
         message = torch.Tensor([message.item()]).long()
         message = F.one_hot(message, num_classes=self.mex_size)[0]
@@ -97,20 +103,28 @@ class ReinforceComm():
 
         return message
 
-    def select_action(self, state, message):
+    def select_action(self, state, message, eval=False):
         print("select act")
         print("state=", state, "mex=", message)
     
-        state = torch.FloatTensor(state).to(device)
-        state_mex = torch.cat((state, message))
-        print("statemex=",state_mex)
-        action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
+        if (eval == True):
+            with torch.no_grad():
+                state = torch.FloatTensor(state).to(device)
+                state_mex = torch.cat((state, message))
+                print("statemex=",state_mex)
+                action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
-        self.buffer.states_a.append(state)
-        self.buffer.actions.append(action)
+        if (eval == False):
+            state = torch.FloatTensor(state).to(device)
+            state_mex = torch.cat((state, message))
+            print("statemex=",state_mex)
+            action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
+            
+            self.buffer.states_a.append(state)
+            self.buffer.actions.append(action)
 
-        self.act_logprobs.append(action_logprob)
-        self.act_entropy.append(entropy)
+            self.act_logprobs.append(action_logprob)
+            self.act_entropy.append(entropy)
         
         return action
 
