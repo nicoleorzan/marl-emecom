@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 hyperparameter_defaults = dict(
     n_experiments = 1,
     episodes_per_experiment = 5000,
-    update_timestep = 128,        # update policy every n timesteps
+    update_timestep = 64,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],#, 0.],
-    mult_fact = [0.,0.],         # list givin min and max value of mult factor
+    mult_fact = [0.,7.],         # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
@@ -61,6 +61,29 @@ print("path=", path)
 with open(path+'params.json', 'w') as fp:
     json.dump(hyperparameter_defaults, fp)
 
+def wandb_eval(parallel_env, agents_dict, m, ep):
+    print("setting m=", m)
+    observations = parallel_env.reset(None, None, m)
+    print("obs=", observations)
+        
+    [agent.reset_episode() for _, agent in agents_dict.items()]
+
+    done = False
+    while not done:
+
+        if (config.random_baseline):
+            messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
+        else:
+            messages = {agent: agents_dict[agent].select_message(observations[agent], True) for agent in parallel_env.agents}
+        message = torch.stack([v for _, v in messages.items()]).view(-1)
+        print("mex=", message)
+        actions = {agent: agents_dict[agent].select_action(observations[agent], message, True) for agent in parallel_env.agents}
+        observations, rewards, done, _ = parallel_env.step(actions)
+    #print([actions["agent_"+str(idx)] for idx in range(config.n_agents)])
+    #print(np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)]))
+
+    return np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)])
+
 def train(config):
 
     mut01 = []; mut10 = []; mut12 = []; mut21 = []; mut20 = []; mut02 = []
@@ -89,7 +112,7 @@ def train(config):
             print("\nEpisode=", ep_in)
 
             observations = parallel_env.reset()
-            print("ons=", observations)
+            print("obs=", observations)
             mult_factors.append(parallel_env.current_multiplier)
                 
             [agent.reset_episode() for _, agent in agents_dict.items()]
@@ -198,12 +221,19 @@ def train(config):
 
                     wandb.log({"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()])}, step=ep_in)
                     wandb.log({"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()])}, step=ep_in)
-                    wandb.log({"sum_avg_losses": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]) + np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()])}, step=ep_in)
+                    wandb.log({"sum_avg_losses": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]) + np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()])}, step=ep_in)
+                    wandb.log({"mult_fact": parallel_env.current_multiplier}, step=ep_in)
+
+                    # insert some evaluation for m=0 and m=5
+                    coop0 = wandb_eval(parallel_env, agents_dict, 0., ep_in)
+                    wandb.log({"mult_"+str(0)+"_coop": coop0}, step=ep_in)
+
+                    coop5 = wandb_eval(parallel_env, agents_dict, 5., ep_in)
+                    wandb.log({"mult_"+str(5)+"_coop": coop5}, step=ep_in)
+
+                    wandb.log({"performance_mult_(0,5)": coop5-coop0}, step=ep_in)
+
                     
-                    if(parallel_env.current_multiplier == 0.):
-                        wandb.log({"mult_0_coop": np.mean(avg_coop_time[-1:])}, step=ep_in)
-                    elif(parallel_env.current_multiplier == 5.):
-                        wandb.log({"mult_5_coop": np.mean(avg_coop_time[-1:])}, step=ep_in)
 
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].return_episode for i in range(config.n_agents)}
