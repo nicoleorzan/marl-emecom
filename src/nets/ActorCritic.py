@@ -16,7 +16,7 @@ class ActorCritic(nn.Module):
         self.output_size = output_size
         self.bottleneck_size = 8
 
-        if (self.comm == True): 
+        """if (self.comm == True): 
             self.actor = nn.Sequential(
                 nn.Linear(self.input_size, self.hidden_size),
                 nn.Tanh(), # try out other activation function?
@@ -31,8 +31,7 @@ class ActorCritic(nn.Module):
                 nn.Linear(self.hidden_size, self.hidden_size),
                 nn.Tanh(),
                 nn.Linear(self.hidden_size, 1),
-        )
-        
+        )"""
         
         self.actor = nn.Sequential(
             nn.Linear(self.input_size, self.hidden_size),
@@ -70,7 +69,7 @@ class ActorCritic(nn.Module):
         if (ent):
             return act.detach(), logprob, dist.entropy().detach()
 
-        return act.detach(), logprob #.detach() --> moved from here be necessary for REINFORCE,put it in PPo code
+        return act.detach(), logprob #.detach() --> moved from here be necessary for REINFORCE,put it in PPO code
 
     def get_dist_entropy(self, state):
         out = self.actor(state)

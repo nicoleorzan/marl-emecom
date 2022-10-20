@@ -37,14 +37,30 @@ class Reinforce():
         self.return_episode = 0
         self.tmp_actions = []
 
-    def select_action(self, state):
+    def select_action(self, state, eval=False):
 
-        state = torch.FloatTensor(state).to(device)
-        action, action_logprob = self.policy.act(state)
+        if (eval == True):
+            with torch.no_grad():
+                state = torch.FloatTensor(state).to(device)
+                action, action_logprob = self.policy.act(state)
 
-        self.logprobs.append(action_logprob)
+        elif (eval == False):
+
+            state = torch.FloatTensor(state).to(device)
+            action, action_logprob = self.policy.act(state)
+
+            self.logprobs.append(action_logprob)
 
         return action
+
+    def get_distribution(self, state):
+
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(device)
+            out = self.policy.get_distribution(state)
+
+            return out
+
 
     def update(self):
 

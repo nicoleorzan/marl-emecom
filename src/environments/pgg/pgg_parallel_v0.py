@@ -177,8 +177,9 @@ class parallel_env(ParallelEnv):
             self.current_multiplier = mult_in
         else:
             if hasattr(self.mult_fact, '__len__'):
-                self.current_multiplier = random.uniform(self.min_mult, self.max_mult)
-                #self.current_multiplier = random.sample([0,1,2,3,4,5,6], 1)[0]
+                #self.current_multiplier = random.uniform(self.min_mult, self.max_mult)
+                #self.current_multiplier = random.sample([0,10], 1)[0]
+                self.current_multiplier = random.sample(self.mult_fact,1)[0]
             else: 
                 self.current_multiplier = self.mult_fact
 

@@ -31,6 +31,7 @@ class ReinforceComm():
         input_act = self.obs_size + self.n_agents*self.mex_size
         output_act = self.action_size
         self.policy_act = ActorCritic(params, input_act, output_act).to(device)
+        print("policy act input size=", input_act)
 
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm},
@@ -66,23 +67,19 @@ class ReinforceComm():
         self.tmp_actions = []
 
     def select_message(self, state, eval=False):
-        #print("select mex")
-        #print("state=", state)
 
         if (eval == True):
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(device)
                 message, message_logprob, entropy = self.policy_comm.act(state, self.ent)
 
-        if (eval == False):
+        elif (eval == False):
             state = torch.FloatTensor(state).to(device)
             message, message_logprob, entropy = self.policy_comm.act(state, self.ent)
 
             self.buffer.states_c.append(state)
             self.buffer.messages.append(message)
 
-            #print("mex logp=", message_logprob)
-            #print("ent=", entropy)
             self.comm_logprobs.append(message_logprob)
             self.comm_entropy.append(entropy)
 
@@ -106,20 +103,17 @@ class ReinforceComm():
         return message
 
     def select_action(self, state, message, eval=False):
-        #print("select act")
-        #print("state=", state, "mex=", message)
     
         if (eval == True):
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(device)
                 state_mex = torch.cat((state, message))
-                #print("statemex=",state_mex)
+                print("state_mex=", state_mex, "type=", type(state_mex))
                 action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
-        if (eval == False):
+        elif (eval == False):
             state = torch.FloatTensor(state).to(device)
             state_mex = torch.cat((state, message))
-            #print("statemex=",state_mex)
             action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
             
             self.buffer.states_a.append(state)
@@ -130,14 +124,25 @@ class ReinforceComm():
         
         return action
 
+    def get_action_distribution(self, state, message):
+
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(device)
+            state_mex = torch.cat((state, message))
+            out = self.policy_act.get_distribution(state_mex)
+
+            return out
+
+    def get_message_distribution(self, state):
+
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(device)
+            out = self.policy_comm.get_distribution(state)
+
+            return out
+
     def update(self):
 
-        # should I normalize the rewards????????
-        #print("rewards=", self.rewards)
-        #rewards = torch.tensor(self.rewards, dtype=torch.float32).to(device)
-        #print("mean rws=", torch.mean(rewards))
-        #rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
-        #print("mean of normalized rewards=",torch.mean(rewards))
         rewards =  self.rewards
         rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
     
@@ -157,6 +162,6 @@ class ReinforceComm():
         self.optimizer.step()
 
         #diminish learning rate
-        self.scheduler.step()
+        #self.scheduler.step()
 
         self.reset()
