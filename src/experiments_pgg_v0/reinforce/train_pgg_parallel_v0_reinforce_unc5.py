@@ -175,7 +175,7 @@ def train(config):
                     coop_max = eval(parallel_env, agents_dict, m_max)
                     wandb.log({"mult_"+str(m_max)+"_coop": coop_max}, step=ep_in)
 
-                    wandb.log({"performance_mult_("+str(coop_min)+","+str(m_max)+")": coop_max+(1.-coop_min)}, step=ep_in)
+                    wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": coop_max+(1.-coop_min)}, step=ep_in)
 
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].return_episode for i in range(config.n_agents)}
