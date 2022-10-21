@@ -12,17 +12,17 @@ import src.analysis.utils as U
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 40000,
-    update_timestep = 64, #60,        # update policy every n timesteps: same as batch side in this case
+    episodes_per_experiment = 80000,
+    update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
-    uncertainties = [0., 0., 5.],
-    mult_fact = [0.,7.],        # list givin min and max value of mult factor
+    uncertainties = [0., 0., 2.],
+    mult_fact = [0.,3.,10.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     hidden_size = 32, # power of two!
     action_size = 2,
     lr_actor = 0.005,              # learning rate for actor network
-    lr_critic = 0.01,           # learning rate for critic network
+    lr_critic = 0.005,           # learning rate for critic network
     decayRate = 0.99,
     fraction = False,
     comm = False,
@@ -33,12 +33,12 @@ hyperparameter_defaults = dict(
     print_freq = 500,
     recurrent = False,
     random_baseline = False,
-    wandb_mode = "offline",
+    wandb_mode = "online",
     normalize_nn_inputs = True
 )
 
 
-wandb.init(project="reinforce_pgg_v0", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="reinforce_pgg_v0_unc2", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -58,7 +58,30 @@ print("path=", path)
 with open(path+'params.json', 'w') as fp:
     json.dump(hyperparameter_defaults, fp)
 
+def eval(parallel_env, agents_dict, m, print=True):
+    observations = parallel_env.reset(None, None, m)
+    [agent.reset_episode() for _, agent in agents_dict.items()]
+
+    if (print == True):
+        print("* Eval ===> Mult factor=", m)
+        print("obs=", observations)
+
+    done = False
+    while not done:
+
+        actions = {agent: agents_dict[agent].select_action(observations[agent], True) for agent in parallel_env.agents}
+        out = {agent: agents_dict[agent].get_distribution(observations[agent]) for agent in parallel_env.agents}
+
+        if (print == True):
+            print("actions=", actions)
+            print("distributions", out)
+        observations, _, done, _ = parallel_env.step(actions)
+
+    return np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)])
+
 def train(config):
+
+    torch.autograd.set_detect_anomaly(True)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
     
@@ -73,10 +96,13 @@ def train(config):
         agents_dict = {}
         for idx in range(config.n_agents):
             model = ActorCritic(config, config.obs_size, config.action_size)
-            optimizer = torch.optim.Adam([{'params': model.actor.parameters(), 'lr': config.lr_actor},
-                    {'params': model.critic.parameters(), 'lr': config.lr_critic} ])
-
+            optimizer = torch.optim.Adam([
+             {'params': model.actor.parameters(), 'lr': config.lr_actor},
+             {'params': model.critic.parameters(), 'lr': config.lr_critic} 
+             ])
             agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config)
+
+            wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
         avg_coop_time = []
@@ -94,7 +120,7 @@ def train(config):
 
                 #print(observations)
                 obs_old = observations
-
+              
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
@@ -113,18 +139,21 @@ def train(config):
                 if done:
                     break
 
-            if (ep_in) % config.print_freq == 0:
-                print("Experiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
-                    ep_in, parallel_env.current_multiplier, config.num_game_iterations))
-                coins = parallel_env.get_coins()
-                print("Episodic Reward:")
-                for ag_idx, agent in agents_dict.items():
-                    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
-
             # update agents with REINFORCE
             if ep_in != 0 and ep_in % config.update_timestep == 0:
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
+                print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
+                    ep_in, parallel_env.current_multiplier, config.num_game_iterations))
+                coop0 = eval(parallel_env, agents_dict, 0.)
+                coop10 = eval(parallel_env, agents_dict, 10.)
+                print("coop with m=0:", coop0)
+                print("coop with m=10:", coop10)
+                print("Episodic Reward:")
+                coins = parallel_env.get_coins()
+                for ag_idx, agent in agents_dict.items():
+                    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
+
 
             if (ep_in%config.save_interval == 0):
 
@@ -137,6 +166,15 @@ def train(config):
                     wandb.log({"avg_return": np.mean([agent.return_episode for _, agent in agents_dict.items()])}, step=ep_in)
                     wandb.log({"avg_coop": avg_coop_time[-1]}, step=ep_in)
                     wandb.log({"avg_coop_time": np.mean(avg_coop_time[-10:])}, step=ep_in)
+
+                    # insert some evaluation for m=0 and m=10
+                    coop0 = eval(parallel_env, agents_dict, 0.)
+                    wandb.log({"mult_"+str(0)+"_coop": coop0}, step=ep_in)
+
+                    coop10 = eval(parallel_env, agents_dict, 10.)
+                    wandb.log({"mult_"+str(10)+"_coop": coop10}, step=ep_in)
+
+                    wandb.log({"performance_mult_(0,5)": coop10+(1.-coop0)}, step=ep_in)
 
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].return_episode for i in range(config.n_agents)}

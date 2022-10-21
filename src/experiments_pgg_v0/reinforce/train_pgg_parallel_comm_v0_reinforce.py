@@ -11,29 +11,28 @@ import matplotlib.pyplot as plt
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 5000,
-    update_timestep = 64,        # update policy every n timesteps
+    episodes_per_experiment = 100000,
+    update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 2.],#, 0.],
-    mult_fact = [0.,7.],         # list givin min and max value of mult factor
+    uncertainties = [0., 0., 0.],
+    mult_fact = [0.,3.,10.],         # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
-    hidden_size = 62,
-    gamma = 0.99,                # discount factor
+    hidden_size = 32,
     lr_actor = 0.005,             # learning rate for actor network
-    lr_critic = 0.05,           # learning rate for critic network
-    lr_actor_comm = 0.001,        # learning rate for actor network
-    lr_critic_comm = 0.5,      # learning rate for critic network
-    decayRate = 0.9,
+    lr_critic = 0.005,           # learning rate for critic network
+    lr_actor_comm = 0.01,        # learning rate for actor network
+    lr_critic_comm = 0.01,      # learning rate for critic network
+    decayRate = 0.99,
     fraction = True,
     comm = True,
     plots = True,
     save_models = True,
     save_data = True,
-    save_interval = 30,
-    print_freq = 100,
-    mex_size = 3,
+    save_interval = 20,
+    print_freq = 500,
+    mex_size = 2,
     random_baseline = False,
     recurrent = False,
     wandb_mode ="online",
@@ -41,7 +40,7 @@ hyperparameter_defaults = dict(
 )
 
 
-wandb.init(project="reinforce_pgg_v0_comm_unc2", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"], sync_tensorboard=True)
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -61,12 +60,13 @@ print("path=", path)
 with open(path+'params.json', 'w') as fp:
     json.dump(hyperparameter_defaults, fp)
 
-def wandb_eval(parallel_env, agents_dict, m, ep):
-    print("setting m=", m)
+def eval(parallel_env, agents_dict, m, print=True):
     observations = parallel_env.reset(None, None, m)
-    print("obs=", observations)
-        
     [agent.reset_episode() for _, agent in agents_dict.items()]
+
+    if (print == True):
+        print("* Eval ===> Mult factor=", m)
+        print("obs=", observations)
 
     done = False
     while not done:
@@ -76,11 +76,12 @@ def wandb_eval(parallel_env, agents_dict, m, ep):
         else:
             messages = {agent: agents_dict[agent].select_message(observations[agent], True) for agent in parallel_env.agents}
         message = torch.stack([v for _, v in messages.items()]).view(-1)
-        print("mex=", message)
         actions = {agent: agents_dict[agent].select_action(observations[agent], message, True) for agent in parallel_env.agents}
-        observations, rewards, done, _ = parallel_env.step(actions)
-    #print([actions["agent_"+str(idx)] for idx in range(config.n_agents)])
-    #print(np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)]))
+        if (print == True):
+            print("messages=", messages)
+            print("message=", message)
+            print("actions=", actions)
+        observations, _, done, _ = parallel_env.step(actions)
 
     return np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)])
 
@@ -100,19 +101,20 @@ def train(config):
             ["coop_ag"+str(i) for i in range(config.n_agents)])
 
     for experiment in range(config.n_experiments):
-        print("\nExperiment ", experiment)
+        #print("\nExperiment ", experiment)
 
         agents_dict = {}
         for idx in range(config.n_agents):
             agents_dict['agent_'+str(idx)] = ReinforceComm(config)
+            wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
         avg_coop_time = []
         for ep_in in range(config.episodes_per_experiment):
-            print("\nEpisode=", ep_in)
+            #print("\nEpisode=", ep_in)
 
             observations = parallel_env.reset()
-            print("obs=", observations)
+            #print("obs=", observations)
             mult_factors.append(parallel_env.current_multiplier)
                 
             [agent.reset_episode() for _, agent in agents_dict.items()]
@@ -125,7 +127,7 @@ def train(config):
                 else:
                     messages = {agent: agents_dict[agent].select_message(observations[agent]) for agent in parallel_env.agents}
                 message = torch.stack([v for _, v in messages.items()]).view(-1)
-                print("mex=", message)
+                #print("mex=", message)
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)
 
@@ -180,15 +182,6 @@ def train(config):
                 if done:
                     break
 
-            if (ep_in+1) % config.print_freq == 0:
-                print("Experiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
-                    ep_in, parallel_env.current_multiplier, config.num_game_iterations))
-                print("Episodic Reward:")
-                for ag_idx, agent in agents_dict.items():
-                    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', parallel_env.coins[ag_idx]),\
-                        "obs=", agent.buffer.states_a[-1], "action=", actions[ag_idx], "rew=", rewards[ag_idx],\
-                        "mutinfo=", agent.mutinfo[-1], "comm entropy=",  str.format('{0:.3f}', agent.comm_entropy[-1].detach().item()))
-
             if (ep_in%config.save_interval == 0):
                 #sc0.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
                 #sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
@@ -204,6 +197,19 @@ def train(config):
             if ep_in != 0 and ep_in % config.update_timestep == 0:
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
+
+                print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
+                ep_in, parallel_env.current_multiplier, config.num_game_iterations))
+                coop0 = eval(parallel_env, agents_dict, 0., False)
+                coop10 = eval(parallel_env, agents_dict, 10., False)
+                print("coop with m=0:", coop0)
+                print("coop with m=10:", coop10)
+                print("Episodic Reward:")
+                for ag_idx, agent in agents_dict.items():
+                    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', parallel_env.coins[ag_idx]),\
+                        "obs=", agent.buffer.states_a[-1], "action=", actions[ag_idx], "rew=", rewards[ag_idx])#,\
+                        #"mutinfo=", agent.mutinfo[-1], "comm entropy=",  str.format('{0:.3f}', agent.comm_entropy[-1].detach().item()))
+
 
             if ( ep_in != 0 and ep_in%config.update_timestep == 0 ):
 
@@ -221,16 +227,17 @@ def train(config):
 
                     wandb.log({"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()])}, step=ep_in)
                     wandb.log({"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()])}, step=ep_in)
-                    wandb.log({"sum_avg_losses": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]) + np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()])}, step=ep_in)
-                    
-                    # insert some evaluation for m=0 and m=5
-                    coop0 = wandb_eval(parallel_env, agents_dict, 0., ep_in)
+                    wandb.log({"sum_avg_losses": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]) + np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()])}, step=ep_in)
+                    wandb.log({"mult_fact": parallel_env.current_multiplier}, step=ep_in)
+
+                    # insert some evaluation for m=0 and m=10
+                    coop0 = eval(parallel_env, agents_dict, 0.)
                     wandb.log({"mult_"+str(0)+"_coop": coop0}, step=ep_in)
 
-                    coop5 = wandb_eval(parallel_env, agents_dict, 5., ep_in)
-                    wandb.log({"mult_"+str(5)+"_coop": coop5}, step=ep_in)
+                    coop10 = eval(parallel_env, agents_dict, 10.)
+                    wandb.log({"mult_"+str(10)+"_coop": coop10}, step=ep_in)
 
-                    wandb.log({"performance_mult_(0,5)": coop5-coop0}, step=ep_in)
+                    wandb.log({"performance_mult_(0,5)": coop10+(1.-coop0)}, step=ep_in)
 
                     
 
