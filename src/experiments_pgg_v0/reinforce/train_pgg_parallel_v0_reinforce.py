@@ -41,6 +41,9 @@ hyperparameter_defaults = dict(
 wandb.init(project="reinforce_pgg_v0", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
+m_min = min(config.mult_fact)
+m_max = max(config.mult_fact)
+
 if (config.mult_fact[0] != config.mult_fact[1]):
     folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/REINFORCE/"
 else: 
@@ -84,8 +87,6 @@ def train(config):
     torch.autograd.set_detect_anomaly(True)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
-    m_min = min(config.mult_fact)
-    m_max = max(config.mult_fact)
     
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
