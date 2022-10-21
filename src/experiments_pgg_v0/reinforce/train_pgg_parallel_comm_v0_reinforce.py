@@ -60,11 +60,11 @@ print("path=", path)
 with open(path+'params.json', 'w') as fp:
     json.dump(hyperparameter_defaults, fp)
 
-def eval(parallel_env, agents_dict, m, print=True):
+def eval(parallel_env, agents_dict, m, _print=True):
     observations = parallel_env.reset(None, None, m)
     [agent.reset_episode() for _, agent in agents_dict.items()]
 
-    if (print == True):
+    if (_print == True):
         print("* Eval ===> Mult factor=", m)
         print("obs=", observations)
 

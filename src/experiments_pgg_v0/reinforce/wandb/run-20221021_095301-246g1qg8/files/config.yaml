@@ -1,0 +1,103 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.12.17
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.8.10
+    start_time: 1666338781
+    t:
+      1:
+      - 1
+      - 55
+      2:
+      - 1
+      - 55
+      3:
+      - 1
+      - 16
+      4: 3.8.10
+      5: 0.12.17
+      8:
+      - 5
+action_size:
+  desc: null
+  value: 2
+comm:
+  desc: null
+  value: false
+decayRate:
+  desc: null
+  value: 0.99
+episodes_per_experiment:
+  desc: null
+  value: 80000
+fraction:
+  desc: null
+  value: false
+hidden_size:
+  desc: null
+  value: 32
+lr_actor:
+  desc: null
+  value: 0.005
+lr_critic:
+  desc: null
+  value: 0.005
+mult_fact:
+  desc: null
+  value:
+  - 0.0
+  - 3.0
+  - 10.0
+n_agents:
+  desc: null
+  value: 3
+n_experiments:
+  desc: null
+  value: 1
+normalize_nn_inputs:
+  desc: null
+  value: true
+num_game_iterations:
+  desc: null
+  value: 1
+obs_size:
+  desc: null
+  value: 2
+plots:
+  desc: null
+  value: true
+print_freq:
+  desc: null
+  value: 500
+random_baseline:
+  desc: null
+  value: false
+recurrent:
+  desc: null
+  value: false
+save_data:
+  desc: null
+  value: true
+save_interval:
+  desc: null
+  value: 20
+save_models:
+  desc: null
+  value: true
+uncertainties:
+  desc: null
+  value:
+  - 0.0
+  - 0.0
+  - 2.0
+update_timestep:
+  desc: null
+  value: 128
+wandb_mode:
+  desc: null
+  value: online

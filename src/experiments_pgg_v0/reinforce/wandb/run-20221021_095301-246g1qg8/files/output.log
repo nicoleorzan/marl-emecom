@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "train_pgg_parallel_v0_reinforce_unc2.py", line 210, in <module>
+    train(config)
+  File "train_pgg_parallel_v0_reinforce_unc2.py", line 171, in train
+    coop0 = eval(parallel_env, agents_dict, 0.)
+  File "train_pgg_parallel_v0_reinforce_unc2.py", line 66, in eval
+    print("* Eval ===> Mult factor=", m)
+TypeError: 'bool' object is not callable
+Traceback (most recent call last):
+  File "train_pgg_parallel_v0_reinforce_unc2.py", line 210, in <module>
+    train(config)
+  File "train_pgg_parallel_v0_reinforce_unc2.py", line 171, in train
+    coop0 = eval(parallel_env, agents_dict, 0.)
+  File "train_pgg_parallel_v0_reinforce_unc2.py", line 66, in eval
+    print("* Eval ===> Mult factor=", m)
+TypeError: 'bool' object is not callable
+New directory is created!
+path= data/pgg_v0/3agents/variating_m_1iters_[0.0, 0.0, 2.0]uncertainties/REINFORCE/normalized/

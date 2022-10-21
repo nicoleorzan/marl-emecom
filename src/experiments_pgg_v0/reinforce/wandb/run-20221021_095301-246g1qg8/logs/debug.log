@@ -1,0 +1,138 @@
+2022-10-21 09:53:01,499 INFO    MainThread:97472 [wandb_setup.py:_flush():76] Loading settings from /home/nicole/.config/wandb/settings
+2022-10-21 09:53:01,499 INFO    MainThread:97472 [wandb_setup.py:_flush():76] Loading settings from /home/nicole/marl-emecom/src/experiments_pgg_v0/reinforce/wandb/settings
+2022-10-21 09:53:01,499 INFO    MainThread:97472 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2022-10-21 09:53:01,500 INFO    MainThread:97472 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'src/experiments_pgg_v0/reinforce/train_pgg_parallel_v0_reinforce_unc2.py', 'program': 'train_pgg_parallel_v0_reinforce_unc2.py'}
+2022-10-21 09:53:01,500 INFO    MainThread:97472 [wandb_init.py:_log_setup():428] Logging user logs to /home/nicole/marl-emecom/src/experiments_pgg_v0/reinforce/wandb/run-20221021_095301-246g1qg8/logs/debug.log
+2022-10-21 09:53:01,501 INFO    MainThread:97472 [wandb_init.py:_log_setup():429] Logging internal logs to /home/nicole/marl-emecom/src/experiments_pgg_v0/reinforce/wandb/run-20221021_095301-246g1qg8/logs/debug-internal.log
+2022-10-21 09:53:01,501 INFO    MainThread:97472 [wandb_init.py:init():462] calling init triggers
+2022-10-21 09:53:01,501 INFO    MainThread:97472 [wandb_init.py:init():465] wandb.init called with sweep_config: {}
+config: {'n_experiments': 1, 'episodes_per_experiment': 80000, 'update_timestep': 128, 'n_agents': 3, 'uncertainties': [0.0, 0.0, 2.0], 'mult_fact': [0.0, 3.0, 10.0], 'num_game_iterations': 1, 'obs_size': 2, 'hidden_size': 32, 'action_size': 2, 'lr_actor': 0.005, 'lr_critic': 0.005, 'decayRate': 0.99, 'fraction': False, 'comm': False, 'plots': True, 'save_models': True, 'save_data': True, 'save_interval': 20, 'print_freq': 500, 'recurrent': False, 'random_baseline': False, 'wandb_mode': 'online', 'normalize_nn_inputs': True}
+2022-10-21 09:53:01,502 INFO    MainThread:97472 [wandb_init.py:init():515] starting backend
+2022-10-21 09:53:01,502 INFO    MainThread:97472 [backend.py:_multiprocessing_setup():97] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2022-10-21 09:53:01,543 INFO    MainThread:97472 [backend.py:ensure_launched():217] starting backend process...
+2022-10-21 09:53:01,563 INFO    MainThread:97472 [backend.py:ensure_launched():222] started backend process with pid: 97487
+2022-10-21 09:53:01,567 INFO    MainThread:97472 [wandb_init.py:init():525] backend started and connected
+2022-10-21 09:53:01,592 INFO    MainThread:97472 [wandb_init.py:init():596] updated telemetry
+2022-10-21 09:53:01,641 INFO    MainThread:97472 [wandb_init.py:init():627] communicating run to backend with 30 second timeout
+2022-10-21 09:53:05,741 INFO    MainThread:97472 [wandb_run.py:_on_init():1924] communicating current version
+2022-10-21 09:53:05,829 INFO    MainThread:97472 [wandb_run.py:_on_init():1928] got version response upgrade_message: "wandb version 0.13.4 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2022-10-21 09:53:05,830 INFO    MainThread:97472 [wandb_init.py:init():662] starting run threads in backend
+2022-10-21 09:53:10,864 INFO    MainThread:97472 [wandb_run.py:_console_start():1898] atexit reg
+2022-10-21 09:53:10,865 INFO    MainThread:97472 [wandb_run.py:_redirect():1771] redirect: SettingsConsole.REDIRECT
+2022-10-21 09:53:10,866 INFO    MainThread:97472 [wandb_run.py:_redirect():1776] Redirecting console.
+2022-10-21 09:53:10,871 INFO    MainThread:97472 [wandb_run.py:_redirect():1832] Redirects installed.
+2022-10-21 09:53:10,871 INFO    MainThread:97472 [wandb_init.py:init():688] run started, returning control to user process
+2022-10-21 09:53:10,898 INFO    MainThread:97472 [wandb_watch.py:watch():47] Watching
+2022-10-21 09:53:10,906 INFO    MainThread:97472 [wandb_watch.py:watch():47] Watching
+2022-10-21 09:53:10,912 INFO    MainThread:97472 [wandb_watch.py:watch():47] Watching
+2022-10-21 09:53:11,780 INFO    MainThread:97472 [wandb_run.py:_atexit_cleanup():1867] got exitcode: 1
+2022-10-21 09:53:11,785 INFO    MainThread:97472 [wandb_run.py:_restore():1839] restore
+2022-10-21 09:53:15,577 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+}
+pusher_stats {
+}
+
+2022-10-21 09:53:15,710 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 1
+}
+pusher_stats {
+  total_bytes: 746
+}
+
+2022-10-21 09:53:16,011 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 1
+}
+pusher_stats {
+  uploaded_bytes: 746
+  total_bytes: 746
+}
+
+2022-10-21 09:53:16,838 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 5
+}
+pusher_stats {
+  uploaded_bytes: 746
+  total_bytes: 10556
+}
+
+2022-10-21 09:53:16,942 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 5
+}
+pusher_stats {
+  uploaded_bytes: 746
+  total_bytes: 10556
+}
+
+2022-10-21 09:53:17,050 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 5
+}
+pusher_stats {
+  uploaded_bytes: 746
+  total_bytes: 10556
+}
+
+2022-10-21 09:53:17,154 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 5
+}
+pusher_stats {
+  uploaded_bytes: 2992
+  total_bytes: 10556
+}
+
+2022-10-21 09:53:17,258 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 5
+}
+pusher_stats {
+  uploaded_bytes: 10556
+  total_bytes: 10556
+}
+
+2022-10-21 09:53:17,362 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 5
+}
+pusher_stats {
+  uploaded_bytes: 10556
+  total_bytes: 10556
+}
+
+2022-10-21 09:53:17,482 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 5
+}
+pusher_stats {
+  uploaded_bytes: 10556
+  total_bytes: 10556
+}
+
+2022-10-21 09:53:17,586 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 5
+}
+pusher_stats {
+  uploaded_bytes: 10556
+  total_bytes: 10556
+}
+
+2022-10-21 09:53:18,279 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: file_counts {
+  wandb_count: 5
+}
+pusher_stats {
+  uploaded_bytes: 10556
+  total_bytes: 10556
+}
+
+2022-10-21 09:53:18,786 INFO    MainThread:97472 [wandb_run.py:_on_finish():1996] got exit ret: done: true
+exit_result {
+}
+file_counts {
+  wandb_count: 5
+}
+pusher_stats {
+  uploaded_bytes: 10556
+  total_bytes: 10556
+}
+local_info {
+}
+
+2022-10-21 09:53:21,049 INFO    MainThread:97472 [wandb_run.py:_footer_history_summary_info():3104] rendering history
+2022-10-21 09:53:21,050 INFO    MainThread:97472 [wandb_run.py:_footer_history_summary_info():3136] rendering summary
+2022-10-21 09:53:21,057 INFO    MainThread:97472 [wandb_run.py:_footer_sync_info():3060] logging synced files
