@@ -45,7 +45,8 @@ hyperparameter_defaults = dict(
     random_baseline = False,
     recurrent = False,
     wandb_mode ="online",
-    normalize_nn_inputs = True
+    normalize_nn_inputs = True,
+    mutinfo_param = 1.
 )
 
 

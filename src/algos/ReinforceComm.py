@@ -147,7 +147,10 @@ class ReinforceComm():
         rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
     
         for i in range(len(self.comm_logprobs)):
-            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i]# + self.mutinfo[i] - self.param_entropy*self.comm_entropy[i]
+            #print("rews=", rew_norm[i])
+            #print("self.mutinfo=", self.mutinfo[i])
+            #print("self.entropy=", self.comm_entropy[i])
+            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i] + self.mutinfo_param*self.mutinfo[i] #- self.param_entropy*self.comm_entropy[i]
             self.act_logprobs[i] = -self.act_logprobs[i] * rew_norm[i] # rewards[i]
 
         self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
