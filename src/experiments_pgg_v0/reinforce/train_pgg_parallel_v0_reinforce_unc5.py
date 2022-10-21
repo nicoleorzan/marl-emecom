@@ -15,8 +15,8 @@ hyperparameter_defaults = dict(
     episodes_per_experiment = 80000,
     update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
-    uncertainties = [0., 0., 2.],
-    mult_fact = [0.,3.,10.],        # list givin min and max value of mult factor
+    uncertainties = [0., 0., 5.],
+    mult_fact = [0.,3.,5.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     hidden_size = 32, # power of two!
@@ -38,7 +38,7 @@ hyperparameter_defaults = dict(
 )
 
 
-wandb.init(project="reinforce_pgg_v0_unc2", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="reinforce_pgg_v0_unc5", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -84,6 +84,8 @@ def train(config):
     torch.autograd.set_detect_anomaly(True)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
+    m_min = min(config.mult_factors)
+    m_max = max(config.mult_factors)
     
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
@@ -145,10 +147,10 @@ def train(config):
                     agent.update()
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, config.num_game_iterations))
-                coop0 = eval(parallel_env, agents_dict, 0.)
-                coop10 = eval(parallel_env, agents_dict, 10.)
-                print("coop with m=0:", coop0)
-                print("coop with m=10:", coop10)
+                coop_min = eval(parallel_env, agents_dict, m_min)
+                coop_max = eval(parallel_env, agents_dict, m_max)
+                print("coop with m="+str(m_min)+":", coop_min)
+                print("coop with m="+str(m_max)+":", coop_max)
                 print("Episodic Reward:")
                 coins = parallel_env.get_coins()
                 for ag_idx, agent in agents_dict.items():
@@ -167,14 +169,13 @@ def train(config):
                     wandb.log({"avg_coop": avg_coop_time[-1]}, step=ep_in)
                     wandb.log({"avg_coop_time": np.mean(avg_coop_time[-10:])}, step=ep_in)
 
-                    # insert some evaluation for m=0 and m=10
-                    coop0 = eval(parallel_env, agents_dict, 0.)
-                    wandb.log({"mult_"+str(0)+"_coop": coop0}, step=ep_in)
+                    # insert some evaluation for m_min and m_max
+                    coop_min = eval(parallel_env, agents_dict, m_min)
+                    wandb.log({"mult_"+str(m_min)+"_coop": coop_min}, step=ep_in)
+                    coop_max = eval(parallel_env, agents_dict, m_max)
+                    wandb.log({"mult_"+str(m_max)+"_coop": coop_max}, step=ep_in)
 
-                    coop10 = eval(parallel_env, agents_dict, 10.)
-                    wandb.log({"mult_"+str(10)+"_coop": coop10}, step=ep_in)
-
-                    wandb.log({"performance_mult_(0,5)": coop10+(1.-coop0)}, step=ep_in)
+                    wandb.log({"performance_mult_("+str(coop_min)+","+str(m_max)+")": coop_max+(1.-coop_min)}, step=ep_in)
 
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].return_episode for i in range(config.n_agents)}

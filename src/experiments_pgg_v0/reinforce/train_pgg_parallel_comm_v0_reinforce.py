@@ -15,7 +15,7 @@ hyperparameter_defaults = dict(
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
-    mult_fact = [0.,3.,10.],         # list givin min and max value of mult factor
+    mult_fact = [0.,3.,5.],         # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
@@ -94,6 +94,8 @@ def train(config):
     mult_factors = []
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
+    m_min = min(config.mult_factors)
+    m_max = max(config.mult_factors)
 
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
@@ -200,10 +202,10 @@ def train(config):
 
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
                 ep_in, parallel_env.current_multiplier, config.num_game_iterations))
-                coop0 = eval(parallel_env, agents_dict, 0., False)
-                coop10 = eval(parallel_env, agents_dict, 10., False)
-                print("coop with m=0:", coop0)
-                print("coop with m=10:", coop10)
+                coop_min = eval(parallel_env, agents_dict, m_min)
+                coop_max = eval(parallel_env, agents_dict, m_max)
+                print("coop with m="+str(m_min)+":", coop_min)
+                print("coop with m="+str(m_max)+":", coop_max)
                 print("Episodic Reward:")
                 for ag_idx, agent in agents_dict.items():
                     print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', parallel_env.coins[ag_idx]),\
@@ -230,15 +232,13 @@ def train(config):
                     wandb.log({"sum_avg_losses": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]) + np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()])}, step=ep_in)
                     wandb.log({"mult_fact": parallel_env.current_multiplier}, step=ep_in)
 
-                    # insert some evaluation for m=0 and m=10
-                    coop0 = eval(parallel_env, agents_dict, 0.)
-                    wandb.log({"mult_"+str(0)+"_coop": coop0}, step=ep_in)
+                    # insert some evaluation for m_min and m_max
+                    coop_min = eval(parallel_env, agents_dict, m_min)
+                    wandb.log({"mult_"+str(m_min)+"_coop": coop_min}, step=ep_in)
+                    coop_max = eval(parallel_env, agents_dict, m_max)
+                    wandb.log({"mult_"+str(m_max)+"_coop": coop_max}, step=ep_in)
 
-                    coop10 = eval(parallel_env, agents_dict, 10.)
-                    wandb.log({"mult_"+str(10)+"_coop": coop10}, step=ep_in)
-
-                    wandb.log({"performance_mult_(0,5)": coop10+(1.-coop0)}, step=ep_in)
-
+                    wandb.log({"performance_mult_("+str(coop_min)+","+str(m_max)+")": coop_max+(1.-coop_min)}, step=ep_in)
                     
 
                 if (config.save_data == True):
