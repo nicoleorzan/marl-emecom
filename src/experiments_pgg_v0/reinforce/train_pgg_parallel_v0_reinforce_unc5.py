@@ -84,8 +84,8 @@ def train(config):
     torch.autograd.set_detect_anomaly(True)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
-    m_min = min(config.mult_factors)
-    m_max = max(config.mult_factors)
+    m_min = min(config.mult_fact)
+    m_max = max(config.mult_fact)
     
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
