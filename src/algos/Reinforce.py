@@ -78,7 +78,7 @@ class Reinforce():
 
         #print("\nlogp", self.logprobs)
         #print("loss=", np.mean([i.detach() for i in self.logprobs]))
-        self.saved_losses.append(np.mean([i.detach() for i in self.logprobs]))
+        self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.logprobs])))
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.logprobs]
         autograd.backward(self.logprobs, tmp, retain_graph=True)

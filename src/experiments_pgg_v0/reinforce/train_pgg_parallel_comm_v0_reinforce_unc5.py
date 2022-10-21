@@ -9,6 +9,15 @@ import os
 import src.analysis.utils as U
 import matplotlib.pyplot as plt
 
+# set device to cpu or cuda
+device = torch.device('cpu')
+if(torch.cuda.is_available()): 
+    device = torch.device('cuda:0') 
+    torch.cuda.empty_cache()
+    print("Device set to : " + str(torch.cuda.get_device_name(device)))
+else:
+    print("Device set to : cpu")
+
 hyperparameter_defaults = dict(
     n_experiments = 1,
     episodes_per_experiment = 100000,
@@ -75,7 +84,7 @@ def eval(parallel_env, agents_dict, m, _print=True):
             messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
         else:
             messages = {agent: agents_dict[agent].select_message(observations[agent], True) for agent in parallel_env.agents}
-        message = torch.stack([v for _, v in messages.items()]).view(-1)
+        message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
         actions = {agent: agents_dict[agent].select_action(observations[agent], message, True) for agent in parallel_env.agents}
         if (print == True):
             print("messages=", messages)
@@ -128,7 +137,7 @@ def train(config):
                     messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
                 else:
                     messages = {agent: agents_dict[agent].select_message(observations[agent]) for agent in parallel_env.agents}
-                message = torch.stack([v for _, v in messages.items()]).view(-1)
+                message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
                 #print("mex=", message)
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)

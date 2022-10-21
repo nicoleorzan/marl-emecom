@@ -3,9 +3,20 @@ from gym.spaces import Discrete, Box
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
 from pettingzoo.utils import parallel_to_aec
-import numpy as np
+#import numpy as np
 import random
 import src.analysis.utils as U
+from torch.distributions import uniform, normal
+import torch
+
+# set device to cpu or cuda
+device = torch.device('cpu')
+if(torch.cuda.is_available()): 
+    device = torch.device('cuda:0') 
+    torch.cuda.empty_cache()
+    print("Device set to : " + str(torch.cuda.get_device_name(device)))
+else:
+    print("Device set to : cpu")
 
 # azione 1 e` cooperativa
 
@@ -59,15 +70,8 @@ class parallel_env(ParallelEnv):
 
         for key, val in config.items(): setattr(self, key, val)
 
-        #self.coins_mean = 4
-        #self.coins_var = 1
-        #self.coins_min = 1.
-        #self.coins_max = 5.
-
-        self.z_value = 4 # max numer of sigma that I want to check if I am away from the mean
-        #self.coins_min = -self.z_value*np.sqrt(self.coins_var) + self.coins_mean
-        #self.coins_max = self.z_value*np.sqrt(self.coins_var) + self.coins_mean
-        
+        self.z_value = torch.Tensor([4.]).to(device) # max numer of sigma that I want to check if I am away from the mean
+         
         if hasattr(self.mult_fact, '__len__'):
             self.min_mult = self.mult_fact[0]
             self.max_mult = self.mult_fact[1]
@@ -92,6 +96,7 @@ class parallel_env(ParallelEnv):
                     self.z_value*self.uncertainties_dict[agent]
         else: 
             self.uncertainties_dict = {agent: 0 for agent in self.agents}
+        self.uncertainty_eps = torch.Tensor([0.00001])
         self.n_actions = 2 # give money, keep money
         self.obs_space_size = 2 # I can observe the amount of money I have (precisely), and the multiplicative fctor (with uncertaity)
 
@@ -107,7 +112,7 @@ class parallel_env(ParallelEnv):
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
         if (self.fraction == True):
-            return Box(low=np.array([-0.001],dtype=np.float32), high=np.array([1.001],dtype=np.float32))            
+            return Box(low=torch.Tensor([-0.001]), high=torch.Tensor([1.001]))            
         else:
             return Discrete(self.n_actions)
 
@@ -125,17 +130,19 @@ class parallel_env(ParallelEnv):
     def assign_coins_uniform(self):
         self.coins = {}
         self.normalized_coins = {}
+        d = uniform.Uniform(self.coins_min, self.coins_max)
         for agent in self.agents:
-            self.coins[agent] = np.random.uniform(self.coins_min, self.coins_max, 1)[0]
+            self.coins[agent] = d.sample()
             self.normalized_coins[agent] = (self.coins[agent] - self.coins_min)/(self.coins_max - self.coins_min)
 
     def assign_coins_normal(self):
         self.coins = {}
         self.normalized_coins = {}
+        d = normal.Normal(torch.Tensor([self.coins_mean]), torch.Tensor([self.coins_var]+self.uncertainty_eps)) # is not var, is std. wrong name I put
         for agent in self.agents:
-            coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
-            if coin < 0.:
-                coin = np.random.normal(self.coins_mean, self.coins_var, 1)[0]
+            coin = d.sample()
+            while coin < 0.:
+                coin = d.sample()
             self.coins[agent] = coin
             self.normalized_coins[agent] = (self.coins[agent] - self.coins_min)/(self.coins_max - self.coins_min)
         
@@ -143,20 +150,21 @@ class parallel_env(ParallelEnv):
 
         self.observations = {}
         for agent in self.agents:
-            obs_multiplier = np.random.normal(self.current_multiplier, self.uncertainties_dict[agent], 1)[0]
+            d = normal.Normal(torch.Tensor([self.current_multiplier]), torch.Tensor([self.uncertainties_dict[agent]+self.uncertainty_eps])) # is not var, is std. wrong name I put
+            obs_multiplier = d.sample()#np.random.normal(self.current_multiplier, self.uncertainties_dict[agent], 1)[0]
             if obs_multiplier < 0.:
-                obs_multiplier = 0.
+                obs_multiplier = torch.Tensor([0.])
 
             # normalize the observed mutiplier (after this has been observed with uncertainty)
             if self.normalize_nn_inputs == True:
                 if (self.min_mult == self.max_mult):
-                    obs_multiplier_norm = 0.
+                    obs_multiplier_norm = torch.Tensor([0.])
                 else:
                     obs_multiplier_norm = (obs_multiplier - self.min_observable_mult[agent])/(self.max_observable_mult[agent] - self.min_observable_mult[agent])
-                self.observations[agent] = np.array((self.normalized_coins[agent], obs_multiplier_norm))
+                self.observations[agent] = torch.Tensor((self.normalized_coins[agent], obs_multiplier_norm)).to(device) 
             # or if I don't normalize
             else:
-                self.observations[agent] = np.array((self.coins[agent], obs_multiplier))        
+                self.observations[agent] = torch.Tensor((self.coins[agent], obs_multiplier)).to(device)       
         
     def reset(self, coins=None, unc=None, mult_in=None, seed=123):
         """
@@ -179,7 +187,7 @@ class parallel_env(ParallelEnv):
             if hasattr(self.mult_fact, '__len__'):
                 #self.current_multiplier = random.uniform(self.min_mult, self.max_mult)
                 #self.current_multiplier = random.sample([0,10], 1)[0]
-                self.current_multiplier = random.sample(self.mult_fact,1)[0]
+                self.current_multiplier = torch.Tensor(random.sample(self.mult_fact,1)).to(device)
             else: 
                 self.current_multiplier = self.mult_fact
 
@@ -231,7 +239,7 @@ class parallel_env(ParallelEnv):
         
         # this means that the actions are not the amount of coins, 
         # but the percentage of coins that agents put
-        common_pot = np.sum([self.coins[agent]*actions[agent] for agent in self.agents])
+        common_pot = torch.sum(torch.Tensor([self.coins[agent]*actions[agent] for agent in self.agents])).to(device)
 
         for agent in self.agents:
             rewards[agent] = common_pot/self.n_agents*self.current_multiplier + \

@@ -83,7 +83,7 @@ class ReinforceComm():
             self.comm_logprobs.append(message_logprob)
             self.comm_entropy.append(entropy)
 
-        message = torch.Tensor([message.item()]).long()
+        message = torch.Tensor([message.item()]).long().to(device)
         message = F.one_hot(message, num_classes=self.mex_size)[0]
         return message
 
@@ -97,7 +97,7 @@ class ReinforceComm():
 
         self.comm_logprobs.append(torch.tensor(0.0001))
 
-        message = torch.Tensor([message.item()]).long()
+        message = torch.Tensor([message.item()]).long().to(device)
         message = F.one_hot(message, num_classes=self.mex_size)[0]
 
         return message
@@ -107,13 +107,13 @@ class ReinforceComm():
         if (eval == True):
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(device)
-                state_mex = torch.cat((state, message))
+                state_mex = torch.cat((state, message)).to(device)
                 print("state_mex=", state_mex, "type=", type(state_mex))
                 action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
         elif (eval == False):
             state = torch.FloatTensor(state).to(device)
-            state_mex = torch.cat((state, message))
+            state_mex = torch.cat((state, message)).to(device)
             action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
             
             self.buffer.states_a.append(state)
@@ -150,8 +150,8 @@ class ReinforceComm():
             self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i]# + self.mutinfo[i] - self.param_entropy*self.comm_entropy[i]
             self.act_logprobs[i] = -self.act_logprobs[i] * rew_norm[i] # rewards[i]
 
-        self.saved_losses_comm.append(np.mean([i.detach() for i in self.comm_logprobs]))
-        self.saved_losses.append(np.mean([i.detach() for i in self.act_logprobs]))
+        self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
+        self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
 
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.comm_logprobs]

@@ -23,7 +23,7 @@ hyperparameter_defaults = dict(
     episodes_per_experiment = 100000,
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 0.],
+    uncertainties = [0., 0., 10.],
     mult_fact = [0.,3.,5.],         # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
@@ -49,7 +49,7 @@ hyperparameter_defaults = dict(
 )
 
 
-wandb.init(project="reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"], sync_tensorboard=True)
+wandb.init(project="reinforce_pgg_v0_comm_unc10", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"], sync_tensorboard=True)
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -84,7 +84,7 @@ def eval(parallel_env, agents_dict, m, _print=True):
             messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
         else:
             messages = {agent: agents_dict[agent].select_message(observations[agent], True) for agent in parallel_env.agents}
-        message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
+        message = torch.stack([v for _, v in messages.items()]).view(-1)
         actions = {agent: agents_dict[agent].select_action(observations[agent], message, True) for agent in parallel_env.agents}
         if (print == True):
             print("messages=", messages)
@@ -221,7 +221,6 @@ def train(config):
                         "obs=", agent.buffer.states_a[-1], "action=", actions[ag_idx], "rew=", rewards[ag_idx])#,\
                         #"mutinfo=", agent.mutinfo[-1], "comm entropy=",  str.format('{0:.3f}', agent.comm_entropy[-1].detach().item()))
 
-
             if ( ep_in != 0 and ep_in%config.update_timestep == 0 ):
 
                 avg_coop_time.append(np.mean([np.mean(agent.tmp_actions) for _, agent in agents_dict.items()]))
@@ -248,7 +247,6 @@ def train(config):
                     wandb.log({"mult_"+str(m_max)+"_coop": coop_max}, step=ep_in)
 
                     wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": coop_max+(1.-coop_min)}, step=ep_in)
-                    
 
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].return_episode for i in range(config.n_agents)}
