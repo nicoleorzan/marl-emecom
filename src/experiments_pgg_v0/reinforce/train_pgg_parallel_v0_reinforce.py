@@ -9,9 +9,17 @@ import pandas as pd
 import os
 import src.analysis.utils as U
 
-
+# set device to cpu or cuda
+device = torch.device('cpu')
+if(torch.cuda.is_available()): 
+    device = torch.device('cuda:0') 
+    torch.cuda.empty_cache()
+    print("Device set to : " + str(torch.cuda.get_device_name(device)))
+else:
+    print("Device set to : cpu")
+    
 hyperparameter_defaults = dict(
-    n_experiments = 1,
+    n_experiments = 20,
     episodes_per_experiment = 80000,
     update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
@@ -30,20 +38,16 @@ hyperparameter_defaults = dict(
     save_models = True,
     save_data = True,
     save_interval = 20,
-    print_freq = 500,
+    print_freq = 1000,
     recurrent = False,
     random_baseline = False,
-    wandb_mode = "online",
+    wandb_mode = "offline",
     normalize_nn_inputs = True
 )
 
 
 wandb.init(project="reinforce_pgg_v0", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
-
-m_min = min(config.mult_fact)
-m_max = max(config.mult_fact)
-print("m_min, m_max=", m_min, m_max)
 
 if (config.mult_fact[0] != config.mult_fact[1]):
     folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/REINFORCE/"
@@ -88,7 +92,10 @@ def train(config):
     torch.autograd.set_detect_anomaly(True)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
-    
+    m_min = min(config.mult_fact)
+    m_max = max(config.mult_fact)
+    print("m_min, m_max=", m_min, m_max)
+        
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
             ["ret_ag"+str(i) for i in range(config.n_agents)] + \
@@ -100,6 +107,7 @@ def train(config):
         agents_dict = {}
         for idx in range(config.n_agents):
             model = ActorCritic(config, config.obs_size, config.action_size)
+            model.to(device)
             optimizer = torch.optim.Adam([
              {'params': model.actor.parameters(), 'lr': config.lr_actor},
              {'params': model.critic.parameters(), 'lr': config.lr_critic} 
@@ -177,15 +185,16 @@ def train(config):
                     wandb.log({"mult_"+str(m_min)+"_coop": coop_min}, step=ep_in)
                     coop_max = eval(parallel_env, agents_dict, m_max)
                     wandb.log({"mult_"+str(m_max)+"_coop": coop_max}, step=ep_in)
-
-                    wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": coop_max+(1.-coop_min)}, step=ep_in)
+                    performance_metric = coop_max+(1.-coop_min)
+                    wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=ep_in)
 
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].return_episode for i in range(config.n_agents)}
                     df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
                     df_avg_coop = {"avg_coop": avg_coop_time[-1]}
                     df_avg_coop_time = {"avg_coop_time": np.mean(avg_coop_time[-10:])}
-                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop, **df_avg_coop_time}
+                    df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
+                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop, **df_avg_coop_time, **df_performance}
                     df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
         if (config.plots == True):
