@@ -8,6 +8,7 @@ import pandas as pd
 import os
 import src.analysis.utils as U
 import matplotlib.pyplot as plt
+import time
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -20,7 +21,7 @@ else:
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 100000,
+    episodes_per_experiment = 50000,
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
@@ -40,13 +41,13 @@ hyperparameter_defaults = dict(
     save_models = True,
     save_data = True,
     save_interval = 20,
-    print_freq = 500,
+    print_freq = 1000,
     mex_size = 2,
     random_baseline = False,
     recurrent = False,
-    wandb_mode ="online",
+    wandb_mode ="offline",
     normalize_nn_inputs = True,
-    mutinfo_param = 1.
+    mutinfo_param = 0.
 )
 
 
@@ -247,16 +248,19 @@ def train(config):
                     wandb.log({"mult_"+str(m_min)+"_coop": coop_min}, step=ep_in)
                     coop_max = eval(parallel_env, agents_dict, m_max)
                     wandb.log({"mult_"+str(m_max)+"_coop": coop_max}, step=ep_in)
-
-                    wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": coop_max+(1.-coop_min)}, step=ep_in)
-                    
+                    performance_metric = coop_max+(1.-coop_min)
+                    wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=ep_in)
 
                 if (config.save_data == True):
+                    coop_min = eval(parallel_env, agents_dict, m_min)
+                    coop_max = eval(parallel_env, agents_dict, m_max)
+                    performance_metric = coop_max+(1.-coop_min)
                     df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].return_episode for i in range(config.n_agents)}
                     df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
                     df_avg_coop = {"avg_coop": avg_coop_time[-1]}
                     df_avg_coop_time = {"avg_coop_time": np.mean(avg_coop_time[-10:])}
-                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop, **df_avg_coop_time}
+                    df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
+                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop, **df_avg_coop_time, **df_performance}
                     df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
         if (config.plots == True):
@@ -286,7 +290,7 @@ def train(config):
 
     if (config.save_data == True):
         print("Saving data")
-        df.to_csv(path+'data_comm.csv')
+        df.to_csv(path+'data_comm'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
     
     # save models
     if (config.save_models == True):
