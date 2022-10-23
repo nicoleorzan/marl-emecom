@@ -187,6 +187,9 @@ def train(config):
                     wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=ep_in)
 
                 if (config.save_data == True):
+                    coop_min = eval(parallel_env, agents_dict, m_min)
+                    coop_max = eval(parallel_env, agents_dict, m_max)
+                    performance_metric = coop_max+(1.-coop_min)
                     df_ret = {"ret_ag"+str(i): agents_dict["agent_"+str(i)].return_episode for i in range(config.n_agents)}
                     df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
                     df_avg_coop = {"avg_coop": avg_coop_time[-1]}
