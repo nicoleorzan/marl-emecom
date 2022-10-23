@@ -31,7 +31,6 @@ class ReinforceComm():
         input_act = self.obs_size + self.n_agents*self.mex_size
         output_act = self.action_size
         self.policy_act = ActorCritic(params, input_act, output_act).to(device)
-        print("policy act input size=", input_act)
 
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm},
@@ -59,7 +58,8 @@ class ReinforceComm():
         self.comm_entropy = []
         self.act_entropy = []
         self.rewards = []
-        self.mutinfo = []
+        self.mutinfo_signaling = []
+        self.mutinfo_listening = []
         self.sc = []
 
     def reset_episode(self):
@@ -150,7 +150,9 @@ class ReinforceComm():
             #print("rews=", rew_norm[i])
             #print("self.mutinfo=", self.mutinfo[i])
             #print("self.entropy=", self.comm_entropy[i])
-            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i] + self.mutinfo_param*self.mutinfo[i] #- self.param_entropy*self.comm_entropy[i]
+            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i] + \
+                self.mutinfo_signal_param*self.mutinfo_signaling[i] + \
+                self.mutinfo_listen_param*self.mutinfo_listening[i] #- self.param_entropy*self.comm_entropy[i]
             self.act_logprobs[i] = -self.act_logprobs[i] * rew_norm[i]
 
         self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))

@@ -38,7 +38,6 @@ hyperparameter_defaults = dict(
     save_models = True,
     save_data = True,
     save_interval = 20,
-    print_freq = 1000,
     recurrent = False,
     random_baseline = False,
     wandb_mode = "offline",

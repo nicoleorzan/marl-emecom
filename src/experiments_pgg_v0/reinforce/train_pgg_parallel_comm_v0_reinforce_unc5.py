@@ -41,13 +41,13 @@ hyperparameter_defaults = dict(
     save_models = True,
     save_data = True,
     save_interval = 20,
-    print_freq = 1000,
     mex_size = 2,
     random_baseline = False,
     recurrent = False,
     wandb_mode ="offline",
     normalize_nn_inputs = True,
-    mutinfo_param = 0.
+    mutinfo_signal_param = 0.,
+    mutinfo_listen_param = 0.
 )
 
 
@@ -99,7 +99,8 @@ def eval(parallel_env, agents_dict, m, _print=True):
 def train(config):
 
     mut01 = []; mut10 = []; mut12 = []; mut21 = []; mut20 = []; mut02 = []
-    mut0_avg = []; mut1_avg = []; mut2_avg = []
+    mut0_sig_avg = []; mut1_sig_avg = []; mut2_sig_avg = []
+    mut0_list_avg = []; mut1_list_avg = []; mut2_list_avg = []
     sc0 = []; sc1 = []; sc2 = []
     h0 = []; h1 = []; h2  = []
     mult_factors = []
@@ -164,8 +165,8 @@ def train(config):
 
                     agents_dict['agent_0'].sc.append(sc0)
                     agents_dict['agent_1'].sc.append(sc1)
-                    mut0_avg.append(mut01[-1])
-                    mut1_avg.append(mut10[-1])
+                    mut0_sig_avg.append(mut01[-1])
+                    mut1_sig_avg.append(mut10[-1])
                 else: 
                     # mut 01 is how much the messages of agent 1 influenced the actions of agent 0 in the last buffer (group of episodes on which I want to learn)
                     mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
@@ -179,26 +180,33 @@ def train(config):
                     sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
                     sc2.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
                     
-                    # voglio salvare dati relativi a quanto gli aenti SONO INFLUENZATI
-                    agents_dict['agent_0'].mutinfo.append(np.mean([mut01[-1], mut02[-1]]))
-                    agents_dict['agent_1'].mutinfo.append(np.mean([mut10[-1], mut12[-1]]))
-                    agents_dict['agent_2'].mutinfo.append(np.mean([mut21[-1], mut20[-1]]))
+                    # voglio salvare dati relativi a quanto gli agenti INFLUNEZANO
+                    agents_dict['agent_0'].mutinfo_signaling.append(np.mean([mut10[-1], mut02[-1]]))
+                    agents_dict['agent_1'].mutinfo_signaling.append(np.mean([mut01[-1], mut21[-1]]))
+                    agents_dict['agent_2'].mutinfo_signaling.append(np.mean([mut02[-1], mut12[-1]]))
+
+                    # voglio salvare dati relativi a quanto gli agenti SONO INFLUENZATI
+                    agents_dict['agent_0'].mutinfo_listening.append(np.mean([mut01[-1], mut02[-1]]))
+                    agents_dict['agent_1'].mutinfo_listening.append(np.mean([mut10[-1], mut12[-1]]))
+                    agents_dict['agent_2'].mutinfo_listening.append(np.mean([mut21[-1], mut20[-1]]))
+
+                    mut0_sig_avg.append(np.mean([mut10[-1], mut20[-1]]))
+                    mut1_sig_avg.append(np.mean([mut01[-1], mut21[-1]]))
+                    mut2_sig_avg.append(np.mean([mut02[-1], mut12[-1]]))
+
+                    mut0_list_avg.append(np.mean([mut01[-1], mut02[-1]]))
+                    mut1_list_avg.append(np.mean([mut10[-1], mut12[-1]]))
+                    mut2_list_avg.append(np.mean([mut21[-1], mut21[-1]]))
 
                     agents_dict['agent_0'].sc.append(sc0)
                     agents_dict['agent_1'].sc.append(sc1)
                     agents_dict['agent_2'].sc.append(sc2)
-                    mut0_avg.append(np.mean([mut01[-1], mut02[-1]]))
-                    mut1_avg.append(np.mean([mut10[-1], mut12[-1]]))
-                    mut2_avg.append(np.mean([mut21[-1], mut20[-1]]))
 
                 # break; if the episode is over
                 if done:
                     break
 
             if (ep_in%config.save_interval == 0):
-                #sc0.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
-                #sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
-                #sc2.append(U.calc_mutinfo(agents_dict['agent_2'].buffer.actions, agents_dict['agent_2'].buffer.messages, config.action_size, config.mex_size))
                 if (config.n_agents == 2):
                     h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
                     h1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
@@ -221,8 +229,6 @@ def train(config):
                 for ag_idx, agent in agents_dict.items():
                     print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', parallel_env.coins[ag_idx]),\
                         "obs=", agent.buffer.states_a[-1], "action=", actions[ag_idx], "rew=", rewards[ag_idx])#,\
-                        #"mutinfo=", agent.mutinfo[-1], "comm entropy=",  str.format('{0:.3f}', agent.comm_entropy[-1].detach().item()))
-
 
             if ( ep_in != 0 and ep_in%config.update_timestep == 0 ):
 
@@ -259,8 +265,18 @@ def train(config):
                     df_coop = {"coop_ag"+str(i): np.mean(agents_dict["agent_"+str(i)].tmp_actions) for i in range(config.n_agents)}
                     df_avg_coop = {"avg_coop": avg_coop_time[-1]}
                     df_avg_coop_time = {"avg_coop_time": np.mean(avg_coop_time[-10:])}
+                    df_signaling = {"ag0_signaling": mut0_sig_avg[-1],
+                    "ag1_signaling": mut1_sig_avg[-1],
+                    "ag2_signaling": mut2_sig_avg[-1],
+                    }
+                    df_listening = {"ag0_listening": mut0_list_avg[-1],
+                    "ag1_listening": mut1_list_avg[-1],
+                    "ag2_listening": mut2_list_avg[-1],
+                    }
                     df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
-                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop, **df_avg_coop_time, **df_performance}
+                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, \
+                        **df_avg_coop, **df_avg_coop_time, **df_performance, \
+                        **df_signaling, **df_listening}
                     df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
         if (config.plots == True):
@@ -270,7 +286,7 @@ def train(config):
             # COOPERATIVITY PERCENTAGE PLOT
             U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
 
-            mutinfos = [mut0_avg, mut1_avg, mut2_avg]
+            mutinfos = [mut0_sig_avg, mut1_sig_avg, mut2_sig_avg]
             #print("mut0_avg=", mut0_avg)
             U.plot_info(config, mutinfos, path, "mutinfo_or_instantaneous_coordination")
 

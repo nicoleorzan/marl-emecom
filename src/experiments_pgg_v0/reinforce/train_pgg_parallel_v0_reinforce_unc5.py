@@ -38,7 +38,6 @@ hyperparameter_defaults = dict(
     save_models = True,
     save_data = True,
     save_interval = 20,
-    print_freq = 1000,
     recurrent = False,
     random_baseline = False,
     wandb_mode = "offline",
@@ -211,7 +210,7 @@ def train(config):
         if (config.random_baseline == True):
             df.to_csv(path+'data_simple_RND.csv')
         else: 
-            df.to_csv(path+'data_simple.csv')
+            df.to_csv(path+'data_simple_unc5.csv')
 
     # save models
     print("Saving models...")
