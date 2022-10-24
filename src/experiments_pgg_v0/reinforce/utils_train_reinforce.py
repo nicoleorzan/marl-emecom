@@ -31,10 +31,10 @@ def save_stuff(config, parallel_env, agents_dict, df, m_min, m_max, avg_coop_tim
     avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()]))
     if (config.wandb_mode == "online"):
         for ag_idx, agent in agents_dict.items():
-            wandb.log({ag_idx+"_return_train": agent.return_episode_old}, step=ep_in)
+            wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy()}, step=ep_in)
             wandb.log({ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=ep_in)
         wandb.log({"episode": ep_in}, step=ep_in)
-        wandb.log({"avg_return_train": np.mean([agent.return_episode_old for _, agent in agents_dict.items()])}, step=ep_in)
+        wandb.log({"avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()])}, step=ep_in)
         wandb.log({"avg_coop_train": avg_coop_time[-1]}, step=ep_in)
         wandb.log({"avg_coop_time_train": np.mean(avg_coop_time[-10:])}, step=ep_in)
         
@@ -44,7 +44,7 @@ def save_stuff(config, parallel_env, agents_dict, df, m_min, m_max, avg_coop_tim
         wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=ep_in)
 
     if (config.save_data == True):
-        df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old for i in range(config.n_agents)}
+        df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy() for i in range(config.n_agents)}
         df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old) for i in range(config.n_agents)}
         df_avg_coop = {"avg_coop_train": avg_coop_time[-1]}
         df_avg_coop_time = {"avg_coop_time_train": np.mean(avg_coop_time[-10:])}
