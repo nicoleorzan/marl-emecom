@@ -73,11 +73,11 @@ class parallel_env(ParallelEnv):
         self.z_value = torch.Tensor([4.]).to(device) # max numer of sigma that I want to check if I am away from the mean
          
         if hasattr(self.mult_fact, '__len__'):
-            self.min_mult = self.mult_fact[0]
-            self.max_mult = self.mult_fact[1]
+            self.min_mult = torch.Tensor([self.mult_fact[0]]).to(device)
+            self.max_mult = torch.Tensor([self.mult_fact[1]]).to(device)
         else: 
-            self.min_mult = self.mult_fact
-            self.max_mult = self.mult_fact
+            self.min_mult = torch.Tensor([self.mult_fact]).to(device)
+            self.max_mult = torch.Tensor([self.mult_fact]).to(device)
 
         self.possible_agents = ["agent_" + str(r) for r in range(self.n_agents)]
         self.agents = self.possible_agents[:]
@@ -89,18 +89,18 @@ class parallel_env(ParallelEnv):
             self.min_observable_mult = {}
             self.max_observable_mult = {}
             for idx, agent in enumerate(self.agents):
-                self.uncertainties_dict[agent] = self.uncertainties[idx]
+                self.uncertainties_dict[agent] = torch.tensor([self.uncertainties[idx]]).to(device)
                 self.min_observable_mult[agent] = self.min_mult - \
                     self.z_value*self.uncertainties_dict[agent]
                 self.max_observable_mult[agent] = self.max_mult + \
                     self.z_value*self.uncertainties_dict[agent]
         else: 
-            self.uncertainties_dict = {agent: 0 for agent in self.agents}
-        self.uncertainty_eps = torch.Tensor([0.00001])
+            self.uncertainties_dict = {agent: torch.Tensor([0.]).to(device) for agent in self.agents}
+        self.uncertainty_eps = torch.Tensor([0.00001]).to(device)
         self.n_actions = 2 # give money, keep money
         self.obs_space_size = 2 # I can observe the amount of money I have (precisely), and the multiplicative fctor (with uncertaity)
 
-        self.current_multiplier = 0
+        self.current_multiplier = torch.Tensor([0.]).to(device)
 
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
@@ -151,14 +151,14 @@ class parallel_env(ParallelEnv):
         self.observations = {}
         for agent in self.agents:
             d = normal.Normal(torch.Tensor([self.current_multiplier]), torch.Tensor([self.uncertainties_dict[agent]+self.uncertainty_eps])) # is not var, is std. wrong name I put
-            obs_multiplier = d.sample()#np.random.normal(self.current_multiplier, self.uncertainties_dict[agent], 1)[0]
+            obs_multiplier = d.sample() #np.random.normal(self.current_multiplier, self.uncertainties_dict[agent], 1)[0]
             if obs_multiplier < 0.:
-                obs_multiplier = torch.Tensor([0.])
+                obs_multiplier = torch.Tensor([0.]).to(device)
 
             # normalize the observed mutiplier (after this has been observed with uncertainty)
             if self.normalize_nn_inputs == True:
                 if (self.min_mult == self.max_mult):
-                    obs_multiplier_norm = torch.Tensor([0.])
+                    obs_multiplier_norm = torch.Tensor([0.]).to(device)
                 else:
                     obs_multiplier_norm = (obs_multiplier - self.min_observable_mult[agent])/(self.max_observable_mult[agent] - self.min_observable_mult[agent])
                 self.observations[agent] = torch.Tensor((self.normalized_coins[agent], obs_multiplier_norm)).to(device) 
@@ -189,7 +189,7 @@ class parallel_env(ParallelEnv):
                 #self.current_multiplier = random.sample([0,10], 1)[0]
                 self.current_multiplier = torch.Tensor(random.sample(self.mult_fact,1)).to(device)
             else: 
-                self.current_multiplier = self.mult_fact
+                self.current_multiplier = self.mult_fact.to(device)
 
         self.state = {agent: None for agent in self.agents}
 
