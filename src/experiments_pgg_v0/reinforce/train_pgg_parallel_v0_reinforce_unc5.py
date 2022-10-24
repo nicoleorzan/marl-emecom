@@ -8,6 +8,9 @@ import json
 import pandas as pd
 import os
 import src.analysis.utils as U
+import time
+
+os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -20,7 +23,7 @@ else:
 
 hyperparameter_defaults = dict(
     n_experiments = 20,
-    episodes_per_experiment = 80000,
+    episodes_per_experiment = 60000,
     update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
     uncertainties = [0., 0., 5.],
@@ -210,7 +213,7 @@ def train(config):
         if (config.random_baseline == True):
             df.to_csv(path+'data_simple_RND.csv')
         else: 
-            df.to_csv(path+'data_simple_unc5.csv')
+            df.to_csv(path+'data_simple_unc5'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
 
     # save models
     print("Saving models...")

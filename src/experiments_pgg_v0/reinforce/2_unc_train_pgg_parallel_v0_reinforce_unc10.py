@@ -26,7 +26,7 @@ hyperparameter_defaults = dict(
     episodes_per_experiment = 60000,
     update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
-    uncertainties = [0., 0., 10.],
+    uncertainties = [0., 10., 10.],
     mult_fact = [0.,3.,5.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
@@ -48,7 +48,7 @@ hyperparameter_defaults = dict(
 )
 
 
-wandb.init(project="reinforce_pgg_v0_unc10", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="2_unc_reinforce_pgg_v0_unc10", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -213,7 +213,7 @@ def train(config):
         if (config.random_baseline == True):
             df.to_csv(path+'data_simple_RND.csv')
         else: 
-            df.to_csv(path+'data_simple_unc10'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
+            df.to_csv(path+'2_unc_data_simple_unc10'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
 
     # save models
     print("Saving models...")

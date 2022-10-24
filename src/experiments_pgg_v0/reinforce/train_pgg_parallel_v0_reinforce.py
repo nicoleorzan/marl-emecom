@@ -8,6 +8,9 @@ import json
 import pandas as pd
 import os
 import src.analysis.utils as U
+import time
+
+os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -20,7 +23,7 @@ else:
     
 hyperparameter_defaults = dict(
     n_experiments = 20,
-    episodes_per_experiment = 80000,
+    episodes_per_experiment = 60000,
     update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
     uncertainties = [0., 0., 0.],
@@ -93,7 +96,6 @@ def train(config):
     parallel_env = pgg_parallel_v0.parallel_env(config)
     m_min = min(config.mult_fact)
     m_max = max(config.mult_fact)
-    print("m_min, m_max=", m_min, m_max)
         
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
@@ -177,7 +179,6 @@ def train(config):
                     wandb.log({"avg_return": np.mean([agent.return_episode for _, agent in agents_dict.items()])}, step=ep_in)
                     wandb.log({"avg_coop": avg_coop_time[-1]}, step=ep_in)
                     wandb.log({"avg_coop_time": np.mean(avg_coop_time[-10:])}, step=ep_in)
-
                     
                     # insert some evaluation for m_min and m_max
                     coop_min = eval(parallel_env, agents_dict, m_min)
@@ -212,7 +213,7 @@ def train(config):
         if (config.random_baseline == True):
             df.to_csv(path+'data_simple_RND.csv')
         else: 
-            df.to_csv(path+'data_simple.csv')
+            df.to_csv(path+'data_simple'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
 
     # save models
     print("Saving models...")
