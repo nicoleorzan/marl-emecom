@@ -23,9 +23,12 @@ class Reinforce():
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.decayRate)
         
         self.train_returns = []
+        self.return_episode = 0
+        self.tmp_actions = []
         self.coop = []
-        self.reset()
         self.saved_losses = []
+
+        self.reset()
 
         self.eps_norm = 0.0001
 
@@ -34,7 +37,9 @@ class Reinforce():
         self.rewards = []
 
     def reset_episode(self):
+        self.return_episode_old = self.return_episode
         self.return_episode = 0
+        self.tmp_actions_old = self.tmp_actions
         self.tmp_actions = []
 
     def select_action(self, state, eval=False):
