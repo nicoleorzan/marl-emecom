@@ -27,7 +27,7 @@ hyperparameter_defaults = dict(
     episodes_per_experiment = 80000,
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 0.],
+    uncertainties = [0., 10., 10.],
     mult_fact = [0.,3.,5.],         # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
@@ -54,7 +54,7 @@ hyperparameter_defaults = dict(
 )
 
 
-wandb.init(project="reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"], sync_tensorboard=True)
+wandb.init(project="2_unc_reinforce_pgg_v0_comm_unc10", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"], sync_tensorboard=True)
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -256,7 +256,7 @@ def train(config):
     if (config.save_data == True):
         print("\n\n\n\n===========>Saving data")
         print(df.head(3))
-        df.to_csv(path+'data_comm'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
+        df.to_csv(path+'2_unc_data_comm_unc10'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
     
     # save models
     if (config.save_models == True):

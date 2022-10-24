@@ -40,8 +40,9 @@ class ReinforceComm():
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
         self.train_returns = []
+        self.return_episode = 0
+        self.tmp_actions = []
         self.coop = []
-        self.reset()
 
         self.ent = True
 
@@ -52,18 +53,29 @@ class ReinforceComm():
 
         self.eps_norm = 0.0001
 
+        self.mutinfo_signaling = []
+        self.mutinfo_listening = []
+        self.mutinfo_signaling_old = []
+        self.mutinfo_listening_old = []
+
+        self.reset()
+
     def reset(self):
         self.comm_logprobs = []
         self.act_logprobs = []
         self.comm_entropy = []
         self.act_entropy = []
         self.rewards = []
+        self.mutinfo_signaling_old = self.mutinfo_signaling
+        self.mutinfo_listening_old = self.mutinfo_listening
         self.mutinfo_signaling = []
         self.mutinfo_listening = []
         self.sc = []
 
     def reset_episode(self):
+        self.return_episode_old = self.return_episode
         self.return_episode = 0
+        self.tmp_actions_old = self.tmp_actions
         self.tmp_actions = []
 
     def select_message(self, state, eval=False):

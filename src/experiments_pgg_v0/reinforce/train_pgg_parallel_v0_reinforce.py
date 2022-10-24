@@ -9,7 +9,7 @@ import pandas as pd
 import os
 import src.analysis.utils as U
 import time
-from utils_train_reinforce import eval, save_stuff
+from utils_train_reinforce import eval
 
 np.seterr(all='raise')
 
@@ -25,7 +25,7 @@ else:
     print("Device set to : cpu")
     
 hyperparameter_defaults = dict(
-    n_experiments = 20,
+    n_experiments = 1,
     episodes_per_experiment = 60000,
     update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
@@ -81,8 +81,10 @@ def train(config):
         
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
-            ["ret_ag"+str(i) for i in range(config.n_agents)] + \
-            ["coop_ag"+str(i) for i in range(config.n_agents)])
+            ["ret_ag"+str(i)+"_train" for i in range(config.n_agents)] + \
+            ["coop_ag"+str(i)+"_train" for i in range(config.n_agents)] + \
+            ["avg_coop_train", "avg_coop_time_train", "coop_m"+str(m_min), "coop_m"+str(m_max), "performance_metric"])
+
 
     for experiment in range(config.n_experiments):
         #print("\nExperiment ", experiment)
@@ -150,9 +152,35 @@ def train(config):
                 for ag_idx, agent in agents_dict.items():
                     print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 
-            if (ep_in != 0 and ep_in%config.save_interval == 0):
-                save_stuff(config, parallel_env, agents_dict, df, m_min, m_max, avg_coop_time, experiment, ep_in)
-
+                coop_min = eval(config, parallel_env, agents_dict, m_min, False)
+                coop_max = eval(config, parallel_env, agents_dict, m_max, False)
+                performance_metric = coop_max+(1.-coop_min)
+                #print("[agent.tmp_actions_old for _, agent in agents_dict.items()]=",[agent.tmp_actions_old for _, agent in agents_dict.items()])
+                avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()]))
+                if (config.wandb_mode == "online"):
+                    for ag_idx, agent in agents_dict.items():
+                        wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy()}, step=ep_in)
+                        wandb.log({ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=ep_in)
+                    wandb.log({"episode": ep_in}, step=ep_in)
+                    wandb.log({"avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()])}, step=ep_in)
+                    wandb.log({"avg_coop_train": avg_coop_time[-1]}, step=ep_in)
+                    wandb.log({"avg_coop_time_train": np.mean(avg_coop_time[-10:])}, step=ep_in)
+                    
+                    # insert some evaluation for m_min and m_max
+                    wandb.log({"mult_"+str(m_min)+"_coop": coop_min}, step=ep_in)
+                    wandb.log({"mult_"+str(m_max)+"_coop": coop_max}, step=ep_in)
+                    wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=ep_in)
+                    
+                if (config.save_data == True):
+                    df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}
+                    df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old) for i in range(config.n_agents)}
+                    df_avg_coop = {"avg_coop_train": avg_coop_time[-1]}
+                    df_avg_coop_time = {"avg_coop_time_train": np.mean(avg_coop_time[-10:])}
+                    
+                    df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
+                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop, **df_avg_coop_time, **df_performance}
+                    df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
+        
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
             U.plot_train_returns(config, agents_dict, path, "train_returns_pgg")
