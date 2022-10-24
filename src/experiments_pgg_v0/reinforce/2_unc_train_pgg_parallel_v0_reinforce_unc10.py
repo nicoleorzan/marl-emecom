@@ -44,7 +44,7 @@ hyperparameter_defaults = dict(
     save_interval = 20,
     recurrent = False,
     random_baseline = False,
-    wandb_mode = "offline",
+    wandb_mode = "online",
     normalize_nn_inputs = True
 )
 
@@ -138,10 +138,10 @@ def train(config):
                     agent.update()
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, config.num_game_iterations))
-                coop_min = eval(parallel_env, agents_dict, m_min)
-                coop_max = eval(parallel_env, agents_dict, m_max)
-                print("coop with m="+str(m_min)+":", coop_min)
-                print("coop with m="+str(m_max)+":", coop_max)
+                coop_min = eval(config, parallel_env, agents_dict, m_min)
+                coop_max = eval(config, parallel_env, agents_dict, m_max)
+                print("eval coop with m="+str(m_min)+":", coop_min)
+                print("eval coop with m="+str(m_max)+":", coop_max)
                 print("Episodic Reward:")
                 coins = parallel_env.get_coins()
                 for ag_idx, agent in agents_dict.items():

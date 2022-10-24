@@ -136,7 +136,6 @@ def train(config):
 
             # update agents with REINFORCE
             if ep_in != 0 and ep_in % config.update_timestep == 0:
-                print("===>update")
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
                 

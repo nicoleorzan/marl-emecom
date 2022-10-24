@@ -100,7 +100,7 @@ def train(config):
         #### TRAINING LOOP
         avg_coop_time = []
 
-        for ep_in in range(1,config.episodes_per_experiment):
+        for ep_in in range(0,config.episodes_per_experiment):
             #print("\nEpisode=", ep_in)
 
             # free variables that change in each episode
@@ -138,10 +138,10 @@ def train(config):
                     agent.update()
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, config.num_game_iterations))
-                coop_min = eval(parallel_env, agents_dict, m_min)
-                coop_max = eval(parallel_env, agents_dict, m_max)
-                print("coop with m="+str(m_min)+":", coop_min)
-                print("coop with m="+str(m_max)+":", coop_max)
+                coop_min = eval(config, parallel_env, agents_dict, m_min)
+                coop_max = eval(config, parallel_env, agents_dict, m_max)
+                print("eval coop with m="+str(m_min)+":", coop_min)
+                print("eval coop with m="+str(m_max)+":", coop_max)
                 print("Episodic Reward:")
                 coins = parallel_env.get_coins()
                 for ag_idx, agent in agents_dict.items():
