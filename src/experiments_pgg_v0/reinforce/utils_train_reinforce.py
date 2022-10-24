@@ -42,13 +42,3 @@ def save_stuff(config, parallel_env, agents_dict, df, m_min, m_max, avg_coop_tim
         wandb.log({"mult_"+str(m_min)+"_coop": coop_min}, step=ep_in)
         wandb.log({"mult_"+str(m_max)+"_coop": coop_max}, step=ep_in)
         wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=ep_in)
-
-    if (config.save_data == True):
-        df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy() for i in range(config.n_agents)}
-        df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old) for i in range(config.n_agents)}
-        df_avg_coop = {"avg_coop_train": avg_coop_time[-1]}
-        df_avg_coop_time = {"avg_coop_time_train": np.mean(avg_coop_time[-10:])}
-        
-        df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
-        df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop, **df_avg_coop_time, **df_performance}
-        df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
