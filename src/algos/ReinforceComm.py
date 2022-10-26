@@ -151,7 +151,7 @@ class ReinforceComm():
             state = torch.FloatTensor(state).to(device)
             out = self.policy_comm.get_distribution(state)
 
-            return out
+            return out.detach()
 
     def update(self):
 
