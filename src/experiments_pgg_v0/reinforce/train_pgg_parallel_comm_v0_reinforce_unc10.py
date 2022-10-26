@@ -6,12 +6,10 @@ import wandb
 import json
 import pandas as pd
 import os
+os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 import src.analysis.utils as U
-import matplotlib.pyplot as plt
 import time
 from utils_train_reinforce_comm import eval
-
-os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -252,10 +250,6 @@ def train(config):
             U.plot_losses(config, agents_dict, path, "losses")
 
             U.plot_losses(config, agents_dict, path, "losses_comm", True)
-
-            plt.figure(0)
-            n, bins, patches = plt.hist(mult_factors)
-            plt.savefig(path+"hist.png")
 
     if (config.save_data == True):
         print("\n\n\n\n===========>Saving data")

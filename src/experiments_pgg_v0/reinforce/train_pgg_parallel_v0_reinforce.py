@@ -7,13 +7,12 @@ import wandb
 import json
 import pandas as pd
 import os
+os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 import src.analysis.utils as U
 import time
 from utils_train_reinforce import eval
 
 np.seterr(all='raise')
-
-os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 
 # set device to cpu or cuda
 device = torch.device('cpu')
