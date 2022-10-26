@@ -195,6 +195,7 @@ def train(config):
                         wandb.log({ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1]}, step=update_idx)
                         wandb.log({ag_idx+"messages_prob_distrib_m"+str(m_min): distrib_min[ag_idx]}, step=update_idx)
                         wandb.log({ag_idx+"messages_prob_distrib_m"+str(m_max): distrib_max[ag_idx]}, step=update_idx)
+                        wandb.log({ag_idx+"entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)})
                     wandb.log({"mult_factor": parallel_env.current_multiplier}, step=update_idx)
                     wandb.log({"episode": ep_in}, step=update_idx)
                     wandb.log({"avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()])}, step=update_idx)

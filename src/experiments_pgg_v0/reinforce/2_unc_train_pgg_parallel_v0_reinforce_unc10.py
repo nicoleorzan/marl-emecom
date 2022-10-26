@@ -116,6 +116,7 @@ def train(config):
 
                 #print(observations)
                 obs_old = observations
+                train_mult_factor = parallel_env.current_multiplier
               
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
                 
@@ -159,7 +160,8 @@ def train(config):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy()}, step=update_idx)
                         wandb.log({ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
-                    wandb.log({"mult_factor": parallel_env.current_multiplier}, step=update_idx)
+                    wandb.log({"train_mult_factor": train_mult_factor}, step=update_idx)
+                    wandb.log({"update_idx": update_idx}, step=update_idx)
                     wandb.log({"episode": ep_in}, step=update_idx)
                     wandb.log({"avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()])}, step=update_idx)
                     wandb.log({"avg_coop_train": avg_coop_time[-1]}, step=update_idx)
