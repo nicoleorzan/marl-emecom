@@ -114,9 +114,10 @@ def train(config):
             done = False
             while not done:
 
+                train_mult_factor = parallel_env.current_multiplier
+
                 #print(observations)
                 obs_old = observations
-                train_mult_factor = parallel_env.current_multiplier
               
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
                 
