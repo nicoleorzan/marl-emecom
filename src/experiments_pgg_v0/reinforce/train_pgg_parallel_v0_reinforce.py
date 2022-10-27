@@ -29,7 +29,7 @@ hyperparameter_defaults = dict(
     update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
     uncertainties = [0., 0., 0.],
-    mult_fact = [0.,3.,5.],        # list givin min and max value of mult factor
+    mult_fact = [0.,1.,2.,3.,5.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     hidden_size = 32, # power of two!
@@ -144,8 +144,14 @@ def train(config):
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, config.num_game_iterations))
 
-                coop_min = eval(config, parallel_env, agents_dict, m_min)
-                coop_max = eval(config, parallel_env, agents_dict, m_max)
+                coop_min, distrib_min = eval(config, parallel_env, agents_dict, m_min)
+                coop_max, distrib_max = eval(config, parallel_env, agents_dict, m_max)
+                coops_eval = {}
+                for m in config.mult_fact:
+                    _, distrib = eval(config, parallel_env, agents_dict, m)
+                    coops_eval[m] = distrib
+                #print("hereee=",coops_eval)
+
                 print("eval coop with m="+str(m_min)+":", coop_min)
                 print("eval coop with m="+str(m_max)+":", coop_max)
                 performance_metric = coop_max+(1.-coop_min)
@@ -158,18 +164,23 @@ def train(config):
 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
-                        wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy()}, step=update_idx)
-                        wandb.log({ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
-                    wandb.log({"train_mult_factor": train_mult_factor}, step=update_idx)
-                    wandb.log({"update_idx": update_idx}, step=update_idx)
-                    wandb.log({"episode": ep_in}, step=update_idx)
-                    wandb.log({"avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()])}, step=update_idx)
-                    wandb.log({"avg_coop_train": avg_coop_time[-1]}, step=update_idx)
-                    wandb.log({"avg_coop_time_train": np.mean(avg_coop_time[-10:])}, step=update_idx)
-                    # insert some evaluation for m_min and m_max
-                    wandb.log({"mult_"+str(m_min)+"_coop": coop_min}, step=update_idx)
-                    wandb.log({"mult_"+str(m_max)+"_coop": coop_max}, step=update_idx)
-                    wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=update_idx)
+                        wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
+                        ag_idx+"prob_coop_m_0": coops_eval[0.][ag_idx][1], # action 1 is cooperative
+                        ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
+                        ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
+                        ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
+                        ag_idx+"prob_coop_m_5": coops_eval[5.][ag_idx][1],
+                        ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
+                    wandb.log({"train_mult_factor": train_mult_factor,
+                        "update_idx": update_idx,
+                        "episode": ep_in,
+                        "avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()]),
+                        "avg_coop_train": avg_coop_time[-1],
+                        "avg_coop_time_train": np.mean(avg_coop_time[-10:]),
+                        # insert some evaluation for m_min and m_max
+                        "mult_"+str(m_min)+"_coop": coop_min,
+                        "mult_"+str(m_max)+"_coop": coop_max,
+                        "performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=update_idx)
 
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}

@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd 
 import wandb
 
 def eval(config, parallel_env, agents_dict, m, _print=True):
@@ -20,7 +19,7 @@ def eval(config, parallel_env, agents_dict, m, _print=True):
             print("distributions", out)
         observations, _, done, _ = parallel_env.step(actions)
 
-    return np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)])
+    return np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)]), out
 
 
 def save_stuff(config, parallel_env, agents_dict, df, m_min, m_max, avg_coop_time, experiment, ep_in):
