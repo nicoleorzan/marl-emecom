@@ -1,3 +1,5 @@
+import os
+os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 from src.environments import pgg_parallel_v0
 from src.algos.ReinforceComm import ReinforceComm
 import numpy as np
@@ -5,8 +7,6 @@ import torch
 import wandb
 import json
 import pandas as pd
-import os
-os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 import src.analysis.utils as U
 import time
 from utils_train_reinforce_comm import eval

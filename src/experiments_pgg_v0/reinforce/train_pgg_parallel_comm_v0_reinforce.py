@@ -1,3 +1,5 @@
+import os
+os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 from src.environments import pgg_parallel_v0
 from src.algos.ReinforceComm import ReinforceComm
 import numpy as np
@@ -5,8 +7,6 @@ import torch
 import wandb
 import json
 import pandas as pd
-import os
-os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 import src.analysis.utils as U
 import time
 from utils_train_reinforce_comm import eval
@@ -179,7 +179,7 @@ def train(config):
                 for m in config.mult_fact:
                     _, distrib = eval(config, parallel_env, agents_dict, m, device)
                     coops_eval[m] = distrib
-                    
+
                 print("coop with m="+str(m_min)+":", coop_min)
                 print("coop with m="+str(m_max)+":", coop_max)
                 performance_metric = coop_max+(1.-coop_min)
