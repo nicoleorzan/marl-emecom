@@ -69,26 +69,16 @@ class Reinforce():
 
     def update(self):
 
-        #rewards = torch.tensor(self.rewards, dtype=torch.float32).to(device)
-        #rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
-        #print("\nUpdate")
         rewards =  self.rewards
         rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
-        #print("logps=", self.logprobs)
-        #print("rews=", rewards)
-        #print("rews_norm=", rew_norm)
 
         for i in range(len(self.logprobs)):
-            self.logprobs[i] = -self.logprobs[i] * rew_norm[i] #rewards[i]
+            self.logprobs[i] = -self.logprobs[i] * rew_norm[i]
 
-        #print("\nlogp", self.logprobs)
-        #print("loss=", np.mean([i.detach() for i in self.logprobs]))
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.logprobs])))
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.logprobs]
         autograd.backward(self.logprobs, tmp, retain_graph=True)
         self.optimizer.step()
-        #print("lin1 grad=",self.policy.lin1.weight.grad) 
-        #print("lin2 grad=",self.policy.lin2.weight.grad) 
 
         self.reset()

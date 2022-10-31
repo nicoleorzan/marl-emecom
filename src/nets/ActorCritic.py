@@ -52,7 +52,6 @@ class ActorCritic(nn.Module):
     def act(self, state, ent=False, greedy=False):
 
         out = self.actor(state)
-        #dist = Categorical(logits=out)
         dist = Categorical(out)
 
         if (self.random_baseline == True): 
@@ -64,7 +63,6 @@ class ActorCritic(nn.Module):
                 act = dist.sample()
 
         logprob = dist.log_prob(act) # negativi
-        #print("logp=", logprob)
 
         if (ent):
             return act.detach(), logprob, dist.entropy().detach()

@@ -45,13 +45,17 @@ class ReinforceComm():
         self.coop = []
 
         self.ent = True
+        self.htarget = np.log(self.action_size)/2.
+        self.hloss_lambda = 0.01
 
         self.saved_losses_comm = []
         self.saved_losses = []
+        self.saved_sign_loss_list = []
 
         self.param_entropy = 0.1
 
         self.eps_norm = 0.0001
+        self.comm_loss = True
 
         self.mutinfo_signaling = []
         self.mutinfo_listening = []
@@ -63,6 +67,7 @@ class ReinforceComm():
     def reset(self):
         self.comm_logprobs = []
         self.act_logprobs = []
+        self.sign_loss_list = []
         self.comm_entropy = []
         self.act_entropy = []
         self.rewards = []
@@ -128,6 +133,18 @@ class ReinforceComm():
             state_mex = torch.cat((state, message)).to(device)
             action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
             
+            if (self.comm_loss == True):
+                state_no_mex = torch.cat((state, torch.zeros_like(message))).to(device)
+                dist_nomex = self.policy_act.get_distribution(state_no_mex).detach()
+                dist_mex = self.policy_act.get_distribution(state_mex)
+                #print("dist_no_mex=", dist_nomex)
+                #print("dist_mex=", dist_mex)
+                #print("diff=", dist_nomex - dist_mex)
+                sign_loss = -torch.sum(torch.abs(dist_nomex - dist_mex))
+                #print("sign_loss=", sign_loss)
+                self.sign_loss_list.append(sign_loss)
+
+
             self.buffer.states_a.append(state)
             self.buffer.actions.append(action)
 
@@ -157,18 +174,24 @@ class ReinforceComm():
 
         rewards =  self.rewards
         rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
-    
+
+        entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
+        #print(entropy.shape)
+        hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
+        #print("hloss=", hloss.shape)
+
+        #print("self.signloss=", self.sign_loss_list)
         for i in range(len(self.comm_logprobs)):
-            #print("rews=", rew_norm[i])
-            #print("self.mutinfo=", self.mutinfo[i])
-            #print("self.entropy=", self.comm_entropy[i])
-            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i]# + \
-            #    self.mutinfo_signal_param*self.mutinfo_signaling[i] + \
-            #    self.mutinfo_listen_param*self.mutinfo_listening[i] #- self.param_entropy*self.comm_entropy[i]
+            #print(" -self.comm_logprobs[i] * rew_norm[i]=",  -self.comm_logprobs[i] * rew_norm[i])
+            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i] + self.hloss_lambda*hloss[i] + self.sign_loss_list[i]
             self.act_logprobs[i] = -self.act_logprobs[i] * rew_norm[i]
 
+        # print("mean signloss=",torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
+        #print("mean entloss=",torch.mean(torch.Tensor([i.detach() for i in hloss])))
+        self.saved_sign_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
         self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
+        #print("self.comm_logp=", len(self.comm_logprobs))
 
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.comm_logprobs]
