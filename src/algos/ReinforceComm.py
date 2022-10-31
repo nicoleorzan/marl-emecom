@@ -17,7 +17,7 @@ else:
 
 class ReinforceComm():
 
-    def __init__(self, params):
+    def __init__(self, params, sign_lambda=0.0, list_lambda=0.0):
 
         for key, val in params.items(): setattr(self, key, val)
 
@@ -46,7 +46,9 @@ class ReinforceComm():
 
         self.ent = True
         self.htarget = np.log(self.action_size)/2.
-        self.hloss_lambda = 0.01
+
+        self.sign_lambda = sign_lambda
+        self.list_lambda = list_lambda
 
         self.saved_losses_comm = []
         self.saved_losses = []
@@ -183,7 +185,7 @@ class ReinforceComm():
         #print("self.signloss=", self.sign_loss_list)
         for i in range(len(self.comm_logprobs)):
             #print(" -self.comm_logprobs[i] * rew_norm[i]=",  -self.comm_logprobs[i] * rew_norm[i])
-            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i] + self.hloss_lambda*hloss[i] + self.sign_loss_list[i]
+            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i] + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
             self.act_logprobs[i] = -self.act_logprobs[i] * rew_norm[i]
 
         # print("mean signloss=",torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))

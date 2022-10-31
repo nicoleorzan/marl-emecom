@@ -45,7 +45,10 @@ hyperparameter_defaults = dict(
     random_baseline = False,
     recurrent = False,
     wandb_mode ="online",
-    normalize_nn_inputs = True
+    normalize_nn_inputs = True,
+    new_loss = True,
+    sign_lambda = [0.01, 0.01, 0.01],
+    list_lambda = [0.1, 0.1, 0.1]
 )
 
 
@@ -94,7 +97,7 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = ReinforceComm(config)
+            agents_dict['agent_'+str(idx)] = ReinforceComm(config, config.sign_lambda[idx], config.list_lambda[idx])
             #wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
