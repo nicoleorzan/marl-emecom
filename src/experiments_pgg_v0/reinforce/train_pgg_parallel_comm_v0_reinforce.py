@@ -198,9 +198,10 @@ def train(config):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
                             ag_idx+"prob_coop_m_0": coops_eval[0.][ag_idx][1], # action 1 is cooperative
-                            #ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
-                            #ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
+                            ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
+                            ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                             ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
+                            ag_idx+"prob_coop_m_4": coops_eval[4.][ag_idx][1],
                             ag_idx+"prob_coop_m_5": coops_eval[5.][ag_idx][1],
                             ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             ag_idx+"_loss": agent.saved_losses[-1],
