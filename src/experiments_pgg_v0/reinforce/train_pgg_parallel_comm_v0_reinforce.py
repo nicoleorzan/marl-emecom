@@ -26,13 +26,13 @@ hyperparameter_defaults = dict(
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
-    mult_fact = [0.,3.,5.],        # list givin min and max value of mult factor
+    mult_fact = [0.,1.,2.,3.,4.,5.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
     hidden_size = 128,
-    lr_actor = 0.001,             # learning rate for actor network
-    lr_critic = 0.0005,           # learning rate for critic network
+    lr_actor = 0.01,             # learning rate for actor network
+    lr_critic = 0.005,           # learning rate for critic network
     lr_actor_comm = 0.01,        # learning rate for actor network
     lr_critic_comm = 0.05,      # learning rate for critic network
     decayRate = 0.99,
@@ -46,9 +46,9 @@ hyperparameter_defaults = dict(
     recurrent = False,
     wandb_mode ="online",
     normalize_nn_inputs = True,
-    new_loss = True,
-    sign_lambda = [0.01, 0.01, 0.01],
-    list_lambda = [0.1, 0.1, 0.1]
+    new_loss = True
+    #sign_lambda = [0.01, 0.01, 0.01],
+    #list_lambda = [0.1, 0.1, 0.1]
 )
 
 
@@ -97,7 +97,7 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = ReinforceComm(config, config.sign_lambda[idx], config.list_lambda[idx])
+            agents_dict['agent_'+str(idx)] = ReinforceComm(config)# , config.sign_lambda[idx], config.list_lambda[idx])
             #wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP

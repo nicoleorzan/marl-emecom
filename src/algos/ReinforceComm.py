@@ -203,6 +203,6 @@ class ReinforceComm():
         self.optimizer.step()
 
         #diminish learning rate
-        #self.scheduler.step()
+        self.scheduler.step()
 
         self.reset()

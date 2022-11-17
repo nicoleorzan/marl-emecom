@@ -26,7 +26,7 @@ else:
 hyperparameter_defaults = dict(
     n_experiments = 1,
     episodes_per_experiment = 60000,
-    update_timestep = 256,       # update policy every n timesteps: same as batch side in this case
+    update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
     uncertainties = [0., 0., 0.],
     mult_fact = [0.,1.,2.,3.,4.,5.],        # list givin min and max value of mult factor
@@ -34,9 +34,9 @@ hyperparameter_defaults = dict(
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     hidden_size = 32, # power of two!
     action_size = 2,
-    lr_actor = 0.05, #0.005,              # learning rate for actor network
-    lr_critic = 0.05, #0.005,           # learning rate for critic network
-    decayRate = 0.999,
+    lr_actor = 0.01, #0.005,              # learning rate for actor network
+    lr_critic = 0.01, #0.005,           # learning rate for critic network
+    decayRate = 0.99,
     fraction = False,
     comm = False,
     plots = True,
@@ -96,7 +96,7 @@ def train(config):
              ])
             agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config)
 
-            wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
+            #wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
         avg_coop_time = []

@@ -26,7 +26,7 @@ hyperparameter_defaults = dict(
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 10.],
-    mult_fact = [0.,1.,2.,3.,5.],        # list givin min and max value of mult factor
+    mult_fact = [0.,1.,2.,3.,4.,5.],       # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
@@ -97,7 +97,7 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = ReinforceComm(config, config.sign_lambda[idx], config.list_lambda[idx])
+            agents_dict['agent_'+str(idx)] = ReinforceComm(config)#, config.sign_lambda[idx], config.list_lambda[idx])
             #wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
