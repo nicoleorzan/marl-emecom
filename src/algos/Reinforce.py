@@ -81,4 +81,7 @@ class Reinforce():
         autograd.backward(self.logprobs, tmp, retain_graph=True)
         self.optimizer.step()
 
+        self.scheduler.step()
+        print(self.scheduler.get_lr())
+
         self.reset()

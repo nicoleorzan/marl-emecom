@@ -26,7 +26,7 @@ hyperparameter_defaults = dict(
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 0., 0.],
-    mult_fact = [0.,1.,2.,3.,5.],        # list givin min and max value of mult factor
+    mult_fact = [0.,3.,5.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
@@ -52,7 +52,7 @@ hyperparameter_defaults = dict(
 )
 
 
-wandb.init(project="reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"], sync_tensorboard=True)
+wandb.init(project="reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -198,8 +198,8 @@ def train(config):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
                             ag_idx+"prob_coop_m_0": coops_eval[0.][ag_idx][1], # action 1 is cooperative
-                            ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
-                            ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
+                            #ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
+                            #ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                             ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
                             ag_idx+"prob_coop_m_5": coops_eval[5.][ag_idx][1],
                             ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),

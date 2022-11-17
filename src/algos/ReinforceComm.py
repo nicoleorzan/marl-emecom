@@ -178,17 +178,16 @@ class ReinforceComm():
         rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
 
         entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
-        #print(entropy.shape)
         hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
         #print("hloss=", hloss.shape)
 
-        #print("self.signloss=", self.sign_loss_list)
         for i in range(len(self.comm_logprobs)):
             #print(" -self.comm_logprobs[i] * rew_norm[i]=",  -self.comm_logprobs[i] * rew_norm[i])
             self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i] + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
             self.act_logprobs[i] = -self.act_logprobs[i] * rew_norm[i]
 
-        # print("mean signloss=",torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
+        #print("mean logits loss=", )
+        #print("mean signloss=",torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
         #print("mean entloss=",torch.mean(torch.Tensor([i.detach() for i in hloss])))
         self.saved_sign_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
         self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))

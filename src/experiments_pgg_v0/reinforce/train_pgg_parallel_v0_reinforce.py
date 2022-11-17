@@ -26,17 +26,17 @@ else:
 hyperparameter_defaults = dict(
     n_experiments = 1,
     episodes_per_experiment = 60000,
-    update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
+    update_timestep = 256,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
     uncertainties = [0., 0., 0.],
-    mult_fact = [0.,1.,2.,3.,5.],        # list givin min and max value of mult factor
+    mult_fact = [0.,1.,2.,3.,4.,5.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     hidden_size = 32, # power of two!
     action_size = 2,
-    lr_actor = 0.005,              # learning rate for actor network
-    lr_critic = 0.005,           # learning rate for critic network
-    decayRate = 0.99,
+    lr_actor = 0.05, #0.005,              # learning rate for actor network
+    lr_critic = 0.05, #0.005,           # learning rate for critic network
+    decayRate = 0.999,
     fraction = False,
     comm = False,
     plots = True,
@@ -169,6 +169,7 @@ def train(config):
                         ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
                         ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                         ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
+                        ag_idx+"prob_coop_m_4": coops_eval[4.][ag_idx][1],
                         ag_idx+"prob_coop_m_5": coops_eval[5.][ag_idx][1],
                         ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
                     wandb.log({"train_mult_factor": train_mult_factor,
