@@ -73,8 +73,8 @@ class parallel_env(ParallelEnv):
         self.z_value = torch.Tensor([4.]).to(device) # max numer of sigma that I want to check if I am away from the mean
          
         if hasattr(self.mult_fact, '__len__'):
-            self.min_mult = torch.Tensor([self.mult_fact[0]]).to(device)
-            self.max_mult = torch.Tensor([self.mult_fact[1]]).to(device)
+            self.min_mult = torch.Tensor([min(self.mult_fact)]).to(device)
+            self.max_mult = torch.Tensor([max(self.mult_fact)]).to(device)
         else: 
             self.min_mult = torch.Tensor([self.mult_fact]).to(device)
             self.max_mult = torch.Tensor([self.mult_fact]).to(device)

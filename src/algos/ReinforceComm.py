@@ -47,8 +47,8 @@ class ReinforceComm():
         self.ent = True
         self.htarget = np.log(self.action_size)/2.
 
-        self.sign_lambda = sign_lambda
-        self.list_lambda = list_lambda
+        #self.sign_lambda = sign_lambda
+        #self.list_lambda = list_lambda
 
         self.saved_losses_comm = []
         self.saved_losses = []

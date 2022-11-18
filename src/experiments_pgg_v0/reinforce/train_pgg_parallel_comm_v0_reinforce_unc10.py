@@ -31,8 +31,8 @@ hyperparameter_defaults = dict(
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
     hidden_size = 128,
-    lr_actor = 0.001,             # learning rate for actor network
-    lr_critic = 0.0005,           # learning rate for critic network
+    lr_actor = 0.01,             # learning rate for actor network
+    lr_critic = 0.005,           # learning rate for critic network
     lr_actor_comm = 0.01,        # learning rate for actor network
     lr_critic_comm = 0.05,      # learning rate for critic network
     decayRate = 0.99,
@@ -47,10 +47,9 @@ hyperparameter_defaults = dict(
     wandb_mode ="online",
     normalize_nn_inputs = True,
     new_loss = True,
-    sign_lambda = [0.01, 0.01, 0.01],
-    list_lambda = [0.1, 0.1, 0.1]
+    sign_lambda = 0.01,
+    list_lambda =  0.1
 )
-
 
 wandb.init(project="reinforce_pgg_v0_comm_unc10", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
 config = wandb.config
@@ -198,9 +197,10 @@ def train(config):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
                             ag_idx+"prob_coop_m_0": coops_eval[0.][ag_idx][1], # action 1 is cooperative
-                            #ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
-                            #ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
+                            ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
+                            ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                             ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
+                            ag_idx+"prob_coop_m_4": coops_eval[4.][ag_idx][1],
                             ag_idx+"prob_coop_m_5": coops_eval[5.][ag_idx][1],
                             ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             ag_idx+"_loss": agent.saved_losses[-1],

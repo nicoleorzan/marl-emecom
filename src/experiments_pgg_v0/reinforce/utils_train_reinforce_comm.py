@@ -19,7 +19,6 @@ def eval(config, parallel_env, agents_dict, m, device, _print=True):
         else:
             messages = {agent: agents_dict[agent].select_message(observations[agent], True) for agent in parallel_env.agents}
             mex_distrib = {agent: agents_dict[agent].get_message_distribution(observations[agent]) for agent in parallel_env.agents}
-            #print("mex_distrib=", mex_distrib)
         message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
         actions = {agent: agents_dict[agent].select_action(observations[agent], message, True) for agent in parallel_env.agents}
         if (_print == True):

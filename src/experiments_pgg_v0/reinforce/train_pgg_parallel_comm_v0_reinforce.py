@@ -46,9 +46,9 @@ hyperparameter_defaults = dict(
     recurrent = False,
     wandb_mode ="online",
     normalize_nn_inputs = True,
-    new_loss = True
-    #sign_lambda = [0.01, 0.01, 0.01],
-    #list_lambda = [0.1, 0.1, 0.1]
+    new_loss = True,
+    sign_lambda = 0.,
+    list_lambda = 0.
 )
 
 

@@ -1,1 +1,0 @@
-{"agent_0_return": 0.0, "_timestamp": 1666338791, "_runtime": 10, "agent_0_coop_level": 1.0, "agent_1_return": 4.0, "agent_1_coop_level": 0.0, "agent_2_return": 0.0, "agent_2_coop_level": 1.0, "episode": 20, "avg_return": 1.3333333730697632, "avg_coop": 0.6666666666666666, "avg_coop_time": 0.6666666666666666, "_step": 20, "_wandb": {"runtime": 9}}
