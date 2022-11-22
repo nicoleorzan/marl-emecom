@@ -187,7 +187,7 @@ class ReinforceComm():
         for i in range(len(self.comm_logprobs)):
             #print(" -self.comm_logprobs[i] * rew_norm[i]=",  -self.comm_logprobs[i] * rew_norm[i])
             self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
-            self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline)
+            self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
 
         #print("mean logits loss=", )
         #print("mean signloss=",torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
