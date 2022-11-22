@@ -47,8 +47,8 @@ hyperparameter_defaults = dict(
     wandb_mode ="online",
     normalize_nn_inputs = True,
     new_loss = True,
-    sign_lambda = [0.01, 0.01, 0.01],
-    list_lambda = [0.1, 0.1, 0.1]
+    sign_lambda = 0.,
+    list_lambda = 0.
 )
 
 
@@ -175,13 +175,18 @@ def train(config):
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
                 ep_in, parallel_env.current_multiplier, config.num_game_iterations))
                 
-                coop_min, distrib_min = eval(config, parallel_env, agents_dict, m_min, device)
-                coop_max, distrib_max = eval(config, parallel_env, agents_dict, m_max, device)
-                
+                #print("====>EVALUATION")
+                coops_distrib = {}
                 coops_eval = {}
                 for m in config.mult_fact:
-                    _, distrib = eval(config, parallel_env, agents_dict, m, device)
-                    coops_eval[m] = distrib
+                    coop_val, mex_distrib, act_distrib = eval(config, parallel_env, agents_dict, m, device)
+                    coops_eval[m] = coop_val
+                    coops_distrib[m] = act_distrib
+
+                coop_max = coops_eval[m_max]
+                coop_min = coops_eval[m_min]
+                distrib_min = coops_distrib[m_min]
+                distrib_max = coops_distrib[m_max]
 
                 print("coop with m="+str(m_min)+":", coop_min)
                 print("coop with m="+str(m_max)+":", coop_max)
@@ -197,11 +202,12 @@ def train(config):
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
-                            ag_idx+"prob_coop_m_0": coops_eval[0.][ag_idx][1], # action 1 is cooperative
-                            #ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
-                            #ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
-                            ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
-                            ag_idx+"prob_coop_m_5": coops_eval[5.][ag_idx][1],
+                            ag_idx+"prob_coop_m_0": coops_distrib[0.][ag_idx][1], # action 1 is cooperative
+                            ag_idx+"prob_coop_m_1": coops_distrib[1.][ag_idx][1],
+                            ag_idx+"prob_coop_m_2": coops_distrib[2.][ag_idx][1],
+                            ag_idx+"prob_coop_m_3": coops_distrib[3.][ag_idx][1],
+                            ag_idx+"prob_coop_m_4": coops_distrib[4.][ag_idx][1],
+                            ag_idx+"prob_coop_m_5": coops_distrib[5.][ag_idx][1],
                             ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             ag_idx+"_loss": agent.saved_losses[-1],
                             ag_idx+"_loss_comm": agent.saved_losses_comm[-1],
