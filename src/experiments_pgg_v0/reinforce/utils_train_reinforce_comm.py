@@ -4,11 +4,10 @@ import pandas as pd
 import wandb
 
 def eval(config, parallel_env, agents_dict, m, device, _print=True):
-    print("device=", device)
     observations = parallel_env.reset(None, None, m)
 
     if (_print == True):
-        print("* Eval ===> Mult factor=", m)
+        print("\n Eval ===> Mult factor=", m)
         print("obs=", observations)
 
     done = False
@@ -21,13 +20,14 @@ def eval(config, parallel_env, agents_dict, m, device, _print=True):
             mex_distrib = {agent: agents_dict[agent].get_message_distribution(observations[agent]) for agent in parallel_env.agents}
         message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
         actions = {agent: agents_dict[agent].select_action(observations[agent], message, True) for agent in parallel_env.agents}
+        acts_distrib = {agent: agents_dict[agent].get_action_distribution(observations[agent], message) for agent in parallel_env.agents}
         if (_print == True):
             print("messages=", messages)
             print("message=", message)
             print("actions=", actions)
         observations, _, done, _ = parallel_env.step(actions)
 
-    return np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)]), mex_distrib
+    return np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)]), mex_distrib, acts_distrib
 
 def save_stuff(config, parallel_env, agents_dict, df, device, m_min, m_max, avg_coop_time, experiment, ep_in):
     print("save stuff")
