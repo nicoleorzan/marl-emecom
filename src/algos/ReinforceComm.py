@@ -127,7 +127,7 @@ class ReinforceComm():
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(device)
                 state_mex = torch.cat((state, message)).to(device)
-                print("state_mex=", state_mex, "type=", type(state_mex))
+                #print("state_mex=", state_mex, "type=", type(state_mex))
                 action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
         elif (eval == False):

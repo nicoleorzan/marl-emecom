@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 import math
+import itertools 
 
 def calc_entropy(comms, n_comm):
     # Calculates the entropy of the communication distribution
@@ -15,6 +16,39 @@ def calc_entropy(comms, n_comm):
     for c in range(n_comm):
         entropy += - p_c[c] * math.log(p_c[c])
     return entropy
+
+def calc_mutinfo2(config, parallel_env, agent_speaker, agent_speaker_idx, agent_listener, agent_listener_idx):
+    cic = 0
+    #define set of possible messages
+    mes = list(itertools.permutations([i for i in range(config.mex_size)]))
+    vals = list(itertools.product(mes, repeat=3))
+    vals = [torch.Tensor(el) for el in vals]
+    possible_messages = [torch.reshape(el, (el.shape[0]*el.shape[1],)) for el in vals]
+    print(possible_messages)
+    
+    #states loop
+    for i in range(100):
+        observations = parallel_env.reset()
+        print("obs=", observations)
+        
+        # loop over possible messages
+        for mex_idx, mex in enumerate(possible_messages):
+            print("mex=", mex)
+
+            p_mj = agent_speaker.policy_comm.get_distribution(observations["agent_"+str(agent_speaker_idx)])#[mex_idx]
+            print("p_mj=", p_mj)
+            obs = torch.FloatTensor(observations["agent_"+str(agent_listener_idx)])
+            state_mex = torch.cat((obs, mex))#.to(device)
+            print("state_mex=", state_mex)
+            p_a_given_mj = agent_listener.policy_act.get_distribution(state_mex)
+            print("p_a_mj=", p_a_given_mj)
+            p_a_and_mj = torch.matmul( torch.reshape(p_mj,(p_mj.shape[0],1)), torch.reshape(p_a_given_mj, (1,p_a_given_mj.shape[0])))
+            print("p_a_and_mj= ", p_a_and_mj)
+            p_a = torch.sum(p_a_and_mj, dim=0) # sum over axes of the action set
+            print("p_a=", p_a)
+            print(torch.matmul(torch.reshape(p_a, (p_a.shape[0], 1)),torch.reshape(p_mj, (1, p_mj.shape[0]))))
+            #cic += (1/i+1)*torch.sum(p_a_and_mj*(torch.log(p_a_and_mj)/torch.matmul(log1,log2)), dim=1)
+
 
 
 def calc_mutinfo(acts, comms, n_acts, n_comm):
