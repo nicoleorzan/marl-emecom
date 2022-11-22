@@ -64,6 +64,9 @@ class ReinforceComm():
         self.mutinfo_signaling_old = []
         self.mutinfo_listening_old = []
 
+        self.n_update = 0.
+        self.baseline = 0.
+
         self.reset()
 
     def reset(self):
@@ -183,8 +186,8 @@ class ReinforceComm():
 
         for i in range(len(self.comm_logprobs)):
             #print(" -self.comm_logprobs[i] * rew_norm[i]=",  -self.comm_logprobs[i] * rew_norm[i])
-            self.comm_logprobs[i] = -self.comm_logprobs[i] * rew_norm[i] + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
-            self.act_logprobs[i] = -self.act_logprobs[i] * rew_norm[i]
+            self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
+            self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline)
 
         #print("mean logits loss=", )
         #print("mean signloss=",torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
@@ -204,5 +207,11 @@ class ReinforceComm():
 
         #diminish learning rate
         self.scheduler.step()
+
+        self.n_update += 1.
+        rewi = [i[0] for i in rew_norm]
+        #rint("rewi=", rewi)
+        #print("mean=", np.mean(rewi))
+        self.baseline += (np.mean(rewi) - self.baseline) / (self.n_update)
 
         self.reset()
