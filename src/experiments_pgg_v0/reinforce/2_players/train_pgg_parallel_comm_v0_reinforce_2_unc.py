@@ -44,7 +44,7 @@ hyperparameter_defaults = dict(
     mex_size = 3,
     random_baseline = False,
     recurrent = False,
-    wandb_mode ="offline",
+    wandb_mode ="online",
     normalize_nn_inputs = True,
     new_loss = True,
     sign_lambda = 0.,
@@ -206,11 +206,11 @@ def train(config):
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
-                            ag_idx+"prob_coop_m_0": coops_eval[0.][ag_idx][1], # action 1 is cooperative
-                            ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
-                            ag_idx+"prob_coop_m_1.5": coops_eval[1.5][ag_idx][1],
-                            ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
-                            ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
+                            ag_idx+"prob_coop_m_0": coops_distrib[0.][ag_idx][1], # action 1 is cooperative
+                            ag_idx+"prob_coop_m_1": coops_distrib[1.][ag_idx][1],
+                            ag_idx+"prob_coop_m_1.5": coops_distrib[1.5][ag_idx][1],
+                            ag_idx+"prob_coop_m_2": coops_distrib[2.][ag_idx][1],
+                            ag_idx+"prob_coop_m_2.5": coops_distrib[2.5][ag_idx][1],
                             ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             ag_idx+"_loss": agent.saved_losses[-1],
                             ag_idx+"_loss_comm": agent.saved_losses_comm[-1],
