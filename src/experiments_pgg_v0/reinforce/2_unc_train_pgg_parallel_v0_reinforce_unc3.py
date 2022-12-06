@@ -22,20 +22,20 @@ if(torch.cuda.is_available()):
     print("Device set to : " + str(torch.cuda.get_device_name(device)))
 else:
     print("Device set to : cpu")
-    
+
 hyperparameter_defaults = dict(
     n_experiments = 1,
     episodes_per_experiment = 60000,
     update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
     n_agents = 3,
-    uncertainties = [0., 0., 0.],
+    uncertainties = [0., 3., 3.],
     mult_fact = [0.,1.,2.,3.,4.,5.,6.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     hidden_size = 32, # power of two!
     action_size = 2,
-    lr_actor = 0.01, #0.005,              # learning rate for actor network
-    lr_critic = 0.01, #0.005,           # learning rate for critic network
+    lr_actor = 0.01,              # learning rate for actor network
+    lr_critic = 0.01,           # learning rate for critic network
     decayRate = 0.99,
     fraction = False,
     comm = False,
@@ -49,7 +49,7 @@ hyperparameter_defaults = dict(
 )
 
 
-wandb.init(project="reinforce_pgg_v0", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="2_unc_reinforce_pgg_v0_unc3", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -78,7 +78,7 @@ def train(config):
     m_max = max(config.mult_fact)
 
     max_values = find_max_min(config.mult_fact, 4)
-        
+    
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
             ["ret_ag"+str(i)+"_train" for i in range(config.n_agents)] + \
@@ -97,7 +97,6 @@ def train(config):
              {'params': model.critic.parameters(), 'lr': config.lr_critic} 
              ])
             agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config)
-
             #wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
@@ -123,14 +122,14 @@ def train(config):
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
-                #print("rews=", rewards)
+
                 rewards_norm = {key: value /max_values[float(parallel_env.current_multiplier[0])]  for key, value in rewards.items()}
-                #print("rew norm=", rewards_norm)
+                #print("rews=", rewards)
                 for ag_idx, agent in agents_dict.items():
                     
                     agent.rewards.append(rewards[ag_idx])
-                    agent.return_epiosde_norm =+ rewards_norm[ag_idx]
                     agent.return_episode += rewards[ag_idx]
+                    agent.return_episode_norm += rewards_norm[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
                     if done:
@@ -155,8 +154,6 @@ def train(config):
                 for m in config.mult_fact:
                     _, distrib = eval(config, parallel_env, agents_dict, m)
                     coops_eval[m] = distrib
-                #print("hereee=",coops_eval)
-
                 print("eval coop with m="+str(m_min)+":", coop_min)
                 print("eval coop with m="+str(m_max)+":", coop_max)
                 performance_metric = coop_max+(1.-coop_min)
@@ -186,9 +183,9 @@ def train(config):
                         "avg_coop_time_train": np.mean(avg_coop_time[-10:]),
                         # insert some evaluation for m_min and m_max
                         "mult_"+str(m_min)+"_coop": coop_min,
-                        "mult_"+str(m_max)+"_coop": coop_max,
+                        "mult_"+str(m_max)+"_coop": coop_max, 
                         "performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=update_idx)
-
+                    
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}
                     df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old) for i in range(config.n_agents)}
@@ -200,7 +197,7 @@ def train(config):
                     df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
                 update_idx += 1
-        
+
         if (config.plots == True):
             ### PLOT TRAIN RETURNS
             U.plot_train_returns(config, agents_dict, path, "train_returns_pgg")
@@ -212,9 +209,9 @@ def train(config):
 
     if (config.save_data == True):
         if (config.random_baseline == True):
-            df.to_csv(path+'data_simple_RND.csv')
+            df.to_csv(path+'2_unc_data_simple_RND.csv')
         else: 
-            df.to_csv(path+'data_simple'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
+            df.to_csv(path+'2_unc_data_simple_unc10'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
 
     # save models
     print("Saving models...")

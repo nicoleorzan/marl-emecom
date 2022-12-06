@@ -26,15 +26,15 @@ hyperparameter_defaults = dict(
     episodes_per_experiment = 80000,
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
-    uncertainties = [0., 0., 0.],
+    uncertainties = [0., 0., 3.],
     mult_fact = [0.,1.,2.,3.,4.,5.,6.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
     hidden_size = 128,
-    lr_actor = 0.005,             # learning rate for actor network
-    lr_critic = 0.01,           # learning rate for critic network
-    lr_actor_comm = 0.05,        # learning rate for actor network
+    lr_actor = 0.01,             # learning rate for actor network
+    lr_critic = 0.005,           # learning rate for critic network
+    lr_actor_comm = 0.01,        # learning rate for actor network
     lr_critic_comm = 0.05,      # learning rate for critic network
     decayRate = 0.99,
     fraction = True,
@@ -42,7 +42,7 @@ hyperparameter_defaults = dict(
     plots = True,
     save_models = True,
     save_data = True,
-    mex_size = 3,
+    mex_size = 10,
     random_baseline = False,
     recurrent = False,
     wandb_mode ="online",
@@ -52,8 +52,7 @@ hyperparameter_defaults = dict(
     list_lambda = 0.
 )
 
-
-wandb.init(project="reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
+wandb.init(project="reinforce_pgg_v0_comm_unc3", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -116,7 +115,6 @@ def train(config):
 
             done = False
             while not done:
-                #print("====>TRAINING")
 
                 train_mult_factor = parallel_env.current_multiplier
 
@@ -141,7 +139,6 @@ def train(config):
                     if done:
                         agent.train_returns.append(agent.return_episode)
                         agent.coop.append(np.mean(agent.tmp_actions))
-
                 # mut 01 is how much the messages of agent 1 influenced the actions of agent 0 in the last buffer (group of episodes on which I want to learn)
                 mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
                 mut10.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
@@ -195,7 +192,7 @@ def train(config):
                 coop_min = coops_eval[m_min]
                 distrib_min = coops_distrib[m_min]
                 distrib_max = coops_distrib[m_max]
-
+     
                 print("coop with m="+str(m_min)+":", coop_min)
                 print("coop with m="+str(m_max)+":", coop_max)
                 performance_metric = coop_max+(1.-coop_min)
@@ -206,7 +203,7 @@ def train(config):
                         #"mutinfo=", agent.mutinfo[-1], "comm entropy=",  str.format('{0:.3f}', agent.comm_entropy[-1].detach().item()))
 
                 avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()]))
-                
+
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
@@ -246,6 +243,7 @@ def train(config):
                     df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old) for i in range(config.n_agents)}
                     df_avg_coop = {"avg_coop_train": avg_coop_time[-1]}
                     df_avg_coop_time = {"avg_coop_time_train": np.mean(avg_coop_time[-10:])}
+                    
                     df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
                    
                     df_signaling = {"mutinfo_signaling_ag"+str(i): agents_dict["agent_"+str(i)].mutinfo_signaling_old[-1] for i in range(config.n_agents)}
@@ -282,7 +280,7 @@ def train(config):
     if (config.save_data == True):
         print("\n\n\n\n===========>Saving data")
         print(df.head(3))
-        df.to_csv(path+'data_comm'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
+        df.to_csv(path+'data_comm_unc10'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
     
     # save models
     if (config.save_models == True):

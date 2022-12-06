@@ -10,6 +10,8 @@ import pandas as pd
 import src.analysis.utils as U
 import time
 from utils_train_reinforce_comm import eval
+from utils_train_reinforce import find_max_min
+
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -26,7 +28,7 @@ hyperparameter_defaults = dict(
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 3,
     uncertainties = [0., 10., 10.],
-    mult_fact = [0.,1.,2.,3.,4.,5.],     # list givin min and max value of mult factor
+    mult_fact = [0.,1.,2.,3.,4.,5.,6.],     # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
@@ -83,6 +85,8 @@ def train(config):
     m_min = min(config.mult_fact)
     m_max = max(config.mult_fact)
 
+    max_values = find_max_min(config.mult_fact, 4)
+
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
             ["ret_ag"+str(i)+"_train" for i in range(config.n_agents)] + \
@@ -125,10 +129,13 @@ def train(config):
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)
 
+                rewards_norm = {key: value /max_values[float(parallel_env.current_multiplier[0])]  for key, value in rewards.items()}
+
                 for ag_idx, agent in agents_dict.items():
                     
                     agent.rewards.append(rewards[ag_idx])
                     agent.return_episode += rewards[ag_idx]
+                    agent.return_episode_norm += rewards_norm[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
                     if done:
@@ -202,6 +209,7 @@ def train(config):
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
+                            ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
                             ag_idx+"prob_coop_m_0": coops_distrib[0.][ag_idx][1], # action 1 is cooperative
                             ag_idx+"prob_coop_m_1": coops_distrib[1.][ag_idx][1],
                             ag_idx+"prob_coop_m_2": coops_distrib[2.][ag_idx][1],
