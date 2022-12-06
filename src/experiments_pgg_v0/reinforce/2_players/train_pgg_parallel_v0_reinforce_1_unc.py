@@ -29,7 +29,7 @@ hyperparameter_defaults = dict(
     update_timestep = 64,       # update policy every n timesteps: same as batch side in this case
     n_agents = 2,
     uncertainties = [0., 3.],
-    mult_fact = [0., 1., 1.5, 2., 2.5],        # list givin min and max value of mult factor
+    mult_fact = [0., 1., 1.5, 2., 2.5, 3.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     hidden_size = 8, # power of two!
@@ -128,7 +128,7 @@ def train(config):
                 for ag_idx, agent in agents_dict.items():
                     
                     agent.rewards.append(rewards[ag_idx])
-                    agent.return_epiosde_norm =+ rewards_norm[ag_idx]
+                    agent.return_episode_norm =+ rewards_norm[ag_idx]
                     agent.return_episode += rewards[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])

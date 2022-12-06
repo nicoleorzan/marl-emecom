@@ -1,6 +1,6 @@
 import numpy as np
 import wandb
-
+import itertools
 
 def find_max_min(multipliers, coins):
     n_agents = 3
