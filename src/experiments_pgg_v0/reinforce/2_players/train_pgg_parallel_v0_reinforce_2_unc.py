@@ -10,7 +10,7 @@ import json
 import pandas as pd
 import src.analysis.utils as U
 import time
-from utils_train_reinforce import eval
+from utils_train_reinforce import eval, find_max_min
 
 np.seterr(all='raise')
 
@@ -26,17 +26,17 @@ else:
 hyperparameter_defaults = dict(
     n_experiments = 1,
     episodes_per_experiment = 60000,
-    update_timestep = 128,       # update policy every n timesteps: same as batch side in this case
+    update_timestep = 64,       # update policy every n timesteps: same as batch side in this case
     n_agents = 2,
-    uncertainties = [5., 5.],
+    uncertainties = [3., 3.],
     mult_fact = [0., 1., 1.5, 2., 2.5],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
-    hidden_size = 32, # power of two!
+    hidden_size = 8, # power of two!
     action_size = 2,
     lr_actor = 0.01, #0.005,              # learning rate for actor network
-    lr_critic = 0.01, #0.005,           # learning rate for critic network
-    decayRate = 0.99,
+    lr_critic = 0.1, #0.005,           # learning rate for critic network
+    decayRate = 0.995,
     fraction = False,
     comm = False,
     plots = True,
@@ -76,6 +76,7 @@ def train(config):
     parallel_env = pgg_parallel_v0.parallel_env(config)
     m_min = min(config.mult_fact)
     m_max = max(config.mult_fact)
+    max_values = find_max_min(config.mult_fact, 4)
         
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
@@ -122,9 +123,12 @@ def train(config):
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
                 #print("rews=", rewards)
+                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])]  for key, value in rewards.items()}
+                
                 for ag_idx, agent in agents_dict.items():
                     
                     agent.rewards.append(rewards[ag_idx])
+                    agent.return_epiosde_norm =+ rewards_norm[ag_idx]
                     agent.return_episode += rewards[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
@@ -165,6 +169,7 @@ def train(config):
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
+                        ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
                         ag_idx+"prob_coop_m_0": coops_eval[0.][ag_idx][1], # action 1 is cooperative
                         ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
                         ag_idx+"prob_coop_m_1.5": coops_eval[1.5][ag_idx][1],

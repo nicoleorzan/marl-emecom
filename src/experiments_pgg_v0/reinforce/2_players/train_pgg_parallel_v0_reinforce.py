@@ -10,7 +10,7 @@ import json
 import pandas as pd
 import src.analysis.utils as U
 import time
-from utils_train_reinforce import eval
+from utils_train_reinforce import eval, find_max_min
 
 np.seterr(all='raise')
 
@@ -76,6 +76,7 @@ def train(config):
     parallel_env = pgg_parallel_v0.parallel_env(config)
     m_min = min(config.mult_fact)
     m_max = max(config.mult_fact)
+    max_values = find_max_min(config.mult_fact, 4)
         
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
@@ -122,9 +123,12 @@ def train(config):
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
                 #print("rews=", rewards)
+                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])]  for key, value in rewards.items()}
+                
                 for ag_idx, agent in agents_dict.items():
                     
                     agent.rewards.append(rewards[ag_idx])
+                    agent.return_epiosde_norm =+ rewards_norm[ag_idx]
                     agent.return_episode += rewards[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
@@ -165,6 +169,7 @@ def train(config):
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
+                        ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
                         ag_idx+"prob_coop_m_0": coops_eval[0.][ag_idx][1], # action 1 is cooperative
                         ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
                         ag_idx+"prob_coop_m_1.5": coops_eval[1.5][ag_idx][1],

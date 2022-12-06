@@ -70,7 +70,7 @@ class parallel_env(ParallelEnv):
 
         for key, val in config.items(): setattr(self, key, val)
 
-        self.z_value = torch.Tensor([4.]).to(device) # max numer of sigma that I want to check if I am away from the mean
+        self.z_value = torch.Tensor([1.]).to(device) # max numer of sigma that I want to check if I am away from the mean
          
         if hasattr(self.mult_fact, '__len__'):
             self.min_mult = torch.Tensor([min(self.mult_fact)]).to(device)
@@ -126,7 +126,6 @@ class parallel_env(ParallelEnv):
             self.coins[agent] = 4. # what they have
             self.normalized_coins[agent] = 0. # what they see
 
-
     def assign_coins_uniform(self):
         self.coins = {}
         self.normalized_coins = {}
@@ -161,6 +160,10 @@ class parallel_env(ParallelEnv):
                     obs_multiplier_norm = torch.Tensor([0.]).to(device)
                 else:
                     obs_multiplier_norm = (obs_multiplier - self.min_observable_mult[agent])/(self.max_observable_mult[agent] - self.min_observable_mult[agent])
+                    if (obs_multiplier_norm < 0.):
+                        obs_multiplier_norm = torch.Tensor([0.])
+                    elif (obs_multiplier_norm > 1.):
+                        obs_multiplier_norm = torch.Tensor([1.])
                 self.observations[agent] = torch.Tensor((self.normalized_coins[agent], obs_multiplier_norm)).to(device) 
             # or if I don't normalize
             else:
