@@ -135,6 +135,7 @@ def train(config):
                         agent.tmp_actions.append(actions[ag_idx])
                     if done:
                         agent.train_returns.append(agent.return_episode)
+                        agent.train_returns_norm.append(agent.return_episode_norm)
                         agent.coop.append(np.mean(agent.tmp_actions))
 
                 # break; if the episode is over
@@ -176,6 +177,7 @@ def train(config):
                         ag_idx+"prob_coop_m_5": coops_eval[5.][ag_idx][1],
                         ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
                     wandb.log({"train_mult_factor": train_mult_factor,
+                        "avg_sum_train_returns_norm": np.sum([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])/len(agents_dict["agent_0"].train_returns_norm[-10:] ),
                         "update_idx": update_idx,
                         "episode": ep_in,
                         "avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()]),

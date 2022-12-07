@@ -138,6 +138,7 @@ def train(config):
                         agent.tmp_actions.append(actions[ag_idx])
                     if done:
                         agent.train_returns.append(agent.return_episode)
+                        agent.train_returns_norm.append(agent.return_episode_norm)
                         agent.coop.append(np.mean(agent.tmp_actions))
                 # mut 01 is how much the messages of agent 1 influenced the actions of agent 0 in the last buffer (group of episodes on which I want to learn)
                 mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
@@ -223,6 +224,7 @@ def train(config):
                             ag_idx+"messages_prob_distrib_m"+str(m_max): distrib_max[ag_idx],
                             ag_idx+"mex_entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx)
                     wandb.log({"train_mult_factor": train_mult_factor,
+                        "avg_sum_train_returns_norm": np.sum([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])/len(agents_dict["agent_0"].train_returns_norm[-10:] ),
                         "update_idx": update_idx,
                         "episode": ep_in,
                         "avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()]),

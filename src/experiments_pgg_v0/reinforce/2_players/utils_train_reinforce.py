@@ -3,7 +3,7 @@ import wandb
 import itertools
 
 def find_max_min(multipliers, coins):
-    n_agents = 3
+    n_agents = 2
     max_values = {}
     coins_per_agent = np.array([coins, coins, coins])
 
