@@ -40,6 +40,7 @@ class ReinforceComm():
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
         self.train_returns = []
+        self.train_returns_norm = []
         self.return_episode = 0
         self.return_episode_norm = 0
         self.tmp_actions = []
