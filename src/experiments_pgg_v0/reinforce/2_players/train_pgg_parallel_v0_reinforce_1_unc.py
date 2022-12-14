@@ -2,6 +2,7 @@ import os
 os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 from src.environments import pgg_parallel_v0
 from src.algos.Reinforce import Reinforce
+from src.algos.ReinforceGMM import ReinforceGMM
 from src.nets.ActorCritic import ActorCritic
 import numpy as np
 import torch
@@ -12,7 +13,7 @@ import src.analysis.utils as U
 import time
 from utils_train_reinforce import eval, find_max_min
 
-np.seterr(all='raise')
+#np.seterr(all='raise')
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -45,7 +46,8 @@ hyperparameter_defaults = dict(
     recurrent = False,
     random_baseline = False,
     wandb_mode = "online",
-    normalize_nn_inputs = True
+    normalize_nn_inputs = True,
+    gmm = True
 )
 
 
@@ -89,13 +91,19 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            model = ActorCritic(config, config.obs_size, config.action_size)
+            if (config.uncertainties[idx] != 0.):
+                model = ActorCritic(config, len(config.mult_fact), config.action_size)
+            else:
+                model = ActorCritic(config, config.obs_size, config.action_size)
             model.to(device)
             optimizer = torch.optim.Adam([
-             {'params': model.actor.parameters(), 'lr': config.lr_actor},
-             {'params': model.critic.parameters(), 'lr': config.lr_critic} 
-             ])
-            agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config)
+            {'params': model.actor.parameters(), 'lr': config.lr_actor},
+            {'params': model.critic.parameters(), 'lr': config.lr_critic} 
+            ])
+            if (config.uncertainties[idx] != 0.):
+                agents_dict['agent_'+str(idx)] = ReinforceGMM(model, optimizer, config, idx)
+            else: 
+                agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config, idx)
 
             #wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
 
@@ -148,7 +156,6 @@ def train(config):
 
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, config.num_game_iterations))
-
                 coop_min, distrib_min = eval(config, parallel_env, agents_dict, m_min)
                 coop_max, distrib_max = eval(config, parallel_env, agents_dict, m_max)
                 coops_eval = {}
@@ -160,12 +167,12 @@ def train(config):
                 print("eval coop with m="+str(m_min)+":", coop_min)
                 print("eval coop with m="+str(m_max)+":", coop_max)
                 performance_metric = coop_max+(1.-coop_min)
-                print("Episodic Reward:")
+                #print("Episodic Reward:")
                 coins = parallel_env.get_coins()
-                for ag_idx, agent in agents_dict.items():
-                    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
+                #for ag_idx, agent in agents_dict.items():
+                #    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 
-                avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()]))
+                avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()], dtype=object))
 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
@@ -176,14 +183,14 @@ def train(config):
                         ag_idx+"prob_coop_m_1.5": coops_eval[1.5][ag_idx][1],
                         ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                         ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
-                        ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
+                        ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old, dtype=object)}, step=update_idx)
                     wandb.log({"train_mult_factor": train_mult_factor,
                         "avg_sum_train_returns_norm": np.sum([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])/len(agents_dict["agent_0"].train_returns_norm[-10:] ),
                         "update_idx": update_idx,
                         "episode": ep_in,
-                        "avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()]),
+                        "avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()], dtype=object),
                         "avg_coop_train": avg_coop_time[-1],
-                        "avg_coop_time_train": np.mean(avg_coop_time[-10:]),
+                        "avg_coop_time_train": np.mean(avg_coop_time[-10:], dtype=object),
                         # insert some evaluation for m_min and m_max
                         "mult_"+str(m_min)+"_coop": coop_min,
                         "mult_"+str(m_max)+"_coop": coop_max,
@@ -191,9 +198,9 @@ def train(config):
 
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}
-                    df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old) for i in range(config.n_agents)}
+                    df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old, dtype=object) for i in range(config.n_agents)}
                     df_avg_coop = {"avg_coop_train": avg_coop_time[-1]}
-                    df_avg_coop_time = {"avg_coop_time_train": np.mean(avg_coop_time[-10:])}
+                    df_avg_coop_time = {"avg_coop_time_train": np.mean(avg_coop_time[-10:], dtype=object)}
 
                     df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
                     df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop, **df_avg_coop_time, **df_performance}

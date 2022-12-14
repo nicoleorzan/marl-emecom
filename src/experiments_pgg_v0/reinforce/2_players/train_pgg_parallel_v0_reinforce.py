@@ -95,7 +95,7 @@ def train(config):
              {'params': model.actor.parameters(), 'lr': config.lr_actor},
              {'params': model.critic.parameters(), 'lr': config.lr_critic} 
              ])
-            agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config)
+            agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config, idx)
 
             #wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
 

@@ -1,10 +1,11 @@
 import os
 os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 from src.environments import pgg_parallel_v0
-from src.algos.Reinforce import Reinforce
+from src.algos.ReinforceGMM import ReinforceGMM
 from src.nets.ActorCritic import ActorCritic
 import numpy as np
 import torch
+
 import wandb
 import json
 import pandas as pd
@@ -12,7 +13,7 @@ import src.analysis.utils as U
 import time
 from utils_train_reinforce import eval, find_max_min
 
-np.seterr(all='raise')
+#np.seterr(all='raise')
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -45,10 +46,9 @@ hyperparameter_defaults = dict(
     recurrent = False,
     random_baseline = False,
     wandb_mode = "online",
-    normalize_nn_inputs = True
+    normalize_nn_inputs = True,
+    gmm = True
 )
-
-
 wandb.init(project="2_agents_reinforce_pgg_v0_2_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
@@ -89,13 +89,13 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            model = ActorCritic(config, config.obs_size, config.action_size)
+            model = ActorCritic(config, len(config.mult_fact), config.action_size)
             model.to(device)
             optimizer = torch.optim.Adam([
              {'params': model.actor.parameters(), 'lr': config.lr_actor},
              {'params': model.critic.parameters(), 'lr': config.lr_critic} 
              ])
-            agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config)
+            agents_dict['agent_'+str(idx)] = ReinforceGMM(model, optimizer, config, idx)
 
             #wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
 
@@ -122,6 +122,7 @@ def train(config):
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
+                
                 #print("rews=", rewards)
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])]  for key, value in rewards.items()}
                 

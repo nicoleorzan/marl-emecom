@@ -1,6 +1,7 @@
 import numpy as np
 import wandb
 import itertools
+import torch
 
 def find_max_min(multipliers, coins):
     n_agents = 2
@@ -40,11 +41,15 @@ def eval(config, parallel_env, agents_dict, m, _print=True):
     if (_print == True):
         print("* Eval ===> Mult factor=", m)
         print("obs=", observations)
+        actions_agents = torch.zeros(config.n_agents)
 
     done = False
     while not done:
 
         actions = {agent: agents_dict[agent].select_action(observations[agent], True) for agent in parallel_env.agents}
+        
+        for idx in range(config.n_agents):
+            actions_agents[idx] = actions["agent_"+str(idx)]
         out = {agent: agents_dict[agent].get_distribution(observations[agent]) for agent in parallel_env.agents}
 
         if (_print == True):
@@ -52,8 +57,8 @@ def eval(config, parallel_env, agents_dict, m, _print=True):
             print("distributions", out)
         observations, _, done, _ = parallel_env.step(actions)
 
-    return np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)]), out
-
+    return torch.mean(actions_agents), out #np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)], dtype=object), out
+"""
 
 def save_stuff(config, parallel_env, agents_dict, df, m_min, m_max, avg_coop_time, experiment, ep_in):
     coop_min = eval(config, parallel_env, agents_dict, m_min, False)
@@ -74,3 +79,4 @@ def save_stuff(config, parallel_env, agents_dict, df, m_min, m_max, avg_coop_tim
         wandb.log({"mult_"+str(m_min)+"_coop": coop_min}, step=ep_in)
         wandb.log({"mult_"+str(m_max)+"_coop": coop_max}, step=ep_in)
         wandb.log({"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=ep_in)
+"""
