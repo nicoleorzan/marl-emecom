@@ -1,6 +1,8 @@
 
 import torch
 import torch.autograd as autograd
+from sklearn.mixture import GaussianMixture as GMM
+import torch.nn.functional as F
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -29,10 +31,14 @@ class Reinforce():
         self.coop = []
         self.saved_losses = []
 
-        self.idx = idx
         self.reset()
 
         self.eps_norm = 0.0001
+
+        self.idx = idx
+        self.gmm_ = False
+        if (self.uncertainties[self.idx] != 0.):
+            self.gmm_ = True
         
     def reset(self):
         self.logprobs = []
@@ -48,14 +54,14 @@ class Reinforce():
 
     def select_action(self, state, eval=False):
 
+        state = torch.FloatTensor(state).to(device)
+        if (self.gmm_):
+            state = self.get_gmm_state(state, eval)
+
         if (eval == True):
             with torch.no_grad():
-                state = torch.FloatTensor(state).to(device)
                 action, action_logprob = self.policy.act(state)
-
         elif (eval == False):
-
-            state = torch.FloatTensor(state).to(device)                
             action, action_logprob = self.policy.act(state)
 
             self.logprobs.append(action_logprob)
@@ -66,6 +72,8 @@ class Reinforce():
 
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
+            if (self.gmm_):
+                state = self.get_gmm_state(state, eval=True)
             out = self.policy.get_distribution(state)
 
             return out
@@ -88,3 +96,22 @@ class Reinforce():
         print(self.scheduler.get_lr())
 
         self.reset()
+
+    def get_gmm_state(self, state, eval=False):
+
+        if hasattr(self, 'mf_history'):
+            if (len(self.mf_history) < 50000 and eval == False):
+                self.mf_history = torch.cat((self.mf_history, state[1].reshape(1)), 0)
+        else:
+            self.mf_history = state[1].reshape(1)
+
+        if (len(self.mf_history) >= len(self.mult_fact)):
+            self.gmm = GMM(n_components = len(self.mult_fact), max_iter=1000, random_state=0, covariance_type = 'full')
+            input_ = self.mf_history.reshape(-1, 1)
+            self.gmm.fit(input_)
+            p = torch.Tensor(self.gmm.predict(state[1].reshape(1).reshape(-1, 1))).long()
+            state_in = F.one_hot(p, num_classes=len(self.mult_fact))[0].to(torch.float32)
+        else: 
+            state_in = torch.zeros(len(self.mult_fact)).to(device)
+
+        return state_in
