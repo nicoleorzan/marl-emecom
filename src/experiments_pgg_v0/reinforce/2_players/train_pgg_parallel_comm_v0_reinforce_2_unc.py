@@ -101,7 +101,7 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = ReinforceComm(config)# , config.sign_lambda[idx], config.list_lambda[idx])
+            agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx)# , config.sign_lambda[idx], config.list_lambda[idx])
             #wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP

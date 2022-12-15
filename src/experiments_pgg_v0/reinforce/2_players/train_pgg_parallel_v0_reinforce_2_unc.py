@@ -1,7 +1,7 @@
 import os
 os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 from src.environments import pgg_parallel_v0
-from src.algos.ReinforceGMM import ReinforceGMM
+from src.algos.Reinforce import Reinforce
 from src.nets.ActorCritic import ActorCritic
 import numpy as np
 import torch
@@ -95,7 +95,7 @@ def train(config):
              {'params': model.actor.parameters(), 'lr': config.lr_actor},
              {'params': model.critic.parameters(), 'lr': config.lr_critic} 
              ])
-            agents_dict['agent_'+str(idx)] = ReinforceGMM(model, optimizer, config, idx)
+            agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config, idx)
 
             #wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
 
