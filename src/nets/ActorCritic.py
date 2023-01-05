@@ -6,7 +6,7 @@ from torch.distributions import Categorical, Normal
 # check hidden layer
 class ActorCritic(nn.Module):
 
-    def __init__(self, params, input_size, output_size):
+    def __init__(self, params, input_size, output_size, gmm=False):
         super(ActorCritic, self).__init__()
 
         # absorb all parameters to self
@@ -15,6 +15,7 @@ class ActorCritic(nn.Module):
         self.input_size = input_size
         self.output_size = output_size
         self.bottleneck_size = 8
+        self.gmm_ = gmm
 
         """if (self.comm == True): 
             self.actor = nn.Sequential(

@@ -36,9 +36,9 @@ class Reinforce():
         self.eps_norm = 0.0001
 
         self.idx = idx
-        self.gmm_ = False
-        if (self.uncertainties[self.idx] != 0.):
-            self.gmm_ = True
+        self.gmm_ = self.policy.gmm_
+        #print("agent idx=", self.idx)
+        #print("gmm is=", self.gmm_)
         
     def reset(self):
         self.logprobs = []
@@ -55,8 +55,10 @@ class Reinforce():
     def select_action(self, state, eval=False):
 
         state = torch.FloatTensor(state).to(device)
+        #print("idx=", self.idx, "state before=", state)
         if (self.gmm_):
             state = self.get_gmm_state(state, eval)
+            #print("state after=", state)
 
         if (eval == True):
             with torch.no_grad():

@@ -47,7 +47,7 @@ hyperparameter_defaults = dict(
     random_baseline = False,
     wandb_mode = "online",
     normalize_nn_inputs = True,
-    gmm = True
+    gmm_ = True
 )
 wandb.init(project="2_agents_reinforce_pgg_v0_2_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
@@ -89,7 +89,10 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            model = ActorCritic(config, len(config.mult_fact), config.action_size)
+            if (config.gmm_ == True and config.uncertainties[idx] != 0.):
+                model = ActorCritic(config, len(config.mult_fact), config.action_size, True)
+            else:
+                model = ActorCritic(config, config.obs_size, config.action_size, False)
             model.to(device)
             optimizer = torch.optim.Adam([
              {'params': model.actor.parameters(), 'lr': config.lr_actor},

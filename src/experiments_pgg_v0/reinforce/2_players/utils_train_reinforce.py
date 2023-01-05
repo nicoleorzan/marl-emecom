@@ -12,7 +12,7 @@ def find_max_min(multipliers, coins):
     possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
 
     for multiplier in multipliers:
-        print("\nMultiplier=", multiplier)
+        #print("\nMultiplier=", multiplier)
         a = 0; b = 0; c = 0
         possible_actions = ["C", "D"]
         possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
@@ -27,11 +27,11 @@ def find_max_min(multipliers, coins):
                     returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier
                 else: 
                     returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier + coins_per_agent[ag_idx]
-            print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
+            #print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
 
         max_values[multiplier] = np.amax(returns)
-        print(" max_values[", multiplier, "]=",  max_values[multiplier])
-        print("normalized=", returns/max_values[multiplier])
+        #print(" max_values[", multiplier, "]=",  max_values[multiplier])
+        #print("normalized=", returns/max_values[multiplier])
     return max_values
 
 
