@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 import torch.autograd as autograd
 import numpy as np
+from sklearn.mixture import GaussianMixture as GMM
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -17,18 +18,28 @@ else:
 
 class ReinforceComm():
 
-    def __init__(self, params, sign_lambda=0.0, list_lambda=0.0):
+    def __init__(self, params, idx=0, gmm_agent=False):
 
         for key, val in params.items(): setattr(self, key, val)
 
         self.buffer = RolloutBufferComm()
+
+        self.idx = idx
+        #self.gmm_ = False
+        #if (self.uncertainties[self.idx] != 0.):
+        #    self.gmm_ = True
+        self.gmm_ = gmm_agent
     
         # Communication Policy and Action Policy
         input_comm = self.obs_size
+        if (self.gmm_):
+            input_comm = len(self.mult_fact)
         output_comm = self.mex_size
         self.policy_comm = ActorCritic(params, input_comm, output_comm).to(device)
 
         input_act = self.obs_size + self.n_agents*self.mex_size
+        if (self.gmm_):
+            input_act = len(self.mult_fact) + self.n_agents*self.mex_size
         output_act = self.action_size
         self.policy_act = ActorCritic(params, input_act, output_act).to(device)
 
@@ -48,9 +59,6 @@ class ReinforceComm():
 
         self.ent = True
         self.htarget = np.log(self.action_size)/2.
-
-        #self.sign_lambda = sign_lambda
-        #self.list_lambda = list_lambda
 
         self.saved_losses_comm = []
         self.saved_losses = []
@@ -94,16 +102,20 @@ class ReinforceComm():
 
     def select_message(self, state, eval=False):
 
+        state = torch.FloatTensor(state).to(device)
+        if (self.gmm_):
+            state_in = self.get_gmm_state(state, eval)
+        else: 
+            state_in = state
+
         if (eval == True):
             with torch.no_grad():
-                state = torch.FloatTensor(state).to(device)
-                message, message_logprob, entropy = self.policy_comm.act(state, self.ent)
+                message, message_logprob, entropy = self.policy_comm.act(state_in, self.ent)
 
         elif (eval == False):
-            state = torch.FloatTensor(state).to(device)
-            message, message_logprob, entropy = self.policy_comm.act(state, self.ent)
+            message, message_logprob, entropy = self.policy_comm.act(state_in, self.ent)
 
-            self.buffer.states_c.append(state)
+            self.buffer.states_c.append(state_in)
             self.buffer.messages.append(message)
 
             self.comm_logprobs.append(message_logprob)
@@ -111,14 +123,19 @@ class ReinforceComm():
 
         message = torch.Tensor([message.item()]).long().to(device)
         message = F.one_hot(message, num_classes=self.mex_size)[0]
+        #print("message=", message)
         return message
 
     def random_messages(self, state):
 
         state = torch.FloatTensor(state).to(device)
+        if (self.gmm_):
+            state_in = self.get_gmm_state(state, eval)
+        else: 
+            state_in = state
         message = torch.randint(0, self.mex_size, (self.mex_size-1,))[0]
 
-        self.buffer.states_c.append(state)
+        self.buffer.states_c.append(state_in)
         self.buffer.messages.append(message)
 
         self.comm_logprobs.append(torch.tensor(0.0001))
@@ -129,21 +146,25 @@ class ReinforceComm():
         return message
 
     def select_action(self, state, message, eval=False):
+
+        state = torch.FloatTensor(state).to(device)
+        if (self.gmm_):
+            state_in = self.get_gmm_state(state, eval)
+        else: 
+            state_in = state
     
         if (eval == True):
             with torch.no_grad():
-                state = torch.FloatTensor(state).to(device)
-                state_mex = torch.cat((state, message)).to(device)
-                #print("state_mex=", state_mex, "type=", type(state_mex))
+                state_mex = torch.cat((state_in, message)).to(device)
+                print("state_mex=", state_mex, "type=", type(state_mex))
                 action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
         elif (eval == False):
-            state = torch.FloatTensor(state).to(device)
-            state_mex = torch.cat((state, message)).to(device)
+            state_mex = torch.cat((state_in, message)).to(device)
             action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
             
             if (self.comm_loss == True):
-                state_no_mex = torch.cat((state, torch.zeros_like(message))).to(device)
+                state_no_mex = torch.cat((state_in, torch.zeros_like(message))).to(device)
                 dist_nomex = self.policy_act.get_distribution(state_no_mex).detach()
                 dist_mex = self.policy_act.get_distribution(state_mex)
                 #print("dist_no_mex=", dist_nomex)
@@ -152,7 +173,6 @@ class ReinforceComm():
                 sign_loss = -torch.sum(torch.abs(dist_nomex - dist_mex))
                 #print("sign_loss=", sign_loss)
                 self.sign_loss_list.append(sign_loss)
-
 
             self.buffer.states_a.append(state)
             self.buffer.actions.append(action)
@@ -166,7 +186,11 @@ class ReinforceComm():
 
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
-            state_mex = torch.cat((state, message))
+            if (self.gmm_):
+                state_in = self.get_gmm_state(state, eval)
+            else: 
+                state_in = state
+            state_mex = torch.cat((state_in, message))
             out = self.policy_act.get_distribution(state_mex)
 
             return out
@@ -175,7 +199,11 @@ class ReinforceComm():
 
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
-            out = self.policy_comm.get_distribution(state)
+            if (self.gmm_):
+                state_in = self.get_gmm_state(state, eval)
+            else: 
+                state_in = state
+            out = self.policy_comm.get_distribution(state_in)
 
             return out.detach()
 
@@ -219,3 +247,24 @@ class ReinforceComm():
         self.baseline += (np.mean(rewi) - self.baseline) / (self.n_update)
 
         self.reset()
+
+    def get_gmm_state(self, state, eval=False):
+
+        if hasattr(self, 'mf_history'):
+            if (len(self.mf_history) < 50000 and eval == False):
+                self.mf_history = torch.cat((self.mf_history, state[1].reshape(1)), 0)
+        else:
+            self.mf_history = state[1].reshape(1)
+
+        if (len(self.mf_history) >= len(self.mult_fact)):
+            if(len(self.mf_history) < 50000):
+                self.gmm = GMM(n_components = len(self.mult_fact), max_iter=1000, random_state=0, covariance_type = 'full')
+                input_ = self.mf_history.reshape(-1, 1)
+                self.gmm.fit(input_)
+
+            p = torch.Tensor(self.gmm.predict(state[1].reshape(1).reshape(-1, 1))).long()
+            state_in = F.one_hot(p, num_classes=len(self.mult_fact))[0].to(torch.float32)
+        else: 
+            state_in = torch.zeros(len(self.mult_fact)).to(device)
+
+        return state_in

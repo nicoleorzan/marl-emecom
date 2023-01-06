@@ -108,9 +108,10 @@ class Reinforce():
             self.mf_history = state[1].reshape(1)
 
         if (len(self.mf_history) >= len(self.mult_fact)):
-            self.gmm = GMM(n_components = len(self.mult_fact), max_iter=1000, random_state=0, covariance_type = 'full')
-            input_ = self.mf_history.reshape(-1, 1)
-            self.gmm.fit(input_)
+            if(len(self.mf_history) < 50000):
+                self.gmm = GMM(n_components = len(self.mult_fact), max_iter=1000, random_state=0, covariance_type = 'full')
+                input_ = self.mf_history.reshape(-1, 1)
+                self.gmm.fit(input_)
             p = torch.Tensor(self.gmm.predict(state[1].reshape(1).reshape(-1, 1))).long()
             state_in = F.one_hot(p, num_classes=len(self.mult_fact))[0].to(torch.float32)
         else: 

@@ -49,7 +49,8 @@ hyperparameter_defaults = dict(
     normalize_nn_inputs = True,
     new_loss = True,
     sign_lambda = 0.,
-    list_lambda = 0.
+    list_lambda = 0.,
+    gmm_ = True
 )
 
 
@@ -101,7 +102,10 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx)# , config.sign_lambda[idx], config.list_lambda[idx])
+            if (config.gmm_ == True and config.uncertainties[idx] != 0.):
+                agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx, True)
+            else:
+                agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx, False)
             #wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
@@ -212,6 +216,7 @@ def train(config):
                             ag_idx+"prob_coop_m_1.5": coops_distrib[1.5][ag_idx][1],
                             ag_idx+"prob_coop_m_2": coops_distrib[2.][ag_idx][1],
                             ag_idx+"prob_coop_m_2.5": coops_distrib[2.5][ag_idx][1],
+                            ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
                             ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             ag_idx+"_loss": agent.saved_losses[-1],
                             ag_idx+"_loss_comm": agent.saved_losses_comm[-1],

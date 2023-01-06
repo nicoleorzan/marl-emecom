@@ -176,6 +176,7 @@ def train(config):
                         ag_idx+"prob_coop_m_1.5": coops_eval[1.5][ag_idx][1],
                         ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                         ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
+                        ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
                         ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
                     print([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])
                     wandb.log({"train_mult_factor": train_mult_factor,
