@@ -50,7 +50,7 @@ class ReinforceComm():
                         {'params': self.policy_act.critic.parameters(), 'lr': self.lr_critic}])
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
-        self.train_returns = []
+        #self.train_returns = []
         self.train_returns_norm = []
         self.return_episode = 0
         self.return_episode_norm = 0
@@ -93,9 +93,9 @@ class ReinforceComm():
         self.sc = []
 
     def reset_episode(self):
-        self.return_episode_old = self.return_episode
+        #self.return_episode_old = self.return_episode
         self.return_episode_old_norm = self.return_episode_norm
-        self.return_episode = 0
+        #self.return_episode = 0
         self.return_episode_norm = 0
         self.tmp_actions_old = self.tmp_actions
         self.tmp_actions = []

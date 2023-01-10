@@ -171,8 +171,7 @@ def train(config):
                     print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 
                 #avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()]))
-                print(" update_idx%2. =", update_idx%2. )
-                if (config.wandb_mode == "online" and update_idx%2.==0.):
+                if (config.wandb_mode == "online" and update_idx%1.==0.):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({#ag_idx+"_return_train": agent.return_episode_old.numpy(),
                         ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),

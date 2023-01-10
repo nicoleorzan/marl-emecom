@@ -83,7 +83,6 @@ def train(config):
     parallel_env = pgg_parallel_v0.parallel_env(config)
     m_min = min(config.mult_fact)
     m_max = max(config.mult_fact)
-    #print("m_min=", m_min, "m_max=", m_max)
 
     max_values = find_max_min(config.mult_fact, 4)
 
@@ -105,13 +104,13 @@ def train(config):
             #wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
-        avg_coop_time = []
+        #avg_coop_time = []
         for ep_in in range(config.episodes_per_experiment):
             #print("\nEpisode=", ep_in)
 
             observations = parallel_env.reset()
             #print("obs=", observations)
-            mult_factors.append(parallel_env.current_multiplier)
+            #mult_factors.append(parallel_env.current_multiplier)
                 
             [agent.reset_episode() for _, agent in agents_dict.items()]
 
@@ -135,12 +134,12 @@ def train(config):
                 for ag_idx, agent in agents_dict.items():
                     
                     agent.rewards.append(rewards[ag_idx])
-                    agent.return_episode += rewards[ag_idx]
+                    #agent.return_episode += rewards[ag_idx]
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
                     if done:
-                        agent.train_returns.append(agent.return_episode)
+                        #agent.train_returns.append(agent.return_episode)
                         agent.train_returns_norm.append(agent.return_episode_norm)
                         agent.coop.append(np.mean(agent.tmp_actions))
 
@@ -151,8 +150,6 @@ def train(config):
                 mut01.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
                 mut10.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
                 #print("sc0=", U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size), "mut=", np.mean([mut01[-1], mut02[-1]]))
-                sc0.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
-                sc1.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
                 
                 # voglio salvare dati relativi a quanto gli agenti INFLUNEZANO
                 agents_dict['agent_0'].mutinfo_signaling.append(mut10[-1])
@@ -162,16 +159,16 @@ def train(config):
                 agents_dict['agent_0'].mutinfo_listening.append(mut01[-1])
                 agents_dict['agent_1'].mutinfo_listening.append(mut10[-1])
 
-                agents_dict['agent_0'].sc.append(sc0)
-                agents_dict['agent_1'].sc.append(sc1)
+                agents_dict['agent_0'].sc.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size))
+                agents_dict['agent_1'].sc.append(U.calc_mutinfo(agents_dict['agent_1'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
 
                 # break; if the episode is over
                 if done:
                     break
 
             if (ep_in != 0 and ep_in%config.update_timestep == 0):
-                h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
-                h1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
+                #h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
+                ##1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
                 # update PPO agents     
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
@@ -191,19 +188,8 @@ def train(config):
                 coop_min = coops_eval[m_min]
                 distrib_min = coops_distrib[m_min]
                 distrib_max = coops_distrib[m_max]
-
-                #print("coop with m="+str(m_min)+":", coop_min)
-                #print("coop with m="+str(m_max)+":", coop_max)
-                performance_metric = coop_max+(1.-coop_min)
-                #print("Episodic Reward:")
-                #for ag_idx, agent in agents_dict.items():
-                #    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', parallel_env.coins[ag_idx]),\
-                #        "obs=", agent.buffer.states_a[-1], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
-                #        #"mutinfo=", agent.mutinfo[-1], "comm entropy=",  str.format('{0:.3f}', agent.comm_entropy[-1].detach().item()))
-
-                #avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()]))
-                
-                if (config.wandb_mode == "online" and update_idx%2. == 0.):
+                 
+                if (config.wandb_mode == "online" and update_idx%1. == 0.):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({#ag_idx+"_return_train": agent.return_episode_old.numpy(),
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
@@ -218,6 +204,7 @@ def train(config):
                             #ag_idx+"_loss_comm": agent.saved_losses_comm[-1],
                             ag_idx+"mutinfo_signaling": agent.mutinfo_signaling_old[-1],
                             ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1],
+                            ag_idx+"sc": agent.sc[-1],
                             ag_idx+"messages_prob_distrib_m"+str(m_min): distrib_min[ag_idx],
                             ag_idx+"messages_prob_distrib_m"+str(m_max): distrib_max[ag_idx],
                             ag_idx+"mex_entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx)
@@ -239,23 +226,9 @@ def train(config):
                         #"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, 
                         step=update_idx)
 
-                """if (config.save_data == True):
-                    df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}
-                    df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old) for i in range(config.n_agents)}
-                    df_avg_coop = {"avg_coop_train": avg_coop_time[-1]}
-                    df_avg_coop_time = {"avg_coop_time_train": np.mean(avg_coop_time[-10:])}
-                    df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
-                   
-                    df_signaling = {"mutinfo_signaling_ag"+str(i): agents_dict["agent_"+str(i)].mutinfo_signaling_old[-1] for i in range(config.n_agents)}
-                    df_listening = {"mutinfo_listening_ag"+str(i): agents_dict["agent_"+str(i)].mutinfo_listening_old[-1] for i in range(config.n_agents)}
-                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, \
-                        **df_avg_coop, **df_avg_coop_time, **df_performance, \
-                        **df_signaling, **df_listening}
-                    df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
-                """
                 update_idx += 1
                 
-        if (config.plots == True):
+        """if (config.plots == True):
             print("\nPlotsssssss")
             ### PLOT TRAIN RETURNS
             U.plot_train_returns(config, agents_dict, path, "train_returns_pgg")
@@ -276,6 +249,7 @@ def train(config):
             U.plot_losses(config, agents_dict, path, "losses")
 
             U.plot_losses(config, agents_dict, path, "losses_comm", True)
+        """
 
     if (config.save_data == True):
         print("\n\n\n\n===========>Saving data")
