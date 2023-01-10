@@ -7,9 +7,9 @@ import numpy as np
 import torch
 import wandb
 import json
+import time
 import pandas as pd
 import src.analysis.utils as U
-import time
 from utils_train_reinforce import eval, find_max_min
 
 np.seterr(all='raise')
@@ -100,7 +100,7 @@ def train(config):
             #wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
-        avg_coop_time = []
+        #avg_coop_time = []
 
         update_idx = 0
         for ep_in in range(0,config.episodes_per_experiment):
@@ -143,9 +143,10 @@ def train(config):
 
             # update agents with REINFORCE
             if ep_in != 0 and ep_in % config.update_timestep == 0:
+                start = time.time()
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
-
+                elapsed = end-start
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, config.num_game_iterations))
 
@@ -157,13 +158,13 @@ def train(config):
                     coops_eval[m] = distrib
                 #print("hereee=",coops_eval)
 
-                print("eval coop with m="+str(m_min)+":", coop_min)
-                print("eval coop with m="+str(m_max)+":", coop_max)
-                performance_metric = coop_max+(1.-coop_min)
-                print("Episodic Reward:")
-                coins = parallel_env.get_coins()
-                for ag_idx, agent in agents_dict.items():
-                    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
+                #print("eval coop with m="+str(m_min)+":", coop_min)
+                #print("eval coop with m="+str(m_max)+":", coop_max)
+                #performance_metric = coop_max+(1.-coop_min)
+                #print("Episodic Reward:")
+                #coins = parallel_env.get_coins()
+                #for ag_idx, agent in agents_dict.items():
+                #    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 
                 #avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()]))
 
@@ -178,14 +179,14 @@ def train(config):
                         ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
                         ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
                         ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
-                    print([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])
+                    #print([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])
                     wandb.log({#"#train_mult_factor": train_mult_factor,
                         #"avg_sum_train_returns_norm": np.sum([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])/len(agents_dict["agent_0"].train_returns_norm[-10:] ),
                         "update_idx": update_idx,
                         #"episode": ep_in,
                         #"avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()]),
                         #"avg_coop_train": avg_coop_time[-1],
-                        "avg_coop_time_train": np.mean(avg_coop_time[-10:]),
+                        #"avg_coop_time_train": np.mean(avg_coop_time[-10:]),
                         # insert some evaluation for m_min and m_max
                         "mult_"+str(m_min)+"_coop": coop_min,
                         "mult_"+str(m_max)+"_coop": coop_max},

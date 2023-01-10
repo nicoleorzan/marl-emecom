@@ -152,8 +152,8 @@ def train(config):
                 #print("sc0=", U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size), "mut=", np.mean([mut01[-1], mut02[-1]]))
                 
                 # voglio salvare dati relativi a quanto gli agenti INFLUNEZANO
-                agents_dict['agent_0'].mutinfo_signaling.append(mut10[-1])
-                agents_dict['agent_1'].mutinfo_signaling.append(mut01[-1])
+                #agents_dict['agent_0'].mutinfo_signaling.append(mut10[-1])
+                #agents_dict['agent_1'].mutinfo_signaling.append(mut01[-1])
 
                 # voglio salvare dati relativi a quanto gli agenti SONO INFLUENZATI
                 agents_dict['agent_0'].mutinfo_listening.append(mut01[-1])
@@ -168,7 +168,7 @@ def train(config):
 
             if (ep_in != 0 and ep_in%config.update_timestep == 0):
                 #h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
-                ##1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
+                #h1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
                 # update PPO agents     
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
@@ -188,7 +188,7 @@ def train(config):
                 coop_min = coops_eval[m_min]
                 distrib_min = coops_distrib[m_min]
                 distrib_max = coops_distrib[m_max]
-                 
+
                 if (config.wandb_mode == "online" and update_idx%1. == 0.):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({#ag_idx+"_return_train": agent.return_episode_old.numpy(),
@@ -202,9 +202,9 @@ def train(config):
                             #ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             #ag_idx+"_loss": agent.saved_losses[-1],
                             #ag_idx+"_loss_comm": agent.saved_losses_comm[-1],
-                            ag_idx+"mutinfo_signaling": agent.mutinfo_signaling_old[-1],
+                            #ag_idx+"mutinfo_signaling": agent.mutinfo_signaling_old[-1],
                             ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1],
-                            ag_idx+"sc": agent.sc[-1],
+                            ag_idx+"sc": agent.sc_old[-1],
                             ag_idx+"messages_prob_distrib_m"+str(m_min): distrib_min[ag_idx],
                             ag_idx+"messages_prob_distrib_m"+str(m_max): distrib_max[ag_idx],
                             ag_idx+"mex_entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx)
@@ -216,8 +216,8 @@ def train(config):
                         #"avg_coop_train": avg_coop_time[-1],
                         #"avg_coop_time_train": np.mean(avg_coop_time[-10:]),
 
-                        "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
-                        "avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]),
+                        #"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
+                        #"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]),
                         #"sum_avg_losses": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]) + np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
 
                         # insert some evaluation for m_min and m_max
@@ -227,30 +227,20 @@ def train(config):
                         step=update_idx)
 
                 update_idx += 1
+            
+            if (config.save_data == True):
+                    df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}
+                    df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old) for i in range(config.n_agents)}
+                    #df_avg_coop = {"avg_coop_train": avg_coop_time[-1]}
+                    #df_avg_coop_time = {"avg_coop_time_train": np.mean(avg_coop_time[-10:])}
+                    #df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
+
+                    df_signaling = {"mutinfo_signaling_ag"+str(i): agents_dict["agent_"+str(i)].mutinfo_signaling_old[-1] for i in range(config.n_agents)}
+                    df_listening = {"mutinfo_listening_ag"+str(i): agents_dict["agent_"+str(i)].mutinfo_listening_old[-1] for i in range(config.n_agents)}
+                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, \
+                        **df_signaling, **df_listening}
+                    df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
                 
-        """if (config.plots == True):
-            print("\nPlotsssssss")
-            ### PLOT TRAIN RETURNS
-            U.plot_train_returns(config, agents_dict, path, "train_returns_pgg")
-
-            # COOPERATIVITY PERCENTAGE PLOT
-            U.cooperativity_plot(config, agents_dict, path, "train_cooperativeness")
-
-            mutinfos = [agents_dict["agent_"+str(i)].mutinfo_signaling for i in range(config.n_agents)]
-            #print("mut0_avg=", mut0_avg)
-            U.plot_info(config, mutinfos, path, "mutinfo_or_instantaneous_coordination")
-
-            SCs = [sc0, sc1]
-            U.plot_info(config, SCs, path, "speaker_consistency")
-
-            Hs = [h0, h1]
-            U.plot_info(config, Hs, path, "entropy")
-
-            U.plot_losses(config, agents_dict, path, "losses")
-
-            U.plot_losses(config, agents_dict, path, "losses_comm", True)
-        """
-
     if (config.save_data == True):
         print("\n\n\n\n===========>Saving data")
         print(df.head(3))

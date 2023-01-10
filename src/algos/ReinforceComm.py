@@ -73,6 +73,8 @@ class ReinforceComm():
         self.mutinfo_listening = []
         self.mutinfo_signaling_old = []
         self.mutinfo_listening_old = []
+        self.sc = []
+        self.sc_old = []
 
         self.n_update = 0.
         self.baseline = 0.
@@ -88,9 +90,10 @@ class ReinforceComm():
         self.rewards = []
         self.mutinfo_signaling_old = self.mutinfo_signaling
         self.mutinfo_listening_old = self.mutinfo_listening
+        self.sc_old = self.sc
+        self.sc = []
         self.mutinfo_signaling = []
         self.mutinfo_listening = []
-        self.sc = []
 
     def reset_episode(self):
         #self.return_episode_old = self.return_episode
@@ -214,8 +217,8 @@ class ReinforceComm():
             self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
 
         #self.saved_sign_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
-        self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
-        self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
+        #self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
+        #self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
 
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.comm_logprobs]
@@ -229,8 +232,8 @@ class ReinforceComm():
         self.scheduler.step()
 
         self.n_update += 1.
-        rewi = [i[0] for i in rew_norm]
-        self.baseline += (np.mean(rewi) - self.baseline) / (self.n_update)
+        #rewi = [i[0] for i in rew_norm]
+        self.baseline += (np.mean([i[0] for i in rew_norm]) - self.baseline) / (self.n_update)
 
         self.reset()
 

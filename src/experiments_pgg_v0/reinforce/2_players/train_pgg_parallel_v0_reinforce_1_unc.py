@@ -159,11 +159,11 @@ def train(config):
                     coops_eval[m] = distrib
                 #print("hereee=",coops_eval)
 
-                print("eval coop with m="+str(m_min)+":", coop_min)
-                print("eval coop with m="+str(m_max)+":", coop_max)
-                performance_metric = coop_max+(1.-coop_min)
+                #print("eval coop with m="+str(m_min)+":", coop_min)
+                #print("eval coop with m="+str(m_max)+":", coop_max)
+                #performance_metric = coop_max+(1.-coop_min)
                 #print("Episodic Reward:")
-                coins = parallel_env.get_coins()
+                #coins = parallel_env.get_coins()
                 #for ag_idx, agent in agents_dict.items():
                 #    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 

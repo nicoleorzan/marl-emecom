@@ -156,8 +156,8 @@ def train(config):
                 #print("sc0=", U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_0'].buffer.messages, config.action_size, config.mex_size), "mut=", np.mean([mut01[-1], mut02[-1]]))
                 
                 # voglio salvare dati relativi a quanto gli agenti INFLUNEZANO
-                agents_dict['agent_0'].mutinfo_signaling.append(mut10[-1])
-                agents_dict['agent_1'].mutinfo_signaling.append(mut01[-1])
+                #agents_dict['agent_0'].mutinfo_signaling.append(mut10[-1])
+                #agents_dict['agent_1'].mutinfo_signaling.append(mut01[-1])
 
                 # voglio salvare dati relativi a quanto gli agenti SONO INFLUENZATI
                 agents_dict['agent_0'].mutinfo_listening.append(mut01[-1])
@@ -217,9 +217,9 @@ def train(config):
                             #ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             #ag_idx+"_loss": agent.saved_losses[-1],
                             #ag_idx+"_loss_comm": agent.saved_losses_comm[-1],
-                            ag_idx+"mutinfo_signaling": agent.mutinfo_signaling_old[-1],
+                            #ag_idx+"mutinfo_signaling": agent.mutinfo_signaling_old[-1],
                             ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1],
-                            ag_idx+"sc": agent.sc[-1],
+                            ag_idx+"sc": agent.sc_old[-1],
                             ag_idx+"messages_prob_distrib_m"+str(m_min): distrib_min[ag_idx],
                             ag_idx+"messages_prob_distrib_m"+str(m_max): distrib_max[ag_idx],
                             ag_idx+"mex_entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx)
@@ -231,8 +231,8 @@ def train(config):
                         #"avg_coop_train": avg_coop_time[-1],
                         #"avg_coop_time_train": np.mean(avg_coop_time[-10:]),
 
-                        "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
-                        "avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]),
+                        #"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
+                        #"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]),
                         #"sum_avg_losses": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]) + np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
 
                         # insert some evaluation for m_min and m_max
