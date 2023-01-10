@@ -47,8 +47,9 @@ hyperparameter_defaults = dict(
     random_baseline = False,
     wandb_mode = "online",
     normalize_nn_inputs = True,
-    gmm_ = True
+    gmm_ = False
 )
+
 wandb.init(project="2_agents_reinforce_pgg_v0_2_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
@@ -170,9 +171,8 @@ def train(config):
                     print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 
                 #avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()]))
-
-                if (config.wandb_mode == "online" and update_idx/2. == 0.):
-                    print("update")
+                print(" update_idx%2. =", update_idx%2. )
+                if (config.wandb_mode == "online" and update_idx%2.==0.):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({#ag_idx+"_return_train": agent.return_episode_old.numpy(),
                         ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
