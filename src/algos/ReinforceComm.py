@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 import torch.autograd as autograd
 import numpy as np
+import time
 from sklearn.mixture import GaussianMixture as GMM
 
 # set device to cpu or cuda
@@ -94,6 +95,7 @@ class ReinforceComm():
         self.sc = []
         self.mutinfo_signaling = []
         self.mutinfo_listening = []
+        self.buffer.clear()
 
     def reset_episode(self):
         #self.return_episode_old = self.return_episode
@@ -206,16 +208,26 @@ class ReinforceComm():
 
     def update(self):
 
-        rewards =  self.rewards
+        #s = time.time()
+        rewards = self.rewards
+        #print(len(self.rewards))
         rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
 
         entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
+        #print("entropy=", entropy.shape)
         hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
-
+        #e = time.time()
+        #el = e - s
+        #print("elapsed1=", el)
+        #s = e
         for i in range(len(self.comm_logprobs)):
             self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
             self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
 
+        #e = time.time()
+        #el = e - s
+        #print("elapsed2=", el)
+        #s = e
         #self.saved_sign_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
         #self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
         #self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
@@ -227,6 +239,10 @@ class ReinforceComm():
         tmp1 = [torch.ones(a.data.shape) for a in self.act_logprobs]
         autograd.backward(self.act_logprobs, tmp1, retain_graph=True)
         self.optimizer.step()
+        #e = time.time()
+        #el = e - s
+        ##print("elapsed3=", el)
+        #s = e
 
         #diminish learning rate
         self.scheduler.step()
@@ -236,6 +252,10 @@ class ReinforceComm():
         self.baseline += (np.mean([i[0] for i in rew_norm]) - self.baseline) / (self.n_update)
 
         self.reset()
+        #e = time.time()
+        #el = e - s
+        #print("elapsed4=", el)
+        #s = e
 
     def get_gmm_state(self, state, eval=False):
 

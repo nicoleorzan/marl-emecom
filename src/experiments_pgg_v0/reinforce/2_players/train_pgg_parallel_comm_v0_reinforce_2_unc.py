@@ -11,6 +11,7 @@ import src.analysis.utils as U
 import time
 from utils_train_reinforce_comm import eval
 from utils_train_reinforce import find_max_min
+import time
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -174,9 +175,12 @@ def train(config):
                 #h0.append(U.calc_entropy(agents_dict['agent_0'].buffer.messages, config.mex_size))
                 #h1.append(U.calc_entropy(agents_dict['agent_1'].buffer.messages, config.mex_size))
                 # update PPO agents     
+                #start = time.time()
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
-
+                #end = time.time()
+                #print("elapsed for update=", end-start)
+               
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
                 ep_in, parallel_env.current_multiplier, update_idx))
                 
@@ -203,7 +207,7 @@ def train(config):
                 #        #"mutinfo=", agent.mutinfo[-1], "comm entropy=",  str.format('{0:.3f}', agent.comm_entropy[-1].detach().item()))
 
                 #avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()]))
-                
+                #start = end
                 if (config.wandb_mode == "online" and update_idx%1. == 0.):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({#ag_idx+"_return_train": agent.return_episode_old.numpy(),
@@ -240,7 +244,8 @@ def train(config):
                         "mult_"+str(m_max)+"_coop": coop_max},
                         #"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, 
                         step=update_idx)
-
+                    #end = time.time()
+                    #print("elapsed for wandb = ", end-start)
                 update_idx += 1
 
     if (config.save_data == True):
