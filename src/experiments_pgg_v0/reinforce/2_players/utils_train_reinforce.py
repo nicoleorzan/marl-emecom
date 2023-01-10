@@ -35,13 +35,13 @@ def find_max_min(multipliers, coins):
     return max_values
 
 
-def eval(config, parallel_env, agents_dict, m, _print=True):
+def eval(config, parallel_env, agents_dict, m, _print=False):
     observations = parallel_env.reset(None, None, m)
 
     if (_print == True):
-        #print("* Eval ===> Mult factor=", m)
-        #print("obs=", observations)
-        actions_agents = torch.zeros(config.n_agents)
+        print("* Eval ===> Mult factor=", m)
+        print("obs=", observations)
+    actions_agents = torch.zeros(config.n_agents)
 
     done = False
     while not done:
@@ -53,8 +53,8 @@ def eval(config, parallel_env, agents_dict, m, _print=True):
         out = {agent: agents_dict[agent].get_distribution(observations[agent]) for agent in parallel_env.agents}
 
         if (_print == True):
-            #print("actions=", actions)
-            #print("distributions", out)
+            print("actions=", actions)
+            print("distributions", out)
         observations, _, done, _ = parallel_env.step(actions)
 
     return torch.mean(actions_agents), out #np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)], dtype=object), out

@@ -23,35 +23,36 @@ else:
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 80000,
+    episodes_per_experiment = 160000,
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 2,
-    uncertainties = [0., 3.],
-    mult_fact = [0., 1., 1.5, 2., 2.5, 3.],          # list givin min and max value of mult factor
+    uncertainties = [3., 3.],
+    mult_fact = [0., 1., 1.5, 2., 2.5, 3.],          # list givin m$
     num_game_iterations = 1,
-    obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
+    obs_size = 2,                # we observe coins we have, and mu$
     action_size = 2,
-    hidden_size = 128,
-    lr_actor = 0.005,             # learning rate for actor network
-    lr_critic = 0.01,           # learning rate for critic network
-    lr_actor_comm = 0.05,        # learning rate for actor network
-    lr_critic_comm = 0.05,      # learning rate for critic network
-    decayRate = 0.99,
+    hidden_size = 64,
+    lr_actor = 0.05,             # learning rate for actor network
+    lr_critic = 0.005,           # learning rate for critic network
+    lr_actor_comm = 0.005,        # learning rate for actor network
+    lr_critic_comm = 0.005,      # learning rate for critic network
+    decayRate = 0.999,
     fraction = True,
     comm = True,
-    plots = True,
-    save_models = True,
-    save_data = True,
+    plots = False,
+    save_models = False,
+    save_data = False,
     mex_size = 3,
     random_baseline = False,
     recurrent = False,
     wandb_mode ="online",
     normalize_nn_inputs = True,
     new_loss = True,
-    sign_lambda = 0.,
-    list_lambda = 0.,
-    gmm_ = True
+    sign_lambda = 0.05,
+    list_lambda = 0.05,
+    gmm_ = False
 )
+
 
 
 wandb.init(project="2_agents_reinforce_pgg_v0_comm_1_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
@@ -84,7 +85,7 @@ def train(config):
     parallel_env = pgg_parallel_v0.parallel_env(config)
     m_min = min(config.mult_fact)
     m_max = max(config.mult_fact)
-    print("m_min=", m_min, "m_max=", m_max)
+    #print("m_min=", m_min, "m_max=", m_max)
 
     max_values = find_max_min(config.mult_fact, 4)
 
@@ -187,7 +188,7 @@ def train(config):
                 coops_distrib = {}
                 coops_eval = {}
                 for m in config.mult_fact:
-                    coop_val, mex_distrib, act_distrib = eval(config, parallel_env, agents_dict, m, device)
+                    coop_val, mex_distrib, act_distrib = eval(config, parallel_env, agents_dict, m, device, False)
                     coops_eval[m] = coop_val
                     coops_distrib[m] = act_distrib
 
@@ -196,41 +197,41 @@ def train(config):
                 distrib_min = coops_distrib[m_min]
                 distrib_max = coops_distrib[m_max]
 
-                print("coop with m="+str(m_min)+":", coop_min)
-                print("coop with m="+str(m_max)+":", coop_max)
+                #print("coop with m="+str(m_min)+":", coop_min)
+                #print("coop with m="+str(m_max)+":", coop_max)
                 performance_metric = coop_max+(1.-coop_min)
-                print("Episodic Reward:")
-                for ag_idx, agent in agents_dict.items():
-                    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', parallel_env.coins[ag_idx]),\
-                        "obs=", agent.buffer.states_a[-1], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
-                        #"mutinfo=", agent.mutinfo[-1], "comm entropy=",  str.format('{0:.3f}', agent.comm_entropy[-1].detach().item()))
+                #print("Episodic Reward:")
+                #for ag_idx, agent in agents_dict.items():
+                #    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', parallel_env.coins[ag_idx]),\
+                #        "obs=", agent.buffer.states_a[-1], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
+                #        #"mutinfo=", agent.mutinfo[-1], "comm entropy=",  str.format('{0:.3f}', agent.comm_entropy[-1].detach().item()))
 
                 avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()]))
                 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
-                        wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
+                        wandb.log({#ag_idx+"_return_train": agent.return_episode_old.numpy(),
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
                             ag_idx+"prob_coop_m_0": coops_distrib[0.][ag_idx][1], # action 1 is cooperative
                             ag_idx+"prob_coop_m_1": coops_distrib[1.][ag_idx][1],
                             ag_idx+"prob_coop_m_1.5": coops_distrib[1.5][ag_idx][1],
                             ag_idx+"prob_coop_m_2": coops_distrib[2.][ag_idx][1],
                             ag_idx+"prob_coop_m_2.5": coops_distrib[2.5][ag_idx][1],
-                            ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
-                            ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
-                            ag_idx+"_loss": agent.saved_losses[-1],
-                            ag_idx+"_loss_comm": agent.saved_losses_comm[-1],
+                            ag_idx+"prob_coop_m_3": coops_distrib[3.][ag_idx][1],
+                            #ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
+                            #ag_idx+"_loss": agent.saved_losses[-1],
+                            #ag_idx+"_loss_comm": agent.saved_losses_comm[-1],
                             ag_idx+"mutinfo_signaling": agent.mutinfo_signaling_old[-1],
                             ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1],
                             ag_idx+"messages_prob_distrib_m"+str(m_min): distrib_min[ag_idx],
                             ag_idx+"messages_prob_distrib_m"+str(m_max): distrib_max[ag_idx],
                             ag_idx+"mex_entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx)
-                    wandb.log({"train_mult_factor": train_mult_factor,
-                        "avg_sum_train_returns_norm": np.sum([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])/len(agents_dict["agent_0"].train_returns_norm[-10:] ),
+                    wandb.log({#"train_mult_factor": train_mult_factor,
+                        #"avg_sum_train_returns_norm": np.sum([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])/len(agents_dict["agent_0"].train_returns_norm[-10:] ),
                         "update_idx": update_idx,
-                        "episode": ep_in,
-                        "avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()]),
-                        "avg_coop_train": avg_coop_time[-1],
+                        #"episode": ep_in,
+                        #"avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()]),
+                        #"avg_coop_train": avg_coop_time[-1],
                         "avg_coop_time_train": np.mean(avg_coop_time[-10:]),
 
                         "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
@@ -239,8 +240,9 @@ def train(config):
 
                         # insert some evaluation for m_min and m_max
                         "mult_"+str(m_min)+"_coop": coop_min,
-                        "mult_"+str(m_max)+"_coop": coop_max,
-                        "performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=update_idx)
+                        "mult_"+str(m_max)+"_coop": coop_max},
+                        #"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, 
+                        step=update_idx)
 
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}

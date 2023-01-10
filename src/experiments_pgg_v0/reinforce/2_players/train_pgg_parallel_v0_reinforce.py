@@ -39,9 +39,9 @@ hyperparameter_defaults = dict(
     decayRate = 0.995,
     fraction = False,
     comm = False,
-    plots = True,
-    save_models = True,
-    save_data = True,
+    plots = False,
+    save_models = False,
+    save_data = False,
     recurrent = False,
     random_baseline = False,
     wandb_mode = "online",
@@ -169,7 +169,7 @@ def train(config):
 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
-                        wandb.log({ag_idx+"_return_train": agent.return_episode_old.numpy(),
+                        wandb.log({#ag_idx+"_return_train": agent.return_episode_old.numpy(),
                         ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
                         ag_idx+"prob_coop_m_0": coops_eval[0.][ag_idx][1], # action 1 is cooperative
                         ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
@@ -179,17 +179,18 @@ def train(config):
                         ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
                         ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
                     print([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])
-                    wandb.log({"train_mult_factor": train_mult_factor,
-                        "avg_sum_train_returns_norm": np.sum([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])/len(agents_dict["agent_0"].train_returns_norm[-10:] ),
+                    wandb.log({#"#train_mult_factor": train_mult_factor,
+                        #"avg_sum_train_returns_norm": np.sum([agent.train_returns_norm[-10:] for _, agent in agents_dict.items()])/len(agents_dict["agent_0"].train_returns_norm[-10:] ),
                         "update_idx": update_idx,
-                        "episode": ep_in,
-                        "avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()]),
-                        "avg_coop_train": avg_coop_time[-1],
+                        #"episode": ep_in,
+                        #"avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()]),
+                        #"avg_coop_train": avg_coop_time[-1],
                         "avg_coop_time_train": np.mean(avg_coop_time[-10:]),
                         # insert some evaluation for m_min and m_max
                         "mult_"+str(m_min)+"_coop": coop_min,
-                        "mult_"+str(m_max)+"_coop": coop_max,
-                        "performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, step=update_idx)
+                        "mult_"+str(m_max)+"_coop": coop_max},
+                        #"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric},
+                        step=update_idx)
 
                 if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}

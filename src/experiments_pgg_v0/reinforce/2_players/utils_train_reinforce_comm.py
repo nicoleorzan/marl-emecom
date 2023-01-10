@@ -3,7 +3,7 @@ import torch
 import pandas as pd 
 import wandb
 
-def eval(config, parallel_env, agents_dict, m, device, _print=True):
+def eval(config, parallel_env, agents_dict, m, device, _print=False):
     observations = parallel_env.reset(None, None, m)
 
     if (_print == True):
@@ -22,7 +22,7 @@ def eval(config, parallel_env, agents_dict, m, device, _print=True):
         actions = {agent: agents_dict[agent].select_action(observations[agent], message, True) for agent in parallel_env.agents}
         acts_distrib = {agent: agents_dict[agent].get_action_distribution(observations[agent], message) for agent in parallel_env.agents}
         if (_print == True):
-            print("messages=", messages)
+            #print("messages=", messages)
             print("message=", message)
             print("actions=", actions)
         observations, _, done, _ = parallel_env.step(actions)
