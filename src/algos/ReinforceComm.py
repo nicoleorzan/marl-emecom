@@ -156,7 +156,7 @@ class ReinforceComm():
         if (eval == True):
             with torch.no_grad():
                 state_mex = torch.cat((state_in, message)).to(device)
-                print("state_mex=", state_mex, "type=", type(state_mex))
+                #print("state_mex=", state_mex, "type=", type(state_mex))
                 action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
         elif (eval == False):
