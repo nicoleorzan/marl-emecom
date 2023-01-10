@@ -44,7 +44,7 @@ hyperparameter_defaults = dict(
     save_models = False,
     save_data = False,
     mex_size = 2,
-    random_baseline = True,
+    random_baseline = False,
     recurrent = False,
     wandb_mode ="online",
     normalize_nn_inputs = True,
@@ -177,14 +177,14 @@ def train(config):
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
 
-                print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
-                ep_in, parallel_env.current_multiplier, config.num_game_iterations))
+                print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
+                ep_in, parallel_env.current_multiplier, update_idx))
                 
                 #print("====>EVALUATION")
                 coops_distrib = {}
                 coops_eval = {}
                 for m in config.mult_fact:
-                    coop_val, mex_distrib, act_distrib = eval(config, parallel_env, agents_dict, m, device, False)
+                    coop_val, _, act_distrib = eval(config, parallel_env, agents_dict, m, device, False)
                     coops_eval[m] = coop_val
                     coops_distrib[m] = act_distrib
 

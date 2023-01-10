@@ -178,8 +178,8 @@ def train(config):
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
 
-                print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Iters: {} ".format(experiment, \
-                ep_in, parallel_env.current_multiplier, config.num_game_iterations))
+                print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
+                ep_in, parallel_env.current_multiplier, update_idx))
                 
                 #print("====>EVALUATION")
                 coops_distrib = {}
