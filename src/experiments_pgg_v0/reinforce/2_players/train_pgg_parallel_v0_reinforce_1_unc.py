@@ -167,7 +167,7 @@ def train(config):
                 #for ag_idx, agent in agents_dict.items():
                 #    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
 
-                avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()], dtype=object))
+                #avg_coop_time.append(np.mean([agent.tmp_actions_old for _, agent in agents_dict.items()], dtype=object))
 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
@@ -186,22 +186,12 @@ def train(config):
                         #"episode": ep_in,
                         #"avg_return_train": np.mean([agent.return_episode_old.numpy() for _, agent in agents_dict.items()], dtype=object),
                         #"avg_coop_train": avg_coop_time[-1],
-                        "avg_coop_time_train": np.mean(avg_coop_time[-10:], dtype=object),
+                        #"avg_coop_time_train": np.mean(avg_coop_time[-10:], dtype=object),
                         # insert some evaluation for m_min and m_max
                         "mult_"+str(m_min)+"_coop": coop_min,
                         "mult_"+str(m_max)+"_coop": coop_max},
                         #"performance_mult_("+str(m_min)+","+str(m_max)+")": performance_metric}, 
                         step=update_idx)
-
-                if (config.save_data == True):
-                    df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}
-                    df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old, dtype=object) for i in range(config.n_agents)}
-                    df_avg_coop = {"avg_coop_train": avg_coop_time[-1]}
-                    df_avg_coop_time = {"avg_coop_time_train": np.mean(avg_coop_time[-10:], dtype=object)}
-
-                    df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
-                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, **df_avg_coop, **df_avg_coop_time, **df_performance}
-                    df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
 
                 update_idx += 1
         

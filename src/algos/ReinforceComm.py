@@ -156,7 +156,6 @@ class ReinforceComm():
         if (eval == True):
             with torch.no_grad():
                 state_mex = torch.cat((state_in, message)).to(device)
-                #print("state_mex=", state_mex, "type=", type(state_mex))
                 action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
         elif (eval == False):
@@ -167,12 +166,7 @@ class ReinforceComm():
                 state_no_mex = torch.cat((state_in, torch.zeros_like(message))).to(device)
                 dist_nomex = self.policy_act.get_distribution(state_no_mex).detach()
                 dist_mex = self.policy_act.get_distribution(state_mex)
-                #print("dist_no_mex=", dist_nomex)
-                #print("dist_mex=", dist_mex)
-                #print("diff=", dist_nomex - dist_mex)
-                sign_loss = -torch.sum(torch.abs(dist_nomex - dist_mex))
-                #print("sign_loss=", sign_loss)
-                self.sign_loss_list.append(sign_loss)
+                self.sign_loss_list.append(-torch.sum(torch.abs(dist_nomex - dist_mex)))
 
             self.buffer.states_a.append(state)
             self.buffer.actions.append(action)
@@ -214,20 +208,14 @@ class ReinforceComm():
 
         entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
         hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
-        #print("hloss=", hloss.shape)
 
         for i in range(len(self.comm_logprobs)):
-            #print(" -self.comm_logprobs[i] * rew_norm[i]=",  -self.comm_logprobs[i] * rew_norm[i])
             self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
             self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
 
-        #print("mean logits loss=", )
-        #print("mean signloss=",torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
-        #print("mean entloss=",torch.mean(torch.Tensor([i.detach() for i in hloss])))
-        self.saved_sign_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
+        #self.saved_sign_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
         self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
-        #print("self.comm_logp=", len(self.comm_logprobs))
 
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.comm_logprobs]
@@ -242,8 +230,6 @@ class ReinforceComm():
 
         self.n_update += 1.
         rewi = [i[0] for i in rew_norm]
-        #rint("rewi=", rewi)
-        #print("mean=", np.mean(rewi))
         self.baseline += (np.mean(rewi) - self.baseline) / (self.n_update)
 
         self.reset()
