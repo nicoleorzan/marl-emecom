@@ -51,7 +51,8 @@ hyperparameter_defaults = dict(
     new_loss = True,
     sign_lambda = 0.6,
     list_lambda = 0.5,
-    gmm_ = False
+    gmm_ = False,
+    new = True
 )
 
 wandb.init(project="2_agents_reinforce_pgg_v0_comm_2_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
@@ -190,14 +191,16 @@ def train(config):
                             ag_idx+"messages_prob_distrib_m_3": mex_distrib_given_m[3.][ag_idx],
                             ag_idx+"messages_prob_distrib_m_1.5": mex_distrib_given_m[1.5][ag_idx],
                             ag_idx+"messages_prob_distrib_m_2.5": mex_distrib_given_m[2.5][ag_idx],
-                            ag_idx+"mex_entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx)
+                            ag_idx+"mex_entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx, 
+                        commit=False)
                     wandb.log({
                         "update_idx": update_idx,
                         "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
                         "avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]),
                         "mult_"+str(m_min)+"_coop": coop_min,
                         "mult_"+str(m_max)+"_coop": coop_max},
-                        step=update_idx)
+                        step=update_idx, 
+                        commit=True)
 
                 update_idx += 1
 

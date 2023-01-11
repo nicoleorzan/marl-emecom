@@ -43,7 +43,8 @@ hyperparameter_defaults = dict(
     random_baseline = False,
     wandb_mode = "online",
     normalize_nn_inputs = True,
-    gmm_ = False
+    gmm_ = False,
+    new = True
 )
 
 wandb.init(project="2_agents_reinforce_pgg_v0_2_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
@@ -164,12 +165,13 @@ def train(config):
                         ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                         ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
                         ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
-                        ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
+                        ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx, commit=False)
                     wandb.log({
                         "update_idx": update_idx,
                         "mult_"+str(m_min)+"_coop": coop_min,
                         "mult_"+str(m_max)+"_coop": coop_max},
-                        step=update_idx)
+                        step=update_idx, 
+                        commit=True)
 
                 """if (config.save_data == True):
                     df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}

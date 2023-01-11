@@ -41,7 +41,8 @@ hyperparameter_defaults = dict(
     recurrent = False,
     random_baseline = False,
     wandb_mode = "online",
-    normalize_nn_inputs = True
+    normalize_nn_inputs = True,
+    new = True
 )
 
 
@@ -158,12 +159,14 @@ def train(config):
                         ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                         ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
                         ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
-                        ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx)
+                        ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx, 
+                        commit=False)
                     wandb.log({
                         "update_idx": update_idx,
                         "mult_"+str(m_min)+"_coop": coop_min,
                         "mult_"+str(m_max)+"_coop": coop_max},
-                        step=update_idx)
+                        step=update_idx, 
+                        commit=True)
 
                 update_idx += 1
 
