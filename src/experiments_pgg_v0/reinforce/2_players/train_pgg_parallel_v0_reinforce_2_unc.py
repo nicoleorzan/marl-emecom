@@ -120,7 +120,7 @@ def train(config):
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
                 
-                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])]  for key, value in rewards.items()}
+                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
                 
                 for ag_idx, agent in agents_dict.items():
                     
@@ -144,12 +144,16 @@ def train(config):
                 print("\nExperiment: {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, update_idx))
 
-                coop_min, _ = eval(config, parallel_env, agents_dict, m_min)
-                coop_max, _ = eval(config, parallel_env, agents_dict, m_max)
                 coops_eval = {}
+                rewards_eval_norm_m = {}
+
                 for m in config.mult_fact:
-                    _, distrib = eval(config, parallel_env, agents_dict, m)
+                    _, distrib, rewards_eval = eval(config, parallel_env, agents_dict, m, max_values)
                     coops_eval[m] = distrib
+                    rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
+
+                coop_max = coops_eval[m_max]
+                coop_min = coops_eval[m_min]
 
                 #coins = parallel_env.get_coins()
                 #for ag_idx, agent in agents_dict.items():
@@ -165,7 +169,14 @@ def train(config):
                         ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                         ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
                         ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
-                        ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old)}, step=update_idx, commit=False)
+                        ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
+                        ag_idx+"rewards_eval_norm_m0": rewards_eval_norm_m[0.][ag_idx], 
+                        ag_idx+"rewards_eval_norm_m1": rewards_eval_norm_m[1.][ag_idx], 
+                        ag_idx+"rewards_eval_norm_m1.5": rewards_eval_norm_m[1.5][ag_idx], 
+                        ag_idx+"rewards_eval_norm_m2": rewards_eval_norm_m[2.][ag_idx], 
+                        ag_idx+"rewards_eval_norm_m2.5": rewards_eval_norm_m[2.5][ag_idx], 
+                        ag_idx+"rewards_eval_norm_m3": rewards_eval_norm_m[3.][ag_idx]}, step=update_idx,
+                        commit=False)
                     wandb.log({
                         "update_idx": update_idx,
                         "mult_"+str(m_min)+"_coop": coop_min,

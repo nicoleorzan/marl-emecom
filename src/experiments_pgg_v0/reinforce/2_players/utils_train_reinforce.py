@@ -1,5 +1,4 @@
 import numpy as np
-import wandb
 import itertools
 import torch
 
@@ -52,12 +51,14 @@ def eval(config, parallel_env, agents_dict, m, _print=False):
             actions_agents[idx] = actions["agent_"+str(idx)]
         out = {agent: agents_dict[agent].get_distribution(observations[agent]) for agent in parallel_env.agents}
 
+        _, rewards_eval, _, _ = parallel_env.step(actions)
+        
         if (_print == True):
             print("actions=", actions)
             print("distributions", out)
         observations, _, done, _ = parallel_env.step(actions)
 
-    return torch.mean(actions_agents), out #np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)], dtype=object), out
+    return torch.mean(actions_agents), out, rewards_eval #np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)], dtype=object), out
 """
 
 def save_stuff(config, parallel_env, agents_dict, df, m_min, m_max, avg_coop_time, experiment, ep_in):

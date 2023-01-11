@@ -161,11 +161,14 @@ def train(config):
                 coops_distrib = {}
                 coops_eval = {}
                 mex_distrib_given_m = {}
+                rewards_eval_norm_m = {}
+
                 for m in config.mult_fact:
-                    coop_val, mex_distrib, act_distrib = eval(config, parallel_env, agents_dict, m, device, False)
+                    coop_val, mex_distrib, act_distrib, rewards_eval = eval(config, parallel_env, agents_dict, m, device, False)
                     coops_eval[m] = coop_val
                     coops_distrib[m] = act_distrib
                     mex_distrib_given_m[m] = mex_distrib # distrib dei messaggei per ogni agente, calcolata con dato input
+                    rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
 
                 coop_max = coops_eval[m_max]
                 coop_min = coops_eval[m_min]
@@ -188,6 +191,12 @@ def train(config):
                             ag_idx+"messages_prob_distrib_m_3": mex_distrib_given_m[3.][ag_idx],
                             ag_idx+"messages_prob_distrib_m_1.5": mex_distrib_given_m[1.5][ag_idx],
                             ag_idx+"messages_prob_distrib_m_2.5": mex_distrib_given_m[2.5][ag_idx],
+                            ag_idx+"rewards_eval_norm_m0": rewards_eval_norm_m[0.][ag_idx], 
+                            ag_idx+"rewards_eval_norm_m1": rewards_eval_norm_m[1.][ag_idx], 
+                            ag_idx+"rewards_eval_norm_m1.5": rewards_eval_norm_m[1.5][ag_idx], 
+                            ag_idx+"rewards_eval_norm_m2": rewards_eval_norm_m[2.][ag_idx], 
+                            ag_idx+"rewards_eval_norm_m2.5": rewards_eval_norm_m[2.5][ag_idx], 
+                            ag_idx+"rewards_eval_norm_m3": rewards_eval_norm_m[3.][ag_idx],
                             ag_idx+"mex_entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx, 
                         commit=False)
                     wandb.log({
