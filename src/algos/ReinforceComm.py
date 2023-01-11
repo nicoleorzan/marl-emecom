@@ -26,9 +26,6 @@ class ReinforceComm():
         self.buffer = RolloutBufferComm()
 
         self.idx = idx
-        #self.gmm_ = False
-        #if (self.uncertainties[self.idx] != 0.):
-        #    self.gmm_ = True
         self.gmm_ = gmm_agent
     
         # Communication Policy and Action Policy
@@ -51,7 +48,6 @@ class ReinforceComm():
                         {'params': self.policy_act.critic.parameters(), 'lr': self.lr_critic}])
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
-        #self.train_returns = []
         self.train_returns_norm = []
         self.return_episode = 0
         self.return_episode_norm = 0
@@ -98,9 +94,7 @@ class ReinforceComm():
         self.buffer.clear()
 
     def reset_episode(self):
-        #self.return_episode_old = self.return_episode
         self.return_episode_old_norm = self.return_episode_norm
-        #self.return_episode = 0
         self.return_episode_norm = 0
         self.tmp_actions_old = self.tmp_actions
         self.tmp_actions = []
@@ -228,9 +222,9 @@ class ReinforceComm():
         #el = e - s
         #print("elapsed2=", el)
         #s = e
-        #self.saved_sign_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
-        #self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
-        #self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
+        self.saved_sign_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
+        self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
+        self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
 
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.comm_logprobs]

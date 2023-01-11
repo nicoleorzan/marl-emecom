@@ -23,7 +23,6 @@ class Reinforce():
         self.optimizer = optimizer
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.decayRate)
         
-        self.train_returns = []
         self.train_returns_norm = []
         self.return_episode = 0
         self.return_episode_norm= 0
@@ -37,8 +36,6 @@ class Reinforce():
 
         self.idx = idx
         self.gmm_ = self.policy.gmm_
-        #print("agent idx=", self.idx)
-        #print("gmm is=", self.gmm_)
         
     def reset(self):
         self.logprobs = []
@@ -55,10 +52,8 @@ class Reinforce():
     def select_action(self, state, eval=False):
 
         state = torch.FloatTensor(state).to(device)
-        #print("idx=", self.idx, "state before=", state)
         if (self.gmm_):
             state = self.get_gmm_state(state, eval)
-            #print("state after=", state)
 
         if (eval == True):
             with torch.no_grad():
@@ -95,7 +90,7 @@ class Reinforce():
         self.optimizer.step()
 
         self.scheduler.step()
-        print(self.scheduler.get_lr())
+        #print(self.scheduler.get_lr())
 
         self.reset()
 

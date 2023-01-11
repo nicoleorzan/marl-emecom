@@ -15,6 +15,7 @@ def eval(config, parallel_env, agents_dict, m, device, _print=False):
 
         if (config.random_baseline):
             messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
+            mex_distrib = 0
         else:
             messages = {agent: agents_dict[agent].select_message(observations[agent], True) for agent in parallel_env.agents}
             mex_distrib = {agent: agents_dict[agent].get_message_distribution(observations[agent]) for agent in parallel_env.agents}
@@ -22,7 +23,6 @@ def eval(config, parallel_env, agents_dict, m, device, _print=False):
         actions = {agent: agents_dict[agent].select_action(observations[agent], message, True) for agent in parallel_env.agents}
         acts_distrib = {agent: agents_dict[agent].get_action_distribution(observations[agent], message) for agent in parallel_env.agents}
         if (_print == True):
-            #print("messages=", messages)
             print("message=", message)
             print("actions=", actions)
         observations, _, done, _ = parallel_env.step(actions)
