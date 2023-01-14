@@ -28,7 +28,7 @@ hyperparameter_defaults = dict(
     episodes_per_experiment = 160000,
     update_timestep = 256,        # update policy every n timesteps
     n_agents = 2,
-    uncertainties = [3., 3.],
+    uncertainties = [0.5, 0.5],
     mult_fact = [0., 1., 1.5, 2., 2.5, 3.],          # list givin m$
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and mu$
@@ -51,7 +51,7 @@ hyperparameter_defaults = dict(
     new_loss = True,
     sign_lambda = 0.6,
     list_lambda = 0.5,
-    gmm_ = False,
+    gmm_ = True,
     new = True
 )
 
@@ -96,10 +96,12 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            if (config.gmm_ == True and config.uncertainties[idx] != 0.):
+            if (config.gmm_ == True):
                 agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx, True)
+                print("agent", idx, "is true")
             else:
                 agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx, False)
+                print("agent", idx, "is false")
             #wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
@@ -112,18 +114,23 @@ def train(config):
             done = False
             while not done:
 
-                _ = parallel_env.current_multiplier
-
+                cm = parallel_env.current_multiplier
+                #print("\nmult=", cm)
+                #print("obs=", observations)
                 if (config.random_baseline):
                     messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
                 else:
                     messages = {agent: agents_dict[agent].select_message(observations[agent]) for agent in parallel_env.agents}
+                #print("messages=", messages)
                 message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
+                #print("message=", message)
                 actions = {agent: agents_dict[agent].select_action(observations[agent], message) for agent in parallel_env.agents}
                 observations, rewards, done, _ = parallel_env.step(actions)
+                #print("rewards=", rewards)
 
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
 
+                #print("rew norm=", rewards_norm)
                 for ag_idx, agent in agents_dict.items():
                     
                     agent.rewards.append(rewards[ag_idx])

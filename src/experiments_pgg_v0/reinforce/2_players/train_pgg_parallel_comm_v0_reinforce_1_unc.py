@@ -26,7 +26,7 @@ hyperparameter_defaults = dict(
     episodes_per_experiment = 160000,
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 2,
-    uncertainties = [0., 3.],
+    uncertainties = [0., 0.5],
     mult_fact = [0., 1., 1.5, 2., 2.5, 3.],          # list givin m$
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and mu$
@@ -50,7 +50,7 @@ hyperparameter_defaults = dict(
     new_loss = True,
     sign_lambda = 0.05,
     list_lambda = 0.05,
-    gmm_ = False,
+    gmm_ = True,
     new = True
 )
 
@@ -83,14 +83,6 @@ def train(config):
     m_max = max(config.mult_fact)
 
     max_values = find_max_min(config.mult_fact, 4)
-
-    if (config.save_data == True):
-        df = pd.DataFrame(columns=['experiment', 'episode'] + \
-            ["ret_ag"+str(i)+"_train" for i in range(config.n_agents)] + \
-            ["coop_ag"+str(i)+"_train" for i in range(config.n_agents)] + \
-            ["avg_coop_train", "avg_coop_time_train", "coop_m"+str(m_min), "coop_m"+str(m_max)] + \
-            ["mutinfo_signaling_ag"+str(i) for i in range(config.n_agents)] + \
-            ["mutinfo_listening_ag"+str(i) for i in range(config.n_agents)])
 
     update_idx = 0
     for experiment in range(config.n_experiments):

@@ -2,10 +2,10 @@
 from src.algos.buffer import RolloutBufferComm
 from src.nets.ActorCritic import ActorCritic
 import torch
+import copy
 import torch.nn.functional as F
 import torch.autograd as autograd
 import numpy as np
-import time
 from sklearn.mixture import GaussianMixture as GMM
 
 # set device to cpu or cuda
@@ -33,13 +33,13 @@ class ReinforceComm():
         if (self.gmm_):
             input_comm = len(self.mult_fact)
         output_comm = self.mex_size
-        self.policy_comm = ActorCritic(params, input_comm, output_comm).to(device)
+        self.policy_comm = ActorCritic(params, input_comm, output_comm, self.gmm_).to(device)
 
         input_act = self.obs_size + self.n_agents*self.mex_size
         if (self.gmm_):
             input_act = len(self.mult_fact) + self.n_agents*self.mex_size
         output_act = self.action_size
-        self.policy_act = ActorCritic(params, input_act, output_act).to(device)
+        self.policy_act = ActorCritic(params, input_act, output_act, self.gmm_).to(device)
 
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm},
@@ -103,18 +103,19 @@ class ReinforceComm():
 
         state = torch.FloatTensor(state).to(device)
         if (self.gmm_):
-            state_in = self.get_gmm_state(state, eval)
+            self.get_gmm_state(state, eval)
+            # creates new state called state_in
         else: 
-            state_in = state
+            self.state_in = state
 
         if (eval == True):
             with torch.no_grad():
-                message, message_logprob, entropy = self.policy_comm.act(state_in, self.ent)
+                message, message_logprob, entropy = self.policy_comm.act(self.state_in, self.ent)
 
         elif (eval == False):
-            message, message_logprob, entropy = self.policy_comm.act(state_in, self.ent)
+            message, message_logprob, entropy = self.policy_comm.act(self.state_in, self.ent)
 
-            self.buffer.states_c.append(state_in)
+            self.buffer.states_c.append(self.state_in)
             self.buffer.messages.append(message)
 
             self.comm_logprobs.append(message_logprob)
@@ -129,12 +130,12 @@ class ReinforceComm():
 
         state = torch.FloatTensor(state).to(device)
         if (self.gmm_):
-            state_in = self.get_gmm_state(state, eval)
+            self.get_gmm_state(state, eval)
         else: 
-            state_in = state
+            self.state_in = state
         message = torch.randint(0, self.mex_size, (self.mex_size-1,))[0]
 
-        self.buffer.states_c.append(state_in)
+        self.buffer.states_c.append(self.state_in)
         self.buffer.messages.append(message)
 
         self.comm_logprobs.append(torch.tensor(0.0001))
@@ -147,22 +148,23 @@ class ReinforceComm():
     def select_action(self, state, message, eval=False):
 
         state = torch.FloatTensor(state).to(device)
-        if (self.gmm_):
-            state_in = self.get_gmm_state(state, eval)
-        else: 
-            state_in = state
+        #if (self.gmm_):
+        #    self.get_gmm_state(state, eval)
+        if (self.gmm_ == False): 
+            self.state_in = state
+        # otherwise I already crated state_in with gmm, in the comm policy
     
         if (eval == True):
             with torch.no_grad():
-                state_mex = torch.cat((state_in, message)).to(device)
+                state_mex = torch.cat((self.state_in, message)).to(device)
                 action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
 
         elif (eval == False):
-            state_mex = torch.cat((state_in, message)).to(device)
+            state_mex = torch.cat((self.state_in, message)).to(device)
             action, action_logprob, entropy = self.policy_act.act(state_mex, self.ent)
             
             if (self.comm_loss == True):
-                state_no_mex = torch.cat((state_in, torch.zeros_like(message))).to(device)
+                state_no_mex = torch.cat((self.state_in, torch.zeros_like(message))).to(device)
                 dist_nomex = self.policy_act.get_distribution(state_no_mex).detach()
                 dist_mex = self.policy_act.get_distribution(state_mex)
                 self.sign_loss_list.append(-torch.sum(torch.abs(dist_nomex - dist_mex)))
@@ -180,10 +182,10 @@ class ReinforceComm():
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             if (self.gmm_):
-                state_in = self.get_gmm_state(state, eval)
+                self.get_gmm_state(state, eval)
             else: 
-                state_in = state
-            state_mex = torch.cat((state_in, message))
+                self.state_in = state
+            state_mex = torch.cat((self.state_in, message))
             out = self.policy_act.get_distribution(state_mex)
 
             return out
@@ -193,35 +195,25 @@ class ReinforceComm():
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             if (self.gmm_):
-                state_in = self.get_gmm_state(state, eval)
+                self.get_gmm_state(state, eval)
             else: 
-                state_in = state
-            out = self.policy_comm.get_distribution(state_in)
+                self.state_in = state
+            out = self.policy_comm.get_distribution(self.state_in)
 
             return out.detach()
 
     def update(self):
 
-        #s = time.time()
         rewards = self.rewards
-        #print(len(self.rewards))
         rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
 
         entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
-        #print("entropy=", entropy.shape)
         hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
-        #e = time.time()
-        #el = e - s
-        #print("elapsed1=", el)
-        #s = e
         for i in range(len(self.comm_logprobs)):
             self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
             self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
 
-        #e = time.time()
-        #el = e - s
-        #print("elapsed2=", el)
-        #s = e
+       
         self.saved_sign_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
         self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
@@ -233,23 +225,14 @@ class ReinforceComm():
         tmp1 = [torch.ones(a.data.shape) for a in self.act_logprobs]
         autograd.backward(self.act_logprobs, tmp1, retain_graph=True)
         self.optimizer.step()
-        #e = time.time()
-        #el = e - s
-        ##print("elapsed3=", el)
-        #s = e
 
         #diminish learning rate
         self.scheduler.step()
 
         self.n_update += 1.
-        #rewi = [i[0] for i in rew_norm]
         self.baseline += (np.mean([i[0] for i in rew_norm]) - self.baseline) / (self.n_update)
 
         self.reset()
-        #e = time.time()
-        #el = e - s
-        #print("elapsed4=", el)
-        #s = e
 
     def get_gmm_state(self, state, eval=False):
 
@@ -266,8 +249,28 @@ class ReinforceComm():
                 self.gmm.fit(input_)
 
             p = torch.Tensor(self.gmm.predict(state[1].reshape(1).reshape(-1, 1))).long()
-            state_in = F.one_hot(p, num_classes=len(self.mult_fact))[0].to(torch.float32)
-        else: 
-            state_in = torch.zeros(len(self.mult_fact)).to(device)
+            #print("self.gmm.means=", self.gmm.means_)
+            #print("shape=", self.gmm.means_.shape)
+            #print("prediction=", p)
+            value_to_feed = self.gmm.means_[p]
+            #print("value_to_feed=", value_to_feed)
+            self.gmm_probs = self.gmm.predict_proba(state[1].reshape(1).reshape(-1, 1))[0]
+            #print("probs=", self.gmm_probs)
+            #state_in = torch.FloatTensor(np.array(self.gmm_probs))
+            #state_in = F.one_hot(p, num_classes=len(self.mult_fact))[0].to(torch.float32)
+            #print("state=", state_in)
 
-        return state_in
+
+            self.means = copy.deepcopy(self.gmm.means_)
+            self.means = np.sort(self.means, axis=0)
+            #print("means ordered=", means_ordered)
+            ordering_values = [np.where(self.means == i)[0][0] for i in self.gmm.means_]
+            #print("sort values=", ordering_values)
+            self.probs = torch.zeros(len(self.gmm_probs)).to(device)
+            for i, value in enumerate(ordering_values):
+                self.probs[value] = self.gmm_probs[i] 
+            #print("sort probs=", ordered_probs)
+            self.state_in = self.probs
+            #print("state=", state_in)
+        else: 
+            self.state_in = torch.zeros(len(self.mult_fact)).to(device)

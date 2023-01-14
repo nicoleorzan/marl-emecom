@@ -4,7 +4,7 @@ import pandas as pd
 import wandb
 
 def eval(config, parallel_env, agents_dict, m, device, _print=False):
-    observations = parallel_env.reset(None, None, m)
+    observations = parallel_env.reset(m)
 
     if (_print == True):
         print("\n Eval ===> Mult factor=", m)
