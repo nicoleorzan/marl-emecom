@@ -1,8 +1,10 @@
 
 import torch
 import torch.autograd as autograd
+import numpy as np
 from sklearn.mixture import GaussianMixture as GMM
 import torch.nn.functional as F
+import copy
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -36,6 +38,14 @@ class Reinforce():
 
         self.idx = idx
         self.gmm_ = self.policy.gmm_
+
+        self.z_value = 1
+        self.min_mult = min(self.mult_fact)
+        self.max_mult = max(self.mult_fact)
+        self.min_observable_mult = self.min_mult - self.z_value*self.uncertainties[idx]
+        self.max_observable_mult = self.max_mult + self.z_value*self.uncertainties[idx]
+        self.means = np.zeros(len(self.mult_fact))
+        self.probs = np.zeros(len(self.mult_fact))
         
     def reset(self):
         self.logprobs = []
@@ -54,7 +64,11 @@ class Reinforce():
         state = torch.FloatTensor(state).to(device)
         if (self.gmm_):
             state = self.get_gmm_state(state, eval)
-
+        else:
+            # normalize m factor
+            #print("state1 before", state)
+            state[1] = self.normalize_m_factor(state[1])
+            #print("state1 after", state)
         if (eval == True):
             with torch.no_grad():
                 action, action_logprob = self.policy.act(state)
@@ -65,12 +79,25 @@ class Reinforce():
 
         return action
 
+    def normalize_m_factor(self, obs_multiplier):
+        
+        obs_multiplier_norm = (obs_multiplier - self.min_observable_mult)/(self.max_observable_mult - self.min_observable_mult)
+        if (obs_multiplier_norm < 0.):
+            obs_multiplier_norm = torch.Tensor([0.])
+        elif (obs_multiplier_norm > 1.):
+            obs_multiplier_norm = torch.Tensor([1.])
+        return obs_multiplier_norm
+
     def get_distribution(self, state):
 
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             if (self.gmm_):
                 state = self.get_gmm_state(state, eval=True)
+            else:
+                #print("state1 before", state)
+                state[1] = self.normalize_m_factor(state[1])
+                #print("state1 after", state)
             out = self.policy.get_distribution(state)
 
             return out
@@ -90,7 +117,6 @@ class Reinforce():
         self.optimizer.step()
 
         self.scheduler.step()
-        #print(self.scheduler.get_lr())
 
         self.reset()
 
@@ -108,7 +134,30 @@ class Reinforce():
                 input_ = self.mf_history.reshape(-1, 1)
                 self.gmm.fit(input_)
             p = torch.Tensor(self.gmm.predict(state[1].reshape(1).reshape(-1, 1))).long()
-            state_in = F.one_hot(p, num_classes=len(self.mult_fact))[0].to(torch.float32)
+            #print("self.gmm.means=", self.gmm.means_)
+            #print("shape=", self.gmm.means_.shape)
+            #print("prediction=", p)
+            value_to_feed = self.gmm.means_[p]
+            #print("value_to_feed=", value_to_feed)
+            self.gmm_probs = self.gmm.predict_proba(state[1].reshape(1).reshape(-1, 1))[0]
+            #print("probs=", self.gmm_probs)
+            #state_in = torch.FloatTensor(np.array(self.gmm_probs))
+            #state_in = F.one_hot(p, num_classes=len(self.mult_fact))[0].to(torch.float32)
+            #print("state=", state_in)
+
+
+            self.means = copy.deepcopy(self.gmm.means_)
+            self.means = np.sort(self.means, axis=0)
+            #print("means ordered=", means_ordered)
+            ordering_values = [np.where(self.means == i)[0][0] for i in self.gmm.means_]
+            #print("sort values=", ordering_values)
+            self.probs = torch.zeros(len(self.gmm_probs)).to(device)
+            for i, value in enumerate(ordering_values):
+                self.probs[value] = self.gmm_probs[i] 
+            #print("sort probs=", ordered_probs)
+            state_in = self.probs
+            #print("state=", state_in)
+
         else: 
             state_in = torch.zeros(len(self.mult_fact)).to(device)
 

@@ -35,7 +35,7 @@ def find_max_min(multipliers, coins):
 
 
 def eval(config, parallel_env, agents_dict, m, _print=False):
-    observations = parallel_env.reset(None, None, m)
+    observations = parallel_env.reset(m)
 
     if (_print == True):
         print("* Eval ===> Mult factor=", m)
