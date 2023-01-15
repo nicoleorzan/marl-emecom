@@ -132,20 +132,23 @@ def train(config):
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
                 ep_in, parallel_env.current_multiplier, update_idx))
                 
-                coops_distrib = {}
+                #coops_distrib = {}
                 mex_distrib_given_m = {}
                 rewards_eval_norm_m = {}
+                actions_eval_m = {}
 
                 for m in config.mult_fact:
-                    _, mex_distrib, act_distrib, rewards_eval = eval(config, parallel_env, agents_dict, m, device, False)
-                    coops_distrib[m] = act_distrib
+                    act_eval, mex_distrib, _, rewards_eval = eval(config, parallel_env, agents_dict, m, device, False)
+                    #coops_distrib[m] = act_distrib
                     mex_distrib_given_m[m] = mex_distrib # distrib dei messaggei per ogni agente, calcolata con dato input
                     rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
+                    actions_eval_m[m] = act_eval
 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
 
-                        df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_distrib[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
+                        #df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_distrib[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
+                        df_actions = {ag_idx+"actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
                         df_mex = {ag_idx+"messages_prob_distrib_m_"+str(i): mex_distrib_given_m[i][ag_idx] for i in config.mult_fact}
                         df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
                         agent_dict = {**{
@@ -157,7 +160,7 @@ def train(config):
                             ag_idx+"sc": agent.sc_old[-1],
                             ag_idx+"avg_mex_entropy": agent.entropy,
                             'episode': ep_in}, 
-                            **df_prob_coop, **df_ret, **df_mex}
+                            **df_actions, **df_ret, **df_mex}
                         
                         wandb.log(agent_dict, step=update_idx, commit=False)
 
