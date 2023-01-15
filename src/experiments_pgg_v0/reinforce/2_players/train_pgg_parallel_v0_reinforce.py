@@ -165,6 +165,7 @@ def train(config):
                         ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                         ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
                         ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
+                        ag_idx+"prob_coop_m_3.5": coops_eval[3.5][ag_idx][1],
                         ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                         ag_idx+"rewards_eval_norm_m0": rewards_eval_norm_m[0.][ag_idx], 
                         ag_idx+"rewards_eval_norm_m1": rewards_eval_norm_m[1.][ag_idx], 

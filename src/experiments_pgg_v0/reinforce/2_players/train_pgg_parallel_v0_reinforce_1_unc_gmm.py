@@ -167,6 +167,7 @@ def train(config):
                         ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                         ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
                         ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
+                        ag_idx+"prob_coop_m_3.5": coops_eval[3.5][ag_idx][1],
                         ag_idx+"gmm_means": agent.means,
                         ag_idx+"gmm_probabilities": agent.probs,
                         ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),

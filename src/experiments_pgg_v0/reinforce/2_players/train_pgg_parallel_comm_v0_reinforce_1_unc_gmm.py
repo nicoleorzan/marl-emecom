@@ -177,6 +177,7 @@ def train(config):
                             ag_idx+"prob_coop_m_2": coops_distrib[2.][ag_idx][1],
                             ag_idx+"prob_coop_m_2.5": coops_distrib[2.5][ag_idx][1],
                             ag_idx+"prob_coop_m_3": coops_distrib[3.][ag_idx][1],
+                            ag_idx+"prob_coop_m_3.5": coops_eval[3.5][ag_idx][1],
                             ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1],
                             ag_idx+"sc": agent.sc_old[-1],
                             ag_idx+"gmm_means": agent.means,
