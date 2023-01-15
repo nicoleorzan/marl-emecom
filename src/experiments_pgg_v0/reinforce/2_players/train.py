@@ -162,7 +162,7 @@ def train(config):
     print("Saving models...")
     if (config.save_models == True):
         for ag_idx, ag in agents_dict.items():
-            torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
+            torch.save(ag.policy.state_dict(), "model_"+str(ag_idx))
 
 
 def training_function(params, repo_name):

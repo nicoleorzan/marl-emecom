@@ -21,66 +21,49 @@ if(torch.cuda.is_available()):
 else:
     print("Device set to : cpu")
 
-hyperparameter_defaults = dict(
-    n_experiments = 1,
-    episodes_per_experiment = 160000,
-    update_timestep = 128,        # update policy every n timesteps
-    n_agents = 2,
-    uncertainties = [0., 0.5],
-    mult_fact =  [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5],          # list givin m$
-    num_game_iterations = 1,
-    obs_size = 2,                # we observe coins we have, and mu$
-    action_size = 2,
-    hidden_size = 64,
-    lr_actor = 0.05,             # learning rate for actor network
-    lr_critic = 0.005,           # learning rate for critic network
-    lr_actor_comm = 0.005,        # learning rate for actor network
-    lr_critic_comm = 0.005,      # learning rate for critic network
-    decayRate = 0.999,
-    fraction = True,
-    comm = True,
-    plots = False,
-    save_models = False,
-    mex_size = 3,
-    random_baseline = False,
-    recurrent = False,
-    wandb_mode ="online",
-    normalize_nn_inputs = True,
-    new_loss = True,
-    sign_lambda = 0.05,
-    list_lambda = 0.05,
-    gmm_ = True,
-    new = True
-)
 
+def setup_training(params, repo_name):
 
+    unc = [0. for i in range(params.n_agents)]
+    for i in range(params.n_uncertain, 0, -1):
+        unc[-i] = params.uncertainty
 
-wandb.init(project="new_2_agents_reinforce_pgg_v0_comm_1_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
-config = wandb.config
+    hyperparameter_defaults = dict(
+        n_experiments = 1,
+        episodes_per_experiment = params.episodes_per_experiment,
+        update_timestep = params.update_timestep,         # update policy every n timesteps
+        n_agents = params.n_agents,
+        uncertainties = unc,
+        mult_fact = params.mult_fact,        # list givin min and max value of mult factor
+        num_game_iterations = 1,
+        obs_size = 2,                        # we observe coins we have, and multiplier factor with uncertainty
+        action_size = 2,
+        hidden_size = params.hidden_size,
+        lr_actor = params.lr_act,             # learning rate for actor network
+        lr_critic = 0.01,
+        lr_actor_comm = params.lr_comm,       # learning rate for actor network
+        lr_critic_comm = 0.05,
+        decayRate = params.decay_rate,
+        comm = True,
+        save_models = False,
+        mex_size = params.mex_size,
+        random_baseline = params.random_baseline,
+        wandb_mode ="online",
+        sign_lambda = params.sign_lambda,
+        list_lambda = params.list_lambda,
+        gmm_ = params.gmm_
+    )
 
-if (config.mult_fact[0] != config.mult_fact[1]):
-    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/REINFORCE/"
-else: 
-    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties"+"/comm/REINFORCE/"
-if (config.normalize_nn_inputs == True):
-    folder = folder + "normalized/"
+    wandb.init(project="new_2_agents_reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
+    config = wandb.config
+    print("config=", config)
 
-path = "data/pgg_v0/"+folder
-if not os.path.exists(path):
-    os.makedirs(path)
-    print("New directory is created!")
+    return config
 
-print("path=", path)
-
-with open(path+'params.json', 'w') as fp:
-    json.dump(hyperparameter_defaults, fp)
 
 def train(config):
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
-    m_min = min(config.mult_fact)
-    m_max = max(config.mult_fact)
-
     max_values = find_max_min(config.mult_fact, 4)
 
     update_idx = 0
@@ -89,17 +72,17 @@ def train(config):
         agents_dict = {}
         for idx in range(config.n_agents):
             if (config.gmm_ == True and config.uncertainties[idx] != 0.):
+                print("agent models uncertainty with GMM")
                 agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx, True)
             else:
+                print("agent DOES NOT model uncertainty with GMM")
                 agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx, False)
-            #wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
         for ep_in in range(config.episodes_per_experiment):
 
             observations = parallel_env.reset()
-            old_obs = observations
-                
+            
             [agent.reset_episode() for _, agent in agents_dict.items()]
 
             done = False
@@ -125,7 +108,7 @@ def train(config):
                     if done:
                         agent.train_returns_norm.append(agent.return_episode_norm)
                         agent.coop.append(np.mean(agent.tmp_actions))
-  
+
                 # voglio salvare dati relativi a quanto gli agenti INFLUNEZANO
                 #agents_dict['agent_0'].mutinfo_signaling.append(mut10[-1])
                 #agents_dict['agent_1'].mutinfo_signaling.append(mut01[-1])
@@ -149,25 +132,19 @@ def train(config):
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
                 ep_in, parallel_env.current_multiplier, update_idx))
                 
-                #print("====>EVALUATION")
                 coops_distrib = {}
-                coops_eval = {}
                 mex_distrib_given_m = {}
                 rewards_eval_norm_m = {}
 
                 for m in config.mult_fact:
-                    coop_val, mex_distrib, act_distrib, rewards_eval = eval(config, parallel_env, agents_dict, m, device, False)
-                    coops_eval[m] = coop_val
+                    _, mex_distrib, act_distrib, rewards_eval = eval(config, parallel_env, agents_dict, m, device, False)
                     coops_distrib[m] = act_distrib
                     mex_distrib_given_m[m] = mex_distrib # distrib dei messaggei per ogni agente, calcolata con dato input
                     rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
 
-                coop_max = coops_eval[m_max]
-                coop_min = coops_eval[m_min]
-     
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
-                        
+
                         df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_distrib[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
                         df_mex = {ag_idx+"messages_prob_distrib_m_"+str(i): mex_distrib_given_m[i][ag_idx] for i in config.mult_fact}
                         df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
@@ -180,7 +157,7 @@ def train(config):
                             ag_idx+"sc": agent.sc_old[-1],
                             ag_idx+"avg_mex_entropy": agent.entropy,
                             'episode': ep_in}, 
-                            **df_prob_coop, **df_ret}
+                            **df_prob_coop, **df_ret, **df_mex}
                         
                         wandb.log(agent_dict, step=update_idx, commit=False)
 
@@ -189,8 +166,7 @@ def train(config):
                         "mf": mf,
                         "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
                         "avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]),
-                        "mult_"+str(m_min)+"_coop": coop_min,
-                        "mult_"+str(m_max)+"_coop": coop_max},
+                        },
                         step=update_idx, 
                         commit=True)
 
@@ -199,8 +175,10 @@ def train(config):
     if (config.save_models == True):
         print("Saving models...")
         for ag_idx, ag in agents_dict.items():
-            torch.save(ag.policy_comm.state_dict(), path+"policy_comm_"+str(ag_idx))
-            torch.save(ag.policy_act.state_dict(), path+"policy_act_"+str(ag_idx))
+            torch.save(ag.policy_comm.state_dict(), "policy_comm_"+str(ag_idx))
+            torch.save(ag.policy_act.state_dict(), "policy_act_"+str(ag_idx))
 
-if __name__ == "__main__":
+def training_function(params, repo_name):
+    print("wandb: saving data in ", repo_name)
+    config = setup_training(params, repo_name)
     train(config)
