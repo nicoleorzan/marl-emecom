@@ -41,7 +41,6 @@ hyperparameter_defaults = dict(
     comm = True,
     plots = False,
     save_models = False,
-    save_data = False,
     mex_size = 3,
     random_baseline = False,
     recurrent = False,
@@ -82,14 +81,6 @@ def train(config):
 
     max_values = find_max_min(config.mult_fact, 4)
 
-    if (config.save_data == True):
-        df = pd.DataFrame(columns=['experiment', 'episode'] + \
-            ["ret_ag"+str(i)+"_train" for i in range(config.n_agents)] + \
-            ["coop_ag"+str(i)+"_train" for i in range(config.n_agents)] + \
-            ["avg_coop_train", "avg_coop_time_train", "coop_m"+str(m_min), "coop_m"+str(m_max)] + \
-            ["mutinfo_signaling_ag"+str(i) for i in range(config.n_agents)] + \
-            ["mutinfo_listening_ag"+str(i) for i in range(config.n_agents)])
-
     update_idx = 0
     for experiment in range(config.n_experiments):
 
@@ -106,7 +97,7 @@ def train(config):
 
             done = False
             while not done:
-                _ = parallel_env.current_multiplier
+                mf = parallel_env.current_multiplier
 
                 if (config.random_baseline):
                     messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
@@ -144,7 +135,7 @@ def train(config):
                     break
 
             if (ep_in != 0 and ep_in%config.update_timestep == 0):
-                # update PPO agents     
+                # update agents     
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
 
@@ -169,33 +160,26 @@ def train(config):
 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
-                        wandb.log({
+
+                        df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_distrib[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
+                        df_mex = {ag_idx+"messages_prob_distrib_m_"+str(i): mex_distrib_given_m[i][ag_idx] for i in config.mult_fact}
+                        df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
+                        agent_dict = {**{
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
-                            ag_idx+"prob_coop_m_0": coops_distrib[0.][ag_idx][1], # action 1 is cooperative
-                            ag_idx+"prob_coop_m_1": coops_distrib[1.][ag_idx][1],
-                            ag_idx+"prob_coop_m_1.5": coops_distrib[1.5][ag_idx][1],
-                            ag_idx+"prob_coop_m_2": coops_distrib[2.][ag_idx][1],
-                            ag_idx+"prob_coop_m_2.5": coops_distrib[2.5][ag_idx][1],
-                            ag_idx+"prob_coop_m_3": coops_distrib[3.][ag_idx][1],
-                            ag_idx+"prob_coop_m_3.5": coops_eval[3.5][ag_idx][1],
+                            ag_idx+"gmm_means": agent.means,
+                            ag_idx+"gmm_probabilities": agent.probs,
+                            ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1],
                             ag_idx+"sc": agent.sc_old[-1],
-                            ag_idx+"messages_prob_distrib_m_0": mex_distrib_given_m[0.][ag_idx],
-                            ag_idx+"messages_prob_distrib_m_1": mex_distrib_given_m[1.][ag_idx],
-                            ag_idx+"messages_prob_distrib_m_2": mex_distrib_given_m[2.][ag_idx],
-                            ag_idx+"messages_prob_distrib_m_3": mex_distrib_given_m[3.][ag_idx],
-                            ag_idx+"messages_prob_distrib_m_1.5": mex_distrib_given_m[1.5][ag_idx],
-                            ag_idx+"messages_prob_distrib_m_2.5": mex_distrib_given_m[2.5][ag_idx],
-                            ag_idx+"rewards_eval_norm_m0": rewards_eval_norm_m[0.][ag_idx], 
-                            ag_idx+"rewards_eval_norm_m1": rewards_eval_norm_m[1.][ag_idx], 
-                            ag_idx+"rewards_eval_norm_m1.5": rewards_eval_norm_m[1.5][ag_idx], 
-                            ag_idx+"rewards_eval_norm_m2": rewards_eval_norm_m[2.][ag_idx], 
-                            ag_idx+"rewards_eval_norm_m2.5": rewards_eval_norm_m[2.5][ag_idx], 
-                            ag_idx+"rewards_eval_norm_m3": rewards_eval_norm_m[3.][ag_idx],
-                            ag_idx+"avg_mex_entropy": agent.entropy}, step=update_idx, 
-                        commit=False)
+                            ag_idx+"avg_mex_entropy": agent.entropy,
+                            'episode': ep_in}, 
+                            **df_prob_coop, **df_ret}
+                        
+                        wandb.log(agent_dict, step=update_idx, commit=False)
+
                     wandb.log({
                         "update_idx": update_idx,
+                        "mf": mf,
                         "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
                         "avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]),
                         "mult_"+str(m_min)+"_coop": coop_min,
@@ -204,24 +188,7 @@ def train(config):
                         commit=True)
 
                 update_idx += 1
-            
-            if (config.save_data == True):
-                    df_ret = {"ret_ag"+str(i)+"_train": agents_dict["agent_"+str(i)].return_episode_old.numpy()[0] for i in range(config.n_agents)}
-                    df_coop = {"coop_ag"+str(i)+"_train": np.mean(agents_dict["agent_"+str(i)].tmp_actions_old) for i in range(config.n_agents)}
-                    #df_avg_coop = {"avg_coop_train": avg_coop_time[-1]}
-                    #df_avg_coop_time = {"avg_coop_time_train": np.mean(avg_coop_time[-10:])}
-                    #df_performance = {"coop_m"+str(m_min): coop_min, "coop_m"+str(m_max): coop_max, "performance_metric": performance_metric}
-                    df_signaling = {"mutinfo_signaling_ag"+str(i): agents_dict["agent_"+str(i)].mutinfo_signaling_old[-1] for i in range(config.n_agents)}
-                    df_listening = {"mutinfo_listening_ag"+str(i): agents_dict["agent_"+str(i)].mutinfo_listening_old[-1] for i in range(config.n_agents)}
-                    df_dict = {**{'experiment': experiment, 'episode': ep_in}, **df_ret, **df_coop, \
-                        **df_signaling, **df_listening}
-                    df = pd.concat([df, pd.DataFrame.from_records([df_dict])])
-                
-    if (config.save_data == True):
-        print("\n\n\n\n===========>Saving data")
-        df.to_csv(path+'data_comm'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
     
-    # save models
     if (config.save_models == True):
         print("Saving models...")
         for ag_idx, ag in agents_dict.items():

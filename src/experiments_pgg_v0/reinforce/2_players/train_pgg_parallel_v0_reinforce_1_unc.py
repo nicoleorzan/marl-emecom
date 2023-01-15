@@ -37,7 +37,6 @@ hyperparameter_defaults = dict(
     fraction = False,
     comm = False,
     save_models = False,
-    save_data = False,
     recurrent = False,
     random_baseline = False,
     wandb_mode = "online",
@@ -75,12 +74,6 @@ def train(config):
     m_min = min(config.mult_fact)
     m_max = max(config.mult_fact)
     max_values = find_max_min(config.mult_fact, 4)
-        
-    if (config.save_data == True):
-        df = pd.DataFrame(columns=['experiment', 'episode'] + \
-            ["ret_ag"+str(i)+"_train" for i in range(config.n_agents)] + \
-            ["coop_ag"+str(i)+"_train" for i in range(config.n_agents)] + \
-            ["avg_coop_train", "avg_coop_time_train", "coop_m"+str(m_min), "coop_m"+str(m_max)])
 
     for experiment in range(config.n_experiments):
         #print("\nExperiment ", experiment)
@@ -159,26 +152,18 @@ def train(config):
 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
-                        wandb.log({
-                        ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
-                        ag_idx+"prob_coop_m_0": coops_eval[0.][ag_idx][1], # action 1 is cooperative
-                        ag_idx+"prob_coop_m_1": coops_eval[1.][ag_idx][1],
-                        ag_idx+"prob_coop_m_1.5": coops_eval[1.5][ag_idx][1],
-                        ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
-                        ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
-                        ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
-                        ag_idx+"prob_coop_m_3.5": coops_eval[3.5][ag_idx][1],
-                        ag_idx+"gmm_means": agent.means,
-                        ag_idx+"gmm_probabilities": agent.probs,
-                        ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
-                        ag_idx+"rewards_eval_norm_m0": rewards_eval_norm_m[0.][ag_idx], 
-                        ag_idx+"rewards_eval_norm_m1": rewards_eval_norm_m[1.][ag_idx], 
-                        ag_idx+"rewards_eval_norm_m1.5": rewards_eval_norm_m[1.5][ag_idx], 
-                        ag_idx+"rewards_eval_norm_m2": rewards_eval_norm_m[2.][ag_idx], 
-                        ag_idx+"rewards_eval_norm_m2.5": rewards_eval_norm_m[2.5][ag_idx], 
-                        ag_idx+"rewards_eval_norm_m3": rewards_eval_norm_m[3.][ag_idx]}, step=update_idx,
-                        commit=False)
-                    #print("gmm_means=",agent.gmm_means)
+
+                        df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_eval[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
+                        df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
+                        agent_dict = {**{
+                            ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
+                            ag_idx+"gmm_means": agent.means,
+                            ag_idx+"gmm_probabilities": agent.probs,
+                            ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
+                            'episode': ep_in}, 
+                            **df_prob_coop, **df_ret}
+                        wandb.log(agent_dict, step=update_idx, commit=False)
+
                     wandb.log({
                         "update_idx": update_idx,
                         "current_multiplier=": mf,
@@ -189,13 +174,6 @@ def train(config):
 
                 update_idx += 1
 
-    if (config.save_data == True):
-        if (config.random_baseline == True):
-            df.to_csv(path+'data_simple_RND.csv')
-        else: 
-            df.to_csv(path+'data_simple'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
-
-    # save models
     print("Saving models...")
     if (config.save_models == True):
         for ag_idx, ag in agents_dict.items():
