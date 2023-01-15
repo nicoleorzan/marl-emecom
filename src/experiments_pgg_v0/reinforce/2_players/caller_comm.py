@@ -37,7 +37,7 @@ if __name__ == '__main__':
     assert(args.decay_rate < 1.)
 
     if (args.n_uncertain != 0):
-        repo_name = "new_"+str(args.n_agents)+"_agents_reinforce_pgg_v0_"+str(args.n_uncertain)+"_unc_comm"
+        repo_name = "new_"+str(args.n_agents)+"_agents_reinforce_pgg_v0_comm_"+str(args.n_uncertain)+"_unc"
     else:
         repo_name = "new_"+str(args.n_agents)+"_agents_reinforce_pgg_v0_comm"
     

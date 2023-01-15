@@ -54,7 +54,7 @@ def setup_training(params, repo_name):
         gmm_ = params.gmm_
     )
 
-    wandb.init(project="new_2_agents_reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
+    wandb.init(project=repo_name, entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
 
