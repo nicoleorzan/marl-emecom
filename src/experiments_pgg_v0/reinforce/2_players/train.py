@@ -38,7 +38,7 @@ def setup_training(params, repo_name):
         obs_size = 2,                 # we observe coins we have, and multiplier factor with uncertainty
         hidden_size = 8,              # power of two!
         action_size = 2,
-        lr_actor = 0.01,              # learning rate for actor network
+        lr_actor = 0.1,              # learning rate for actor network
         lr_critic = 0.1,              # learning rate for critic network
         decayRate = 0.995,
         comm = False,
@@ -125,42 +125,48 @@ def train(config):
                 print("\nExperiment: {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, update_idx))
 
-                coops_eval = {}
+                #coops_eval = {}
                 rewards_eval_norm_m = {}
+                actions_eval_m = {}
 
                 for m in config.mult_fact:
-                    _, distrib, rewards_eval = eval(config, parallel_env, agents_dict, m, max_values)
-                    coops_eval[m] = distrib
+                    #print("m=", m)
+                    actions, _, rewards_eval = eval(config, parallel_env, agents_dict, m, max_values)
+                    #print("actions=", actionss)
+                    #coops_eval[m] = distrib
+                    actions_eval_m[m] = actions
+                    #print("coop prob=", coops_eval[m])
                     rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
-
-                coop_max = coops_eval[m_max]
-                coop_min = coops_eval[m_min]
+                    #print("rewards=", rewards_eval)
+                    #print("rewards norm=", rewards_eval_norm_m)
 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
-                        df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_eval[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
+                        df_actions = {ag_idx+"actions_eval_m"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
+                        #df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_eval[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
+                        #print("df_prob_coop=",df_prob_coop)
                         df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
+                        #print("dfa=", df_actions)
+                        #print("dfr=", df_ret)
                         agent_dict = {**{
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
                             ag_idx+"gmm_means": agent.means,
                             ag_idx+"gmm_probabilities": agent.probs,
                             ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             'episode': ep_in}, 
-                            **df_prob_coop, **df_ret}
+                            **df_actions, **df_ret}
                         wandb.log(agent_dict, step=update_idx, commit=False)
 
                     wandb.log({
                         "update_idx": update_idx,
-                        "current_multiplier": mf,
-                        "mult_"+str(m_min)+"_coop": coop_min,
-                        "mult_"+str(m_max)+"_coop": coop_max},
+                        "current_multiplier": mf},
                         step=update_idx, 
                         commit=True)
 
                 update_idx += 1
 
-    print("Saving models...")
     if (config.save_models == True):
+        print("Saving models...")
         for ag_idx, ag in agents_dict.items():
             torch.save(ag.policy.state_dict(), "model_"+str(ag_idx))
 
