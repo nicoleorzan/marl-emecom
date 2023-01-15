@@ -5,11 +5,9 @@ from src.algos.Reinforce import Reinforce
 from src.nets.ActorCritic import ActorCritic
 import numpy as np
 import torch
-
 import wandb
 import json
 import pandas as pd
-import time
 from utils_train_reinforce import eval, find_max_min
 
 # set device to cpu or cuda
@@ -20,51 +18,42 @@ if(torch.cuda.is_available()):
     print("Device set to : " + str(torch.cuda.get_device_name(device)))
 else:
     print("Device set to : cpu")
-    
-hyperparameter_defaults = dict(
-    n_experiments = 1,
-    episodes_per_experiment = 40000,
-    update_timestep = 64,       # update policy every n timesteps: same as batch side in this case
-    n_agents = 2,
-    uncertainties = [0.5, 0.5],
-    mult_fact =  [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5],      # list givin min and max value of mult factor
-    num_game_iterations = 1,
-    obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
-    hidden_size = 8, # power of two!
-    action_size = 2,
-    lr_actor = 0.01, #0.005,              # learning rate for actor network
-    lr_critic = 0.1, #0.005,           # learning rate for critic network
-    decayRate = 0.995,
-    fraction = False,
-    comm = False,
-    save_models = False,
-    recurrent = False,
-    random_baseline = False,
-    wandb_mode = "online",
-    normalize_nn_inputs = True,
-    gmm_ = False,
-    new = True
-)
 
-wandb.init(project="new_2_agents_reinforce_pgg_v0_2_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
-config = wandb.config
 
-if (config.mult_fact[0] != config.mult_fact[1]):
-    folder = str(config.n_agents)+"agents/"+"variating_m_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/REINFORCE/"
-else: 
-    folder = str(config.n_agents)+"agents/"+str(config.mult_fact[0])+"mult_"+str(config.num_game_iterations)+"iters_"+str(config.uncertainties)+"uncertainties/REINFORCE/"
-if (config.normalize_nn_inputs == True):
-    folder = folder + "normalized/"
+def setup_training(params, repo_name):
 
-path = "data/pgg_v0/"+folder
-if not os.path.exists(path):
-    os.makedirs(path)
-    print("New directory is created!")
+    unc = [0. for i in range(params.n_agents)]
+    for i in range(params.n_uncertain, 0, -1):
+        unc[-i] = params.uncertainty
+        
+    print("uncertianties=", unc)
+    hyperparameter_defaults = dict(
+        n_experiments = 1,
+        episodes_per_experiment = params.episodes_per_experiment,
+        update_timestep = params.update_timestep,         # update policy every n timesteps: same as batch side in this case
+        n_agents = params.n_agents,
+        uncertainties = unc,
+        mult_fact = params.mult_fact,
+        num_game_iterations = 1,
+        obs_size = 2,                 # we observe coins we have, and multiplier factor with uncertainty
+        hidden_size = 8,              # power of two!
+        action_size = 2,
+        lr_actor = 0.01,              # learning rate for actor network
+        lr_critic = 0.1,              # learning rate for critic network
+        decayRate = 0.995,
+        comm = False,
+        save_models = False,
+        random_baseline = False,
+        wandb_mode = "online",
+        gmm_ = params.gmm_
+    )
 
-print("path=", path)
+    wandb.init(project=repo_name, entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+    config = wandb.config
+    print("config=", config)
 
-with open(path+'params.json', 'w') as fp:
-    json.dump(hyperparameter_defaults, fp)
+    return config
+
 
 def train(config):
 
@@ -106,15 +95,13 @@ def train(config):
             while not done:
 
                 mf = parallel_env.current_multiplier
-                #print("mf=", mf)
 
                 obs_old = observations
-                #print("obs=", obs_old)
               
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
-                
+
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
                 
                 for ag_idx, agent in agents_dict.items():
@@ -135,7 +122,6 @@ def train(config):
             if ep_in != 0 and ep_in % config.update_timestep == 0:
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
-
                 print("\nExperiment: {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, update_idx))
 
@@ -152,7 +138,6 @@ def train(config):
 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
-                        
                         df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_eval[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
                         df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
                         agent_dict = {**{
@@ -166,7 +151,7 @@ def train(config):
 
                     wandb.log({
                         "update_idx": update_idx,
-                        "current_multiplier=": mf,
+                        "current_multiplier": mf,
                         "mult_"+str(m_min)+"_coop": coop_min,
                         "mult_"+str(m_max)+"_coop": coop_max},
                         step=update_idx, 
@@ -180,5 +165,7 @@ def train(config):
             torch.save(ag.policy.state_dict(), path+"model_"+str(ag_idx))
 
 
-if __name__ == "__main__":
+def training_function(params, repo_name):
+    print("wandb: saving data in ", repo_name)
+    config = setup_training(params, repo_name)
     train(config)
