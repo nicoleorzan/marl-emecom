@@ -11,7 +11,6 @@ import src.analysis.utils as U
 import time
 from utils_train_reinforce_comm import eval
 from utils_train_reinforce import find_max_min
-import time
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -22,40 +21,42 @@ if(torch.cuda.is_available()):
 else:
     print("Device set to : cpu")
 
-
 hyperparameter_defaults = dict(
     n_experiments = 1,
     episodes_per_experiment = 160000,
-    update_timestep = 256,        # update policy every n timesteps
+    update_timestep = 128,        # update policy every n timesteps
     n_agents = 2,
-    uncertainties = [0.5, 0.5],
-    mult_fact = [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5],          # list givin m$
+    uncertainties = [0., 0.5],
+    mult_fact =  [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5],          # list givin m$
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and mu$
     action_size = 2,
     hidden_size = 64,
-    lr_actor = 0.1,             # learning rate for actor network
+    lr_actor = 0.05,             # learning rate for actor network
     lr_critic = 0.005,           # learning rate for critic network
-    lr_actor_comm = 0.01,        # learning rate for actor network
-    lr_critic_comm = 0.01,	# learning rate for critic network
-    decayRate = 0.99,
+    lr_actor_comm = 0.005,        # learning rate for actor network
+    lr_critic_comm = 0.005,      # learning rate for critic network
+    decayRate = 0.999,
     fraction = True,
     comm = True,
+    plots = False,
     save_models = False,
     save_data = False,
-    mex_size = 2,
+    mex_size = 3,
     random_baseline = False,
     recurrent = False,
     wandb_mode ="online",
     normalize_nn_inputs = True,
     new_loss = True,
-    sign_lambda = 0.6,
-    list_lambda = 0.5,
-    gmm_ = False,
+    sign_lambda = 0.05,
+    list_lambda = 0.05,
+    gmm_ = True,
     new = True
 )
 
-wandb.init(project="new_2_agents_reinforce_pgg_v0_comm_2_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
+
+
+wandb.init(project="new_2_agents_reinforce_pgg_v0_comm_1_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -88,27 +89,24 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            if (config.gmm_ == True):
+            if (config.gmm_ == True and config.uncertainties[idx] != 0.):
                 agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx, True)
-                print("agent", idx, "is models uncertaity with GMM")
             else:
                 agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx, False)
-                print("agent", idx, "DOES NOT model uncertaity with GMM")
             #wandb.watch(agents_dict['agent_'+str(idx)].policy_act, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
         for ep_in in range(config.episodes_per_experiment):
 
             observations = parallel_env.reset()
-           
+            old_obs = observations
+                
             [agent.reset_episode() for _, agent in agents_dict.items()]
 
             done = False
             while not done:
-
                 mf = parallel_env.current_multiplier
-                #print("\nmult=", cm)
-                #print("obs=", observations)
+
                 if (config.random_baseline):
                     messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
                 else:
@@ -128,6 +126,10 @@ def train(config):
                     if done:
                         agent.train_returns_norm.append(agent.return_episode_norm)
                         agent.coop.append(np.mean(agent.tmp_actions))
+  
+                # voglio salvare dati relativi a quanto gli agenti INFLUNEZANO
+                #agents_dict['agent_0'].mutinfo_signaling.append(mut10[-1])
+                #agents_dict['agent_1'].mutinfo_signaling.append(mut01[-1])
 
                 # voglio salvare dati relativi a quanto gli agenti SONO INFLUENZATI
                 agents_dict['agent_0'].mutinfo_listening.append(U.calc_mutinfo(agents_dict['agent_0'].buffer.actions, agents_dict['agent_1'].buffer.messages, config.action_size, config.mex_size))
@@ -144,7 +146,7 @@ def train(config):
                 # update PPO agents     
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
-               
+
                 print("\nExperiment : {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
                 ep_in, parallel_env.current_multiplier, update_idx))
                 
@@ -163,9 +165,10 @@ def train(config):
 
                 coop_max = coops_eval[m_max]
                 coop_min = coops_eval[m_min]
-
+     
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
+                        #print("entropy=", agent.policy_comm.get_dist_entropy(old_obs[ag_idx]))
                         wandb.log({
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
                             ag_idx+"prob_coop_m_0": coops_distrib[0.][ag_idx][1], # action 1 is cooperative
@@ -190,12 +193,12 @@ def train(config):
                             ag_idx+"rewards_eval_norm_m2": rewards_eval_norm_m[2.][ag_idx], 
                             ag_idx+"rewards_eval_norm_m2.5": rewards_eval_norm_m[2.5][ag_idx], 
                             ag_idx+"rewards_eval_norm_m3": rewards_eval_norm_m[3.][ag_idx],
-                            ag_idx+"avg_mex_entropy": agent.entropy},
-                            step=update_idx, 
+                            ag_idx+"avg_mex_entropy": agent.entropy}, 
+                            step=update_idx, #U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx, 
                         commit=False)
                     wandb.log({
                         "update_idx": update_idx,
-                        "mf": mf,
+                        "current_multiplier=": mf,
                         "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
                         "avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]),
                         "mult_"+str(m_min)+"_coop": coop_min,
@@ -204,11 +207,14 @@ def train(config):
                         commit=True)
 
                 update_idx += 1
+                if (update_idx >= 630):
+                    break
 
     if (config.save_data == True):
         print("\n\n\n\n===========>Saving data")
         df.to_csv(path+'data_comm'+time.strftime("%Y%m%d-%H%M%S")+'.csv')
     
+    # save models
     if (config.save_models == True):
         print("Saving models...")
         for ag_idx, ag in agents_dict.items():

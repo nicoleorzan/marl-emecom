@@ -23,11 +23,11 @@ else:
     
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 60000,
+    episodes_per_experiment = 40000,
     update_timestep = 64,       # update policy every n timesteps: same as batch side in this case
     n_agents = 2,
     uncertainties = [0.5, 0.5],
-    mult_fact = [0., 1., 1.5, 2., 2.5, 3.],        # list givin min and max value of mult factor
+    mult_fact =  [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5],      # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     hidden_size = 8, # power of two!
@@ -43,11 +43,11 @@ hyperparameter_defaults = dict(
     random_baseline = False,
     wandb_mode = "online",
     normalize_nn_inputs = True,
-    gmm_ = True,
+    gmm_ = False,
     new = True
 )
 
-wandb.init(project="2_agents_reinforce_pgg_v0_2_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="new_2_agents_reinforce_pgg_v0_2_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):

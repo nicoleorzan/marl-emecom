@@ -78,6 +78,10 @@ class ReinforceComm():
 
         self.reset()
 
+        self.means = []
+        self.probs = []
+        self.entropy = 0
+
     def reset(self):
         self.comm_logprobs = []
         self.act_logprobs = []
@@ -208,6 +212,8 @@ class ReinforceComm():
         rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
 
         entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
+        self.entropy = entropy
+        #print("avg ent=", torch.mean(self.entropy))
         hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
         for i in range(len(self.comm_logprobs)):
             self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]

@@ -51,7 +51,7 @@ hyperparameter_defaults = dict(
     new_loss = True,
     sign_lambda = 0.6,
     list_lambda = 0.5,
-    gmm_ = False,
+    gmm_ = True,
     new = True
 )
 

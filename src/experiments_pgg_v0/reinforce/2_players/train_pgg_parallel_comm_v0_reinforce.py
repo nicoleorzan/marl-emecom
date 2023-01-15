@@ -27,7 +27,7 @@ hyperparameter_defaults = dict(
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 2,
     uncertainties = [0., 0.],
-    mult_fact = [0., 1., 1.5, 2., 2.5, 3.],          # list givin min and max value of mult factor
+    mult_fact =  [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
@@ -54,7 +54,7 @@ hyperparameter_defaults = dict(
 )
 
 
-wandb.init(project="2_agents_reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
+wandb.init(project="new_2_agents_reinforce_pgg_v0_comm", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -191,7 +191,7 @@ def train(config):
                             ag_idx+"rewards_eval_norm_m2": rewards_eval_norm_m[2.][ag_idx], 
                             ag_idx+"rewards_eval_norm_m2.5": rewards_eval_norm_m[2.5][ag_idx], 
                             ag_idx+"rewards_eval_norm_m3": rewards_eval_norm_m[3.][ag_idx],
-                            ag_idx+"mex_entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx, 
+                            ag_idx+"avg_mex_entropy": agent.entropy}, step=update_idx, 
                         commit=False)
                     wandb.log({
                         "update_idx": update_idx,

@@ -7,8 +7,8 @@ import numpy as np
 import torch
 import wandb
 import json
-import time
 import pandas as pd
+import time
 from utils_train_reinforce import eval, find_max_min
 
 # set device to cpu or cuda
@@ -22,11 +22,11 @@ else:
     
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = 60000,
+    episodes_per_experiment = 40000,
     update_timestep = 64,       # update policy every n timesteps: same as batch side in this case
     n_agents = 2,
-    uncertainties = [0., 0.],
-    mult_fact = [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5],        # list givin min and max value of mult factor
+    uncertainties = [0., 0.5],
+    mult_fact =  [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5],       # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and multiplier factor with uncertainty
     hidden_size = 8, # power of two!
@@ -42,11 +42,12 @@ hyperparameter_defaults = dict(
     random_baseline = False,
     wandb_mode = "online",
     normalize_nn_inputs = True,
+    gmm_ = True,
     new = True
 )
 
 
-wandb.init(project="new_2_agents_reinforce_pgg_v0", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="new_2_agents_reinforce_pgg_v0_1_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -74,7 +75,6 @@ def train(config):
     m_min = min(config.mult_fact)
     m_max = max(config.mult_fact)
     max_values = find_max_min(config.mult_fact, 4)
-    print("max_values=", max_values)
         
     if (config.save_data == True):
         df = pd.DataFrame(columns=['experiment', 'episode'] + \
@@ -87,14 +87,18 @@ def train(config):
 
         agents_dict = {}
         for idx in range(config.n_agents):
-            model = ActorCritic(config, config.obs_size, config.action_size)
+            if (config.gmm_ == True and config.uncertainties[idx] != 0.):
+                print("agente", idx, "modella l'uncertainty")
+                model = ActorCritic(config, len(config.mult_fact), config.action_size, True)
+            else:
+                print("agente", idx, "NON modella l'uncertainty")
+                model = ActorCritic(config, config.obs_size, config.action_size, False)
             model.to(device)
             optimizer = torch.optim.Adam([
-             {'params': model.actor.parameters(), 'lr': config.lr_actor},
-             {'params': model.critic.parameters(), 'lr': config.lr_critic} 
-             ])
+            {'params': model.actor.parameters(), 'lr': config.lr_actor},
+            {'params': model.critic.parameters(), 'lr': config.lr_critic} 
+            ])
             agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config, idx)
-
             #wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP
@@ -109,14 +113,15 @@ def train(config):
             done = False
             while not done:
 
-                _ = parallel_env.current_multiplier
+                mf = parallel_env.current_multiplier
+                #print("mf=", mf)
 
                 obs_old = observations
+                #print("obs=", obs_old)
               
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
-
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
                 
                 for ag_idx, agent in agents_dict.items():
@@ -137,9 +142,10 @@ def train(config):
             if ep_in != 0 and ep_in % config.update_timestep == 0:
                 for ag_idx, agent in agents_dict.items():
                     agent.update()
+
                 print("\nExperiment: {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, update_idx))
-
+                
                 coops_eval = {}
                 rewards_eval_norm_m = {}
 
@@ -151,10 +157,6 @@ def train(config):
                 coop_max = coops_eval[m_max]
                 coop_min = coops_eval[m_min]
 
-                #coins = parallel_env.get_coins()
-                #for ag_idx, agent in agents_dict.items():
-                #    print("Agent=", ag_idx, "coins=", str.format('{0:.3f}', coins[ag_idx]), "obs=", obs_old[ag_idx], "action=", actions[ag_idx], "rew=", rewards[ag_idx])
-
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
                         wandb.log({
@@ -165,6 +167,8 @@ def train(config):
                         ag_idx+"prob_coop_m_2": coops_eval[2.][ag_idx][1],
                         ag_idx+"prob_coop_m_2.5": coops_eval[2.5][ag_idx][1],
                         ag_idx+"prob_coop_m_3": coops_eval[3.][ag_idx][1],
+                        ag_idx+"gmm_means": agent.means,
+                        ag_idx+"gmm_probabilities": agent.probs,
                         ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                         ag_idx+"rewards_eval_norm_m0": rewards_eval_norm_m[0.][ag_idx], 
                         ag_idx+"rewards_eval_norm_m1": rewards_eval_norm_m[1.][ag_idx], 
@@ -173,8 +177,10 @@ def train(config):
                         ag_idx+"rewards_eval_norm_m2.5": rewards_eval_norm_m[2.5][ag_idx], 
                         ag_idx+"rewards_eval_norm_m3": rewards_eval_norm_m[3.][ag_idx]}, step=update_idx,
                         commit=False)
+                    #print("gmm_means=",agent.gmm_means)
                     wandb.log({
                         "update_idx": update_idx,
+                        "current_multiplier=": mf,
                         "mult_"+str(m_min)+"_coop": coop_min,
                         "mult_"+str(m_max)+"_coop": coop_max},
                         step=update_idx, 

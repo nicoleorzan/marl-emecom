@@ -27,7 +27,7 @@ hyperparameter_defaults = dict(
     update_timestep = 128,        # update policy every n timesteps
     n_agents = 2,
     uncertainties = [0., 0.5],
-    mult_fact = [0., 1., 1.5, 2., 2.5, 3.],          # list givin m$
+    mult_fact =  [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5],          # list givin m$
     num_game_iterations = 1,
     obs_size = 2,                # we observe coins we have, and mu$
     action_size = 2,
@@ -50,13 +50,13 @@ hyperparameter_defaults = dict(
     new_loss = True,
     sign_lambda = 0.05,
     list_lambda = 0.05,
-    gmm_ = True,
+    gmm_ = False,
     new = True
 )
 
 
 
-wandb.init(project="2_agents_reinforce_pgg_v0_comm_1_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
+wandb.init(project="new_2_agents_reinforce_pgg_v0_comm_1_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
 config = wandb.config
 
 if (config.mult_fact[0] != config.mult_fact[1]):
@@ -99,12 +99,13 @@ def train(config):
         for ep_in in range(config.episodes_per_experiment):
 
             observations = parallel_env.reset()
+            old_obs = observations
                 
             [agent.reset_episode() for _, agent in agents_dict.items()]
 
             done = False
             while not done:
-                _ = parallel_env.current_multiplier
+                mf = parallel_env.current_multiplier
 
                 if (config.random_baseline):
                     messages = {agent: agents_dict[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
@@ -167,6 +168,7 @@ def train(config):
      
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
+                        #print("entropy=", agent.policy_comm.get_dist_entropy(old_obs[ag_idx]))
                         wandb.log({
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
                             ag_idx+"prob_coop_m_0": coops_distrib[0.][ag_idx][1], # action 1 is cooperative
@@ -177,6 +179,8 @@ def train(config):
                             ag_idx+"prob_coop_m_3": coops_distrib[3.][ag_idx][1],
                             ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1],
                             ag_idx+"sc": agent.sc_old[-1],
+                            ag_idx+"gmm_means": agent.means,
+                            ag_idx+"gmm_probabilities": agent.probs,
                             ag_idx+"messages_prob_distrib_m_0": mex_distrib_given_m[0.][ag_idx],
                             ag_idx+"messages_prob_distrib_m_1": mex_distrib_given_m[1.][ag_idx],
                             ag_idx+"messages_prob_distrib_m_2": mex_distrib_given_m[2.][ag_idx],
@@ -189,10 +193,12 @@ def train(config):
                             ag_idx+"rewards_eval_norm_m2": rewards_eval_norm_m[2.][ag_idx], 
                             ag_idx+"rewards_eval_norm_m2.5": rewards_eval_norm_m[2.5][ag_idx], 
                             ag_idx+"rewards_eval_norm_m3": rewards_eval_norm_m[3.][ag_idx],
-                            ag_idx+"mex_entropy": U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx, 
+                            ag_idx+"avg_mex_entropy": agent.entropy}, 
+                            step=update_idx, #U.calc_entropy(agents_dict[ag_idx].buffer.messages, config.mex_size)}, step=update_idx, 
                         commit=False)
                     wandb.log({
                         "update_idx": update_idx,
+                        "current_multiplier=": mf,
                         "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
                         "avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]),
                         "mult_"+str(m_min)+"_coop": coop_min,
@@ -201,6 +207,8 @@ def train(config):
                         commit=True)
 
                 update_idx += 1
+                if (update_idx >= 630):
+                    break
 
     if (config.save_data == True):
         print("\n\n\n\n===========>Saving data")
