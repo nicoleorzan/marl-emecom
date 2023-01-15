@@ -157,7 +157,7 @@ def train(config):
                             ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1],
                             ag_idx+"sc": agent.sc_old[-1],
-                            ag_idx+"avg_mex_entropy": torch.mean(agent.entropy),
+                            ag_idx+"_avg_mex_entropy": torch.mean(agent.entropy),
                             'episode': ep_in}, 
                             **df_actions, **df_ret, **df_mex}
                         
