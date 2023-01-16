@@ -74,7 +74,7 @@ def find_max_min(multipliers, coins):
         min_values[multiplier] = np.amin(returns)
         print(" max_values[", multiplier, "]=",  max_values[multiplier])
         print(" min_values[", multiplier, "]=",  min_values[multiplier])
-        print("normalized=", (returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
+        #print("normalized=", (returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
     return max_values
 
 
