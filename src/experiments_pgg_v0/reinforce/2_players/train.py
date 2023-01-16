@@ -58,8 +58,6 @@ def train(config):
     torch.autograd.set_detect_anomaly(True)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
-    m_min = min(config.mult_fact)
-    m_max = max(config.mult_fact)
     max_values = find_max_min(config.mult_fact, 4)
 
     for experiment in range(config.n_experiments):
@@ -94,7 +92,7 @@ def train(config):
 
                 mf = parallel_env.current_multiplier
 
-                obs_old = observations
+                _ = observations
               
                 actions = {agent: agents_dict[agent].select_action(observations[agent]) for agent in parallel_env.agents}
                 
@@ -110,8 +108,6 @@ def train(config):
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
                     if done:
-                        #agent.train_returns_norm.append(agent.return_episode_norm)
-                        #agent.train_returns.append(agent.return_episode)
                         agent.coop.append(np.mean(agent.tmp_actions))
 
                 # break if the episode is over
@@ -125,7 +121,6 @@ def train(config):
                 print("\nExperiment: {} \t Episode : {} \t Mult factor : {} \t Update: {} ".format(experiment, \
                     ep_in, parallel_env.current_multiplier, update_idx))
 
-                #coops_eval = {}
                 rewards_eval_norm_m = {}
                 actions_eval_m = {}
 
@@ -137,8 +132,6 @@ def train(config):
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
                         df_actions = {ag_idx+"actions_eval_m"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
-                        #df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_eval[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
-                        #print("df_prob_coop=",df_prob_coop)
                         df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
                         agent_dict = {**{
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
@@ -150,12 +143,10 @@ def train(config):
                             **df_actions, **df_ret}
                         wandb.log(agent_dict, step=update_idx, commit=False)
 
-                    rew_measure = np.mean([agent.return_episode_old_norm.numpy() for ag_idx, agent in agents_dict.items()])
-
                     wandb.log({
                         "update_idx": update_idx,
                         "current_multiplier": mf[0],
-                        "act_measure": rew_measure},
+                        "avg_return_train": np.mean([agent.return_episode_old_norm.numpy() for _, agent in agents_dict.items()])},
                         step=update_idx, 
                         commit=True)
 

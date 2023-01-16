@@ -59,7 +59,7 @@ class ReinforceComm():
 
         self.saved_losses_comm = []
         self.saved_losses = []
-        self.saved_sign_loss_list = []
+        self.saved_List_loss_list = []
 
         self.param_entropy = 0.1
 
@@ -85,7 +85,7 @@ class ReinforceComm():
     def reset(self):
         self.comm_logprobs = []
         self.act_logprobs = []
-        self.sign_loss_list = []
+        self.List_loss_list = []
         self.comm_entropy = []
         self.act_entropy = []
         self.rewards = []
@@ -171,7 +171,7 @@ class ReinforceComm():
                 state_no_mex = torch.cat((self.state_in, torch.zeros_like(message))).to(device)
                 dist_nomex = self.policy_act.get_distribution(state_no_mex).detach()
                 dist_mex = self.policy_act.get_distribution(state_mex)
-                self.sign_loss_list.append(-torch.sum(torch.abs(dist_nomex - dist_mex)))
+                self.List_loss_list.append(-torch.sum(torch.abs(dist_nomex - dist_mex)))
 
             self.buffer.states_a.append(state)
             self.buffer.actions.append(action)
@@ -216,11 +216,11 @@ class ReinforceComm():
         #print("avg ent=", torch.mean(self.entropy))
         hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
         for i in range(len(self.comm_logprobs)):
-            self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
-            self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.sign_loss_list[i]
+            self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.List_loss_list[i]
+            self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.List_loss_list[i]
 
        
-        self.saved_sign_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.sign_loss_list])))
+        self.saved_List_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.List_loss_list])))
         self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
 

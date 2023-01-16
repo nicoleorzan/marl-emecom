@@ -46,7 +46,7 @@ class parallel_env(ParallelEnv):
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
         - action_spaces
-        - observation_spaces
+        - observation_spacesf
 
         These attributes should not be changed after initialization.
 
@@ -123,6 +123,10 @@ class parallel_env(ParallelEnv):
         for agent in self.agents:
             d = normal.Normal(torch.Tensor([self.current_multiplier]), torch.Tensor([self.uncertainties_dict[agent]+self.uncertainty_eps])) # is not var, is std. wrong name I put
             obs_multiplier = d.sample() 
+            if (obs_multiplier < 0.):
+                obs_multiplier = 0.
+            elif (obs_multiplier > max(self.mult_fact)):
+                obs_multiplier = max(self.mult_fact)
             self.observations[agent] = torch.Tensor((self.normalized_coins[agent], obs_multiplier)).to(device) 
            
     def reset(self, mult_in=None):
