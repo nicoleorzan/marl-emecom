@@ -6,8 +6,6 @@ from src.nets.ActorCritic import ActorCritic
 import numpy as np
 import torch
 import wandb
-import json
-import pandas as pd
 from utils_train_reinforce import eval, find_max_min
 
 # set device to cpu or cuda
@@ -108,10 +106,12 @@ def train(config):
                     
                     agent.rewards.append(rewards[ag_idx])
                     agent.return_episode_norm =+ rewards_norm[ag_idx]
+                    agent.return_episode =+ rewards[ag_idx]
                     if (actions[ag_idx] is not None):
                         agent.tmp_actions.append(actions[ag_idx])
                     if done:
-                        agent.train_returns_norm.append(agent.return_episode_norm)
+                        #agent.train_returns_norm.append(agent.return_episode_norm)
+                        #agent.train_returns.append(agent.return_episode)
                         agent.coop.append(np.mean(agent.tmp_actions))
 
                 # break if the episode is over
@@ -130,15 +130,9 @@ def train(config):
                 actions_eval_m = {}
 
                 for m in config.mult_fact:
-                    #print("m=", m)
                     actions, _, rewards_eval = eval(config, parallel_env, agents_dict, m, max_values)
-                    #print("actions=", actionss)
-                    #coops_eval[m] = distrib
                     actions_eval_m[m] = actions
-                    #print("coop prob=", coops_eval[m])
                     rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
-                    #print("rewards=", rewards_eval)
-                    #print("rewards norm=", rewards_eval_norm_m)
 
                 if (config.wandb_mode == "online"):
                     for ag_idx, agent in agents_dict.items():
@@ -146,10 +140,9 @@ def train(config):
                         #df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_eval[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
                         #print("df_prob_coop=",df_prob_coop)
                         df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
-                        print("dfa=", df_actions)
-                        #print("dfr=", df_ret)
                         agent_dict = {**{
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
+                            ag_idx+"_return_train_"+str(mf[0]): agent.return_episode_old.numpy(),
                             ag_idx+"gmm_means": agent.means,
                             ag_idx+"gmm_probabilities": agent.probs,
                             ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
@@ -157,9 +150,12 @@ def train(config):
                             **df_actions, **df_ret}
                         wandb.log(agent_dict, step=update_idx, commit=False)
 
+                    rew_measure = np.mean([agent.return_episode_old_norm.numpy() for ag_idx, agent in agents_dict.items()])
+
                     wandb.log({
                         "update_idx": update_idx,
-                        "current_multiplier": mf},
+                        "current_multiplier": mf[0],
+                        "act_measure": rew_measure},
                         step=update_idx, 
                         commit=True)
 

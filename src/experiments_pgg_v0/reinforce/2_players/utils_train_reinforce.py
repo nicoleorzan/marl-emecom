@@ -5,6 +5,7 @@ import torch
 def find_max_min(multipliers, coins):
     n_agents = 2
     max_values = {}
+    min_values = {}
     coins_per_agent = np.array([coins, coins, coins])
 
     possible_actions = ["C", "D"]
@@ -29,8 +30,10 @@ def find_max_min(multipliers, coins):
             print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
 
         max_values[multiplier] = np.amax(returns)
+        min_values[multiplier] = np.amin(returns)
         print(" max_values[", multiplier, "]=",  max_values[multiplier])
-        print("normalized=", returns/max_values[multiplier])
+        print(" min_values[", multiplier, "]=",  min_values[multiplier])
+        print("normalized=", (returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
     return max_values
 
 
@@ -62,4 +65,4 @@ def eval(config, parallel_env, agents_dict, m, _print=False):
     return actions, out, rewards_eval #np.mean([actions["agent_"+str(idx)] for idx in range(config.n_agents)], dtype=object), out
 
 
-find_max_min([0.5, 5.], 4)
+find_max_min([0., 1.5, 3.], 4)
