@@ -258,7 +258,7 @@ class ReinforceComm():
             #print("self.gmm.means=", self.gmm.means_)
             #print("shape=", self.gmm.means_.shape)
             #print("prediction=", p)
-            value_to_feed = self.gmm.means_[p]
+            #value_to_feed = self.gmm.means_[p]
             #print("value_to_feed=", value_to_feed)
             self.gmm_probs = self.gmm.predict_proba(state[1].reshape(1).reshape(-1, 1))[0]
             #print("probs=", self.gmm_probs)

@@ -36,10 +36,10 @@ def setup_training(params, repo_name):
         mult_fact = params.mult_fact,
         num_game_iterations = 1,
         obs_size = 2,                 # we observe coins we have, and multiplier factor with uncertainty
-        hidden_size = 8,              # power of two!
+        hidden_size = params.hidden_size,              # power of two!
         action_size = 2,
-        lr_actor = 0.1,              # learning rate for actor network
-        lr_critic = 0.1,              # learning rate for critic network
+        lr_actor = params.lr_actor,              # learning rate for actor network
+        lr_critic = 0.01,              # learning rate for critic network
         decayRate = 0.995,
         comm = False,
         save_models = False,
@@ -146,7 +146,7 @@ def train(config):
                         #df_prob_coop = {ag_idx+"prob_coop_m_"+str(i): coops_eval[i][ag_idx][1] for i in config.mult_fact} # action 1 is cooperative
                         #print("df_prob_coop=",df_prob_coop)
                         df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
-                        #print("dfa=", df_actions)
+                        print("dfa=", df_actions)
                         #print("dfr=", df_ret)
                         agent_dict = {**{
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
