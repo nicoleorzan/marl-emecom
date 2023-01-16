@@ -20,8 +20,6 @@ else:
 repo_name = "new_2_agents_reinforce_pgg_v0"
 
 
-    
-print("uncertianties=", unc)
 hyperparameter_defaults = dict(
     n_experiments = 1,
     episodes_per_experiment = 40000,
@@ -43,7 +41,7 @@ hyperparameter_defaults = dict(
     gmm_ = False
 )
 
-wandb.init(project=repo_name, entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
+wandb.init(project="new_2_agents_reinforce_pgg_v0", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])
 config = wandb.config
 print("config=", config)
 

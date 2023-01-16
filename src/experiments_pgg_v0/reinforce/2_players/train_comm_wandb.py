@@ -19,43 +19,36 @@ else:
     print("Device set to : cpu")
 
 
-def setup_training(params, repo_name):
 
-    unc = [0. for i in range(params.n_agents)]
-    for i in range(params.n_uncertain, 0, -1):
-        unc[-i] = params.uncertainty
+hyperparameter_defaults = dict(
+    n_experiments = 1,
+    episodes_per_experiment = params.episodes_per_experiment,
+    update_timestep = params.update_timestep,         # update policy every n timesteps
+    n_agents = params.n_agents,
+    uncertainties = unc,
+    mult_fact = params.mult_fact,        # list givin min and max value of mult factor
+    num_game_iterations = 1,
+    obs_size = 2,                        # we observe coins we have, and multiplier factor with uncertainty
+    action_size = 2,
+    hidden_size = params.hidden_size,
+    lr_actor = params.lr_act,             # learning rate for actor network
+    lr_critic = 0.01,
+    lr_actor_comm = params.lr_comm,       # learning rate for actor network
+    lr_critic_comm = 0.05,
+    decayRate = params.decay_rate,
+    comm = True,
+    save_models = False,
+    mex_size = params.mex_size,
+    random_baseline = params.random_baseline,
+    wandb_mode ="online",
+    sign_lambda = params.sign_lambda,
+    list_lambda = params.list_lambda,
+    gmm_ = params.gmm_
+)
 
-    hyperparameter_defaults = dict(
-        n_experiments = 1,
-        episodes_per_experiment = params.episodes_per_experiment,
-        update_timestep = params.update_timestep,         # update policy every n timesteps
-        n_agents = params.n_agents,
-        uncertainties = unc,
-        mult_fact = params.mult_fact,        # list givin min and max value of mult factor
-        num_game_iterations = 1,
-        obs_size = 2,                        # we observe coins we have, and multiplier factor with uncertainty
-        action_size = 2,
-        hidden_size = params.hidden_size,
-        lr_actor = params.lr_act,             # learning rate for actor network
-        lr_critic = 0.01,
-        lr_actor_comm = params.lr_comm,       # learning rate for actor network
-        lr_critic_comm = 0.05,
-        decayRate = params.decay_rate,
-        comm = True,
-        save_models = False,
-        mex_size = params.mex_size,
-        random_baseline = params.random_baseline,
-        wandb_mode ="online",
-        sign_lambda = params.sign_lambda,
-        list_lambda = params.list_lambda,
-        gmm_ = params.gmm_
-    )
-
-    wandb.init(project=repo_name, entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
-    config = wandb.config
-    print("config=", config)
-
-    return config
+wandb.init(project="new_2_agents_reinforce_pgg_v0_comm_1_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
+config = wandb.config
+print("config=", config)
 
 
 def train(config):
