@@ -99,6 +99,8 @@ class ReinforceComm():
 
     def reset_episode(self):
         self.return_episode_old_norm = self.return_episode_norm
+        self.return_episode_old = self.return_episode
+        self.return_episode = 0
         self.return_episode_norm = 0
         self.tmp_actions_old = self.tmp_actions
         self.tmp_actions = []
