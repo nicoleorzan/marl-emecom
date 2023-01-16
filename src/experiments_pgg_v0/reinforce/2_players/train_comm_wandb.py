@@ -22,28 +22,28 @@ else:
 
 hyperparameter_defaults = dict(
     n_experiments = 1,
-    episodes_per_experiment = params.episodes_per_experiment,
-    update_timestep = params.update_timestep,         # update policy every n timesteps
-    n_agents = params.n_agents,
-    uncertainties = unc,
-    mult_fact = params.mult_fact,        # list givin min and max value of mult factor
+    episodes_per_experiment = 160000,
+    update_timestep = 64,         # update policy every n timesteps
+    n_agents = 2,
+    uncertainties = [0., 1.],
+    mult_fact = [0., 0.5, 1., 1.5, 2., 2.5, 3., 2.5],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                        # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
-    hidden_size = params.hidden_size,
-    lr_actor = params.lr_act,             # learning rate for actor network
+    hidden_size = 64,
+    lr_actor = 0.01,             # learning rate for actor network
     lr_critic = 0.01,
-    lr_actor_comm = params.lr_comm,       # learning rate for actor network
+    lr_actor_comm = 0.01,       # learning rate for actor network
     lr_critic_comm = 0.05,
-    decayRate = params.decay_rate,
+    decayRate = 0.99,
     comm = True,
     save_models = False,
-    mex_size = params.mex_size,
-    random_baseline = params.random_baseline,
+    mex_size = 3,
+    random_baseline = False,
     wandb_mode ="online",
-    sign_lambda = params.sign_lambda,
-    list_lambda = params.list_lambda,
-    gmm_ = params.gmm_
+    sign_lambda = 0.,
+    list_lambda = 0.,
+    gmm_ = False
 )
 
 wandb.init(project="new_2_agents_reinforce_pgg_v0_comm_1_unc", entity="nicoleorzan", config=hyperparameter_defaults, mode=hyperparameter_defaults["wandb_mode"])#, sync_tensorboard=True)
