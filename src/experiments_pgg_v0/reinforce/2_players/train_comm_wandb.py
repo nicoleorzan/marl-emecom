@@ -170,7 +170,6 @@ def train(config):
             torch.save(ag.policy_comm.state_dict(), "policy_comm_"+str(ag_idx))
             torch.save(ag.policy_act.state_dict(), "policy_act_"+str(ag_idx))
 
-def training_function(params, repo_name):
-    print("wandb: saving data in ", repo_name)
-    config = setup_training(params, repo_name)
+
+if __name__ == "__main__":
     train(config)
