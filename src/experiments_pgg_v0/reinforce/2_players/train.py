@@ -67,9 +67,11 @@ def train(config):
         agents_dict = {}
         for idx in range(config.n_agents):
             if (config.gmm_ == True and config.uncertainties[idx] != 0.):
-                model = ActorCritic(config, len(config.mult_fact), config.action_size, config.n_hidden, True)
+                model = ActorCritic(params=config, input_size=len(config.mult_fact), 
+                output_size=config.action_size, n_hidden=config.n_hidden, gmm=True)
             else:
-                model = ActorCritic(config, config.obs_size, config.action_size, config.n_hidden, False)
+                model = ActorCritic(params=config, input_size=config.obs_size, 
+                output_size=config.action_size, n_hidden=config.n_hidden, gmm=False)
             model.to(device)
             optimizer = torch.optim.Adam([
              {'params': model.actor.parameters(), 'lr': config.lr_actor},
