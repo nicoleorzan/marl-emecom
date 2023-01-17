@@ -79,6 +79,7 @@ def train(config):
                 agents_dict['agent_'+str(idx)] = ReinforceComm(config, idx, False)
 
         #### TRAINING LOOP
+        avg_returns_train_list = []
         for ep_in in range(config.episodes_per_experiment):
 
             observations = parallel_env.reset()
@@ -160,11 +161,12 @@ def train(config):
                             **df_actions, **df_ret, **df_mex}
                         
                         wandb.log(agent_dict, step=update_idx, commit=False)
-
+                    avg_returns_train_list.append([agent.return_episode_old_norm.numpy() for _, agent in agents_dict.items()])
                     wandb.log({
                         "update_idx": update_idx,
                         "current_multiplier": mf,
-                        "avg_return_train": np.mean([agent.return_episode_old_norm.numpy() for _, agent in agents_dict.items()]),
+                        "avg_return_train": avg_returns_train_list[-1],
+                        "avg_return_train_time": np.mean(avg_returns_train_list[-10:]),
                         "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents_dict.items()]),
                         "avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents_dict.items()]),
                         },
