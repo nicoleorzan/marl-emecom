@@ -149,7 +149,7 @@ def train(config):
                         df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
                         agent_dict = {**{
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
-                            ag_idx+"_return_train_"+str(mf[0]): agent.return_episode_old.numpy(),
+                            #ag_idx+"_return_train_"+str(mf[0]): agent.return_episode_old.numpy(),
                             ag_idx+"gmm_means": agent.means,
                             ag_idx+"gmm_probabilities": agent.probs,
                             ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1],
