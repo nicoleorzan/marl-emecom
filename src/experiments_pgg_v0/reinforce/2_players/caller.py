@@ -14,6 +14,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_agents', type=int)
     parser.add_argument('--n_uncertain', type=int)
     parser.add_argument('--hidden_size', type=int)
+    parser.add_argument('--n_hidden', type=int)
     parser.add_argument('--lr_actor', type=float)
     parser.add_argument('--uncertainty', type=float)
     parser.add_argument('--gmm_', type=str)

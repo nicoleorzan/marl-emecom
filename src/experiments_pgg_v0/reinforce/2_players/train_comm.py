@@ -36,8 +36,8 @@ def setup_training(params, repo_name):
         obs_size = 2,                        # we observe coins we have, and multiplier factor with uncertainty
         action_size = 2,
         hidden_size = params.hidden_size,
-        n_hidden_comm = 2,
-        n_hidden_act = 1,
+        n_hidden_comm = params.n_hidden_comm,
+        n_hidden_act = params.n_hidden_act,
         lr_actor = params.lr_act,             # learning rate for actor network
         lr_critic = 0.01,
         lr_actor_comm = params.lr_comm,       # learning rate for actor network

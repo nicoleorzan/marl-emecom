@@ -16,6 +16,8 @@ if __name__ == '__main__':
     parser.add_argument('--uncertainty', type=float)
     parser.add_argument('--gmm_', type=str)
     parser.add_argument('--hidden_size', type=int)
+    parser.add_argument('--n_hidden_act', type=int)
+    parser.add_argument('--n_hidden_comm', type=int)
     parser.add_argument('--lr_act', type=float)
     parser.add_argument('--lr_comm', type=float)
     parser.add_argument('--decay_rate', type=float)
