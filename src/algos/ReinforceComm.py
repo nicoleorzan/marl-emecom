@@ -33,13 +33,13 @@ class ReinforceComm():
         if (self.gmm_):
             input_comm = len(self.mult_fact)
         self.policy_comm = ActorCritic(params=params, input_size=input_comm, output_size=self.mex_size, \
-            n_hidden=self.n_hidden_comm, gmm=self.gmm_).to(device)
+            n_hidden=self.n_hidden_comm, hidden_size=self.hidden_size_act, gmm=self.gmm_).to(device)
 
         input_act = self.obs_size + self.n_agents*self.mex_size
         if (self.gmm_):
             input_act = len(self.mult_fact) + self.n_agents*self.mex_size
         self.policy_act = ActorCritic(params=params, input_size=input_act, output_size=self.action_size, \
-            n_hidden=self.n_hidden_act, gmm=self.gmm_).to(device)
+            n_hidden=self.n_hidden_act, hidden_size=self.hidden_size_act, gmm=self.gmm_).to(device)
 
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm},

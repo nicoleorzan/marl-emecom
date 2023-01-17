@@ -6,7 +6,7 @@ from torch.distributions import Categorical, Normal
 # check hidden layer
 class ActorCritic(nn.Module):
 
-    def __init__(self, params, input_size, output_size, n_hidden, gmm=False):
+    def __init__(self, params, input_size, output_size, n_hidden, hidden_size, gmm=False):
         super(ActorCritic, self).__init__()
 
         # absorb all parameters to self
@@ -15,6 +15,7 @@ class ActorCritic(nn.Module):
         self.input_size = input_size
         self.output_size = output_size
         self.n_hidden = n_hidden
+        self.hidden_size = hidden_size
         self.gmm_ = gmm
         print("setto gmm=", self.gmm_)
         print("num_hidden=", self.n_hidden)
