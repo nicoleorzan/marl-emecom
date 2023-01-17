@@ -17,14 +17,87 @@ def calc_entropy(comms, n_comm):
         entropy += - p_c[c] * math.log(p_c[c])
     return entropy
 
-def calc_mutinfo2(config, parallel_env, agent_speaker, agent_speaker_idx, agent_listener, agent_listener_idx):
+def get_p_a_given_do_c(config, possible_messages, agents_dict, parallel_env):
+    # Calculates p(a | do(c)) for all agents, i.e. the probability distribution over other agent's messages given that
+    p_a_given_do_c = [np.zeros((len(possible_messages), config.action_size)), np.zeros((len(possible_messages), config.action_size)), np.zeros((len(possible_messages), config.action_size))]
+
+    # For both agents
+    # Iterated over possible messages
+    for idx_mex, message in enumerate(possible_messages):
+        observations = parallel_env.reset()
+
+        acts_distrib = {agent: agents_dict[agent].get_action_distribution(observations[agent], message) for agent in parallel_env.agents}
+    
+        for ag_idx, agent in enumerate(parallel_env.agents):
+            p_a_given_do_c[ag_idx][idx_mex, :] = acts_distrib[agent].numpy()
+
+    return p_a_given_do_c, observations
+
+def define_all_possibe_messages(config):
+
+    pox_mex = [i for i in range(config.mex_size)]
+    pox_configurations = [p for p in itertools.product(pox_mex, repeat=config.n_agents)]
+    possible_messages = []
+    for c in pox_configurations:
+        tens = torch.Tensor([])
+        for ag_idx in range(config.n_agents):
+            tens = torch.concat((tens,torch.nn.functional.one_hot(torch.Tensor([c[ag_idx]]).long(), num_classes=config.mex_size)[0]), dim=0)
+        possible_messages.append(tens)
+            
+    return possible_messages 
+"""   
+def calc_cic(config, possible_messages, p_a_given_do_c, p_c):
+    # Calculate the one-step causal influence of communication, i.e. the mutual information using p(a | do(c))
+    print("possible_messages=", possible_messages)
+    print("p_a_given_do_c=",p_a_given_do_c)
+    print("pc=", p_c, "np.expand_dims(p_c, axis=1)=",  np.expand_dims(p_c, axis=1))
+    p_ac = numpy.zeros((p_a_given_do_c.shape))
+    print("p_ac",p_ac)
+    p_ac[0:config.mex_size**(config.n_agents-1)] =  p_a_given_do_c[0:config.mex_size**(config.n_agents-1)]*p_c[0]
+    p_ac[config.mex_size**(config.n_agents-1):config.mex_size**(config.n_agents-1)*2] = p_a_given_do_c[config.mex_size**(config.n_agents-1):config.mex_size**(config.n_agents-1)*2]*p_c[1]
+    p_ac[config.mex_size**(config.n_agents-1)*2:config.mex_size**(config.n_agents-1)*3] = p_a_given_do_c[config.mex_size**(config.n_agents-1)*2:config.mex_size**(config.n_agents-1)*3]*p_c[2]
+    
+    #p_ac = p_a_given_do_c * np.expand_dims(p_c, axis=1)  # calculate joint probability p(a, c)
+    p_ac /= np.sum(p_ac)  # re-normalize
+    p_a = np.mean(p_ac, axis=0)  # compute p(a) by marginalizing over c
+
+    # Calculate mutual information
+    cic = 0
+    for c in range(config.mex_size):
+        for a in range(config.action_size):
+            if p_ac[c][a] > 0:
+                cic += p_ac[c][a] * math.log(p_ac[c][a] / (p_c[c] * p_a[a]))
+    return cic
+
+def calc_model_cic(config, possible_messages, agents_dict, parallel_env, num_games=1000):
+    # Given trained model files in model_file_ag1 and model_file_ag2 (.txt files saved with torch.save), calculates
+    # the one-step CIC, averaged over num_games training games
+    # args are used to specify MCG game, and structure of the agen
+
+    # Iterate over games
+    cics = [[], [], []]
+    for i in range(num_games):
+        print("game=", i)
+        # Get a new game (which is random even if args.game = fixed)
+        #observations = parallel_env.reset()
+
+        # Calculate p(a | do(c)) for both agents and messages c
+        p_a_given_do_c, observations = get_p_a_given_do_c(config, possible_messages, agents_dict, parallel_env)
+        # For each agent, calculate the one-step CIC
+        # Calcualte p(c) of other agent (1-ag) by doing a forward pass through network
+        #logits_c, logits_a, v = agents[1 - ag].forward(torch.Tensor(ob_c[ag]))
+        #probs_c = F.softmax(logits_c, dim=0).data.numpy()
+        probs_c = {agent: agents_dict[agent].get_message_distribution(observations[agent]) for agent in parallel_env.agents}
+        print("probs_c=", probs_c)
+        for ag_idx, agent in enumerate(parallel_env.agents):
+            cic = calc_cic(config, possible_messages, p_a_given_do_c[ag_idx], probs_c[agent])
+            cics[ag_idx].append(cic)
+
+    return cics
+"""
+def calc_mutinfo2(possible_messages, parallel_env, agent_speaker, agent_speaker_idx, agent_listener, agent_listener_idx):
     cic = 0
     #define set of possible messages
-    mes = list(itertools.permutations([i for i in range(config.mex_size)]))
-    vals = list(itertools.product(mes, repeat=3))
-    vals = [torch.Tensor(el) for el in vals]
-    possible_messages = [torch.reshape(el, (el.shape[0]*el.shape[1],)) for el in vals]
-    print(possible_messages)
     
     #states loop
     for i in range(100):
@@ -38,6 +111,7 @@ def calc_mutinfo2(config, parallel_env, agent_speaker, agent_speaker_idx, agent_
             p_mj = agent_speaker.policy_comm.get_distribution(observations["agent_"+str(agent_speaker_idx)])#[mex_idx]
             print("p_mj=", p_mj)
             obs = torch.FloatTensor(observations["agent_"+str(agent_listener_idx)])
+            # intervene forcing message "mex"
             state_mex = torch.cat((obs, mex))#.to(device)
             print("state_mex=", state_mex)
             p_a_given_mj = agent_listener.policy_act.get_distribution(state_mex)

@@ -6,7 +6,7 @@ from torch.distributions import Categorical, Normal
 # check hidden layer
 class ActorCritic(nn.Module):
 
-    def __init__(self, params, input_size, output_size, gmm=False):
+    def __init__(self, params, input_size, output_size, n_hidden, gmm=False):
         super(ActorCritic, self).__init__()
 
         # absorb all parameters to self
@@ -14,13 +14,14 @@ class ActorCritic(nn.Module):
 
         self.input_size = input_size
         self.output_size = output_size
-        self.bottleneck_size = 8
+        self.n_hidden = n_hidden
         self.gmm_ = gmm
+        print("setto gmm=", self.gmm_)
 
-        """if (self.comm == True): 
+        if (self.n_hidden == 2):
             self.actor = nn.Sequential(
                 nn.Linear(self.input_size, self.hidden_size),
-                nn.Tanh(), # try out other activation function?
+                nn.Tanh(),
                 nn.Linear(self.hidden_size, self.hidden_size),
                 nn.Tanh(),
                 nn.Linear(self.hidden_size, self.output_size),
@@ -28,24 +29,24 @@ class ActorCritic(nn.Module):
             )
             self.critic = nn.Sequential(
                 nn.Linear(self.input_size, self.hidden_size),
-                nn.Tanh(), # try out other activation function?
+                nn.Tanh(),
                 nn.Linear(self.hidden_size, self.hidden_size),
                 nn.Tanh(),
                 nn.Linear(self.hidden_size, 1),
-        )"""
-        
-        self.actor = nn.Sequential(
-            nn.Linear(self.input_size, self.hidden_size),
-            nn.Tanh(),
-            nn.Linear(self.hidden_size, self.output_size),
-            nn.Softmax(dim=0)
-        )
-        
-        self.critic = nn.Sequential(
-            nn.Linear(self.input_size, self.hidden_size),
-            nn.Tanh(),
-            nn.Linear(self.hidden_size, 1),
-        )
+            )
+        else:
+            self.actor = nn.Sequential(
+                nn.Linear(self.input_size, self.hidden_size),
+                nn.Tanh(),
+                nn.Linear(self.hidden_size, self.output_size),
+                nn.Softmax(dim=0)
+            )
+            self.critic = nn.Sequential(
+                nn.Linear(self.input_size, self.hidden_size),
+                nn.Tanh(),
+                nn.Linear(self.hidden_size, 1),
+            )
+
 
     def reset_state(self):
         pass

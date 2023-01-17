@@ -66,10 +66,8 @@ class Reinforce():
         if (self.gmm_):
             state = self.get_gmm_state(state, eval)
         else:
-            # normalize m factor
-            #print("state1 before", state)
             state[1] = self.normalize_m_factor(state[1])
-            #print("state1 after", state)
+            
         if (eval == True):
             with torch.no_grad():
                 action, action_logprob = self.policy.act(state)
@@ -138,7 +136,7 @@ class Reinforce():
             #print("self.gmm.means=", self.gmm.means_)
             #print("shape=", self.gmm.means_.shape)
             #print("prediction=", p)
-            value_to_feed = self.gmm.means_[p]
+            #value_to_feed = self.gmm.means_[p]
             #print("value_to_feed=", value_to_feed)
             self.gmm_probs = self.gmm.predict_proba(state[1].reshape(1).reshape(-1, 1))[0]
             #print("probs=", self.gmm_probs)

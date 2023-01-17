@@ -26,11 +26,13 @@ hyperparameter_defaults = dict(
     update_timestep = 64,         # update policy every n timesteps
     n_agents = 2,
     uncertainties = [0., 1.],
-    mult_fact = [0., 0.5, 1., 1.5, 2., 2.5, 3., 2.5],        # list givin min and max value of mult factor
+    mult_fact = [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4.],        # list givin min and max value of mult factor
     num_game_iterations = 1,
     obs_size = 2,                        # we observe coins we have, and multiplier factor with uncertainty
     action_size = 2,
     hidden_size = 64,
+    n_hidden_comm = 2,
+    n_hidden_act = 1,
     lr_actor = 0.01,             # learning rate for actor network
     lr_critic = 0.01,
     lr_actor_comm = 0.01,       # learning rate for actor network
@@ -94,11 +96,11 @@ def train(config):
                     agent.rewards.append(rewards[ag_idx])
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     agent.return_episode =+ rewards[ag_idx]
-                    if (actions[ag_idx] is not None):
-                        agent.tmp_actions.append(actions[ag_idx])
-                    if done:
-                        agent.train_returns_norm.append(agent.return_episode_norm)
-                        agent.coop.append(np.mean(agent.tmp_actions))
+                    #if (actions[ag_idx] is not None):
+                    #    agent.tmp_actions.append(actions[ag_idx])
+                    #if done:
+                    #    #agent.train_returns_norm.append(agent.return_episode_norm)
+                    #    agent.coop.append(np.mean(agent.tmp_actions))
 
                 # voglio salvare dati relativi a quanto gli agenti INFLUNEZANO
                 #agents_dict['agent_0'].mutinfo_signaling.append(mut10[-1])
@@ -140,10 +142,9 @@ def train(config):
                         df_ret = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
                         agent_dict = {**{
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm.numpy(),
-                            ag_idx+"_return_train_"+str(mf[0]): agent.return_episode_old.numpy(),
+                            #g_idx+"_return_train_"+str(mf[0]): agent.return_episode_old.numpy(),
                             ag_idx+"gmm_means": agent.means,
                             ag_idx+"gmm_probabilities": agent.probs,
-                            ag_idx+"_coop_level_train": np.mean(agent.tmp_actions_old),
                             ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1],
                             ag_idx+"sc": agent.sc_old[-1],
                             ag_idx+"_avg_mex_entropy": torch.mean(agent.entropy),

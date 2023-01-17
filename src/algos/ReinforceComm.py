@@ -32,14 +32,14 @@ class ReinforceComm():
         input_comm = self.obs_size
         if (self.gmm_):
             input_comm = len(self.mult_fact)
-        output_comm = self.mex_size
-        self.policy_comm = ActorCritic(params, input_comm, output_comm, self.gmm_).to(device)
+        self.policy_comm = ActorCritic(params=params, input_size=input_comm, output_size=self.mex_size, \
+            n_hidden=self.n_hidden_comm, gmm=self.gmm_).to(device)
 
         input_act = self.obs_size + self.n_agents*self.mex_size
         if (self.gmm_):
             input_act = len(self.mult_fact) + self.n_agents*self.mex_size
-        output_act = self.action_size
-        self.policy_act = ActorCritic(params, input_act, output_act, self.gmm_).to(device)
+        self.policy_act = ActorCritic(params=params, input_size=input_act, output_size=self.action_size, \
+            n_hidden=self.n_hidden_act, gmm=self.gmm_).to(device)
 
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm},
@@ -48,40 +48,32 @@ class ReinforceComm():
                         {'params': self.policy_act.critic.parameters(), 'lr': self.lr_critic}])
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
-        self.train_returns_norm = []
-        self.return_episode_old = 0
-        self.return_episode = 0
-        self.return_episode_norm = 0
-        self.tmp_actions = []
-        self.coop = []
-
-        self.ent = True
         self.htarget = np.log(self.action_size)/2.
-
-        self.saved_losses_comm = []
-        self.saved_losses = []
-        self.saved_List_loss_list = []
-
-        self.param_entropy = 0.1
+        self.n_update = 0.
+        self.baseline = 0.
 
         self.eps_norm = 0.0001
         self.comm_loss = True
 
-        self.mutinfo_signaling = []
-        self.mutinfo_listening = []
-        self.mutinfo_signaling_old = []
-        self.mutinfo_listening_old = []
-        self.sc = []
-        self.sc_old = []
-
-        self.n_update = 0.
-        self.baseline = 0.
-
-        self.reset()
+        self.ent = True
+        self.param_entropy = 0.1
+        self.entropy = 0.
 
         self.means = []
         self.probs = []
-        self.entropy = 0
+
+        #### == this needs to be there, is not a repetition == 
+        self.sc = []
+        self.mutinfo_signaling = []
+        self.mutinfo_listening = []
+        self.return_episode_norm = 0
+        self.return_episode = 0
+        #### ==
+
+        self.reset()
+
+        self.saved_losses_comm = []
+        self.saved_losses = []
 
     def reset(self):
         self.comm_logprobs = []
@@ -103,8 +95,6 @@ class ReinforceComm():
         self.return_episode_old = self.return_episode
         self.return_episode = 0
         self.return_episode_norm = 0
-        self.tmp_actions_old = self.tmp_actions
-        self.tmp_actions = []
 
     def select_message(self, state, eval=False):
 
@@ -130,7 +120,6 @@ class ReinforceComm():
 
         message = torch.Tensor([message.item()]).long().to(device)
         message = F.one_hot(message, num_classes=self.mex_size)[0]
-        #print("message=", message)
         return message
 
     def random_messages(self, state):
@@ -216,14 +205,11 @@ class ReinforceComm():
 
         entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
         self.entropy = entropy
-        #print("avg ent=", torch.mean(self.entropy))
         hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
         for i in range(len(self.comm_logprobs)):
-            self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.List_loss_list[i]
-            self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i] + self.list_lambda*self.List_loss_list[i]
-
+            self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i]
+            self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline) + self.list_lambda*self.List_loss_list[i]
        
-        self.saved_List_loss_list.append(torch.mean(torch.Tensor([i.detach() for i in self.List_loss_list])))
         self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
 
@@ -257,7 +243,7 @@ class ReinforceComm():
                 input_ = self.mf_history.reshape(-1, 1)
                 self.gmm.fit(input_)
 
-            p = torch.Tensor(self.gmm.predict(state[1].reshape(1).reshape(-1, 1))).long()
+            #p = torch.Tensor(self.gmm.predict(state[1].reshape(1).reshape(-1, 1))).long()
             #print("self.gmm.means=", self.gmm.means_)
             #print("shape=", self.gmm.means_.shape)
             #print("prediction=", p)
@@ -265,10 +251,6 @@ class ReinforceComm():
             #print("value_to_feed=", value_to_feed)
             self.gmm_probs = self.gmm.predict_proba(state[1].reshape(1).reshape(-1, 1))[0]
             #print("probs=", self.gmm_probs)
-            #state_in = torch.FloatTensor(np.array(self.gmm_probs))
-            #state_in = F.one_hot(p, num_classes=len(self.mult_fact))[0].to(torch.float32)
-            #print("state=", state_in)
-
 
             self.means = copy.deepcopy(self.gmm.means_)
             self.means = np.sort(self.means, axis=0)
@@ -280,6 +262,5 @@ class ReinforceComm():
                 self.probs[value] = self.gmm_probs[i] 
             #print("sort probs=", ordered_probs)
             self.state_in = self.probs
-            #print("state=", state_in)
         else: 
             self.state_in = torch.zeros(len(self.mult_fact)).to(device)

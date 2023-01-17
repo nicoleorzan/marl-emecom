@@ -26,10 +26,11 @@ hyperparameter_defaults = dict(
     update_timestep = 128,         # update policy every n timesteps: same as batch side in this case
     n_agents = 2,
     uncertainties = [0.,0.],
-    mult_fact = [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5],
+    mult_fact = [0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4.],
     num_game_iterations = 1,
     obs_size = 2,                 # we observe coins we have, and multiplier factor with uncertainty
     hidden_size = 8,              # power of two!
+    n_hidden = 1,
     action_size = 2,
     lr_actor = 0.01,              # learning rate for actor network
     lr_critic = 0.01,              # learning rate for critic network
@@ -62,16 +63,15 @@ def train(config):
         agents_dict = {}
         for idx in range(config.n_agents):
             if (config.gmm_ == True and config.uncertainties[idx] != 0.):
-                model = ActorCritic(config, len(config.mult_fact), config.action_size, True)
+                model = ActorCritic(config, len(config.mult_fact), config.action_size, config.n_hidden, True)
             else:
-                model = ActorCritic(config, config.obs_size, config.action_size, False)
+                model = ActorCritic(config, config.obs_size, config.action_size, config.n_hidden, False)
             model.to(device)
             optimizer = torch.optim.Adam([
              {'params': model.actor.parameters(), 'lr': config.lr_actor},
              {'params': model.critic.parameters(), 'lr': config.lr_critic} 
              ])
             agents_dict['agent_'+str(idx)] = Reinforce(model, optimizer, config, idx)
-
             #wandb.watch(agents_dict['agent_'+str(idx)].policy, log = 'all', log_freq = 1)
 
         #### TRAINING LOOP

@@ -123,10 +123,14 @@ class parallel_env(ParallelEnv):
         for agent in self.agents:
             d = normal.Normal(torch.Tensor([self.current_multiplier]), torch.Tensor([self.uncertainties_dict[agent]+self.uncertainty_eps])) # is not var, is std. wrong name I put
             obs_multiplier = d.sample() 
+            #print("mult=", self.current_multiplier)
+            #print("obs=", obs_multiplier)
             if (obs_multiplier < 0.):
                 obs_multiplier = 0.
-            elif (obs_multiplier > max(self.mult_fact)):
+            elif (obs_multiplier > max(self.mult_fact)+3*self.uncertainties_dict[agent]):
                 obs_multiplier = max(self.mult_fact)
+
+            assert(obs_multiplier >= 0.)
             self.observations[agent] = torch.Tensor((self.normalized_coins[agent], obs_multiplier)).to(device) 
            
     def reset(self, mult_in=None):
