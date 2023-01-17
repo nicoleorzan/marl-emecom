@@ -5,9 +5,9 @@
 In this repository I implemented two pettingzoo environments for two different versions of the Public Good Game, and PPO reinforcement learning agents that can solve the game with and wthout communication. 
 
 Under the "src" folder you can find:
-* in the "environments" the implementations of the two environments, with versions v0 and v1.
+* in the "environments" the implementations of the two environments, with versions v0 and v1. Both the parallel and sequential Pettingzoo versions are available.
 * in the "nets" folder you can find an implementation of the different kind of architectures for the agents playing the game
-* in the "algos" folder you can find the implementations of the learning algorithm, which are different versions of the PPO (proximal olicy Optimization) algorithm. The different versions allow to train different kind of networks.
+* in the "algos" folder you can find the implementations of the learning algorithms, which are different versions of the PPO (Proximal Policy Optimization) algorithm. The different versions allow to train different kind of networks, creating different losses given the different network outputs.
 * in the "analysis" folder you can find the implementation of different function to analyse the bahavior of the RL agents during and after training
 * in the "experiments_pgg_v0" and "experiments_pgg_v1" fodlers you can respectively find the training mains for the different kind of reinfrocement learning agents that solve the two games.
 

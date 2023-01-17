@@ -1,5 +1,5 @@
 import os
-os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
+#os.environ['MPLCONFIGDIR'] = os.getcwd() + "/configs/"
 from src.environments import pgg_parallel_v0
 from src.algos.Reinforce import Reinforce
 from src.nets.ActorCritic import ActorCritic
