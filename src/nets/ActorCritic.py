@@ -17,6 +17,7 @@ class ActorCritic(nn.Module):
         self.n_hidden = n_hidden
         self.gmm_ = gmm
         print("setto gmm=", self.gmm_)
+        print("num_hidden=", self.n_hidden)
 
         if (self.n_hidden == 2):
             self.actor = nn.Sequential(
