@@ -131,7 +131,8 @@ class parallel_env(ParallelEnv):
                 obs_multiplier = max(self.mult_fact)
 
             assert(obs_multiplier >= 0.)
-            self.observations[agent] = torch.Tensor((self.normalized_coins[agent], obs_multiplier)).to(device) 
+            #self.observations[agent] = torch.Tensor((self.normalized_coins[agent], obs_multiplier)).to(device) 
+            self.observations[agent] = torch.Tensor([obs_multiplier]).to(device) 
            
     def reset(self, mult_in=None):
         """

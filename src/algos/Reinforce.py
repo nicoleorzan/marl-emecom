@@ -1,9 +1,10 @@
 
+from src.algos.buffer import RolloutBufferComm
+from src.nets.ActorCritic import ActorCritic
 import torch
 import torch.autograd as autograd
 import numpy as np
 from sklearn.mixture import GaussianMixture as GMM
-import torch.nn.functional as F
 import copy
 
 # set device to cpu or cuda
@@ -17,13 +18,32 @@ else:
 
 class Reinforce():
 
-    def __init__(self, model, optimizer, params, idx):
+    def __init__(self, params, idx, gmm_agent):
 
         for key, val in params.items():  setattr(self, key, val)
-    
-        self.policy = model.to(device)
-        self.optimizer = optimizer
-        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.decayRate)
+
+        self.idx = idx
+        self.gmm_ = gmm_agent
+
+        self.buffer = RolloutBufferComm()
+
+        # get observations size
+        self.input_size = params.obs_size
+        #if (self.gmm_):
+        #    self.input_size = self.n_gmm_components
+        # get message
+        if ("listening_agents" in params):
+            if (self.listening_agents[self.idx]):
+                self.input_size += self.mex_size*self.communicating_agents.count(1)
+        print("input size=", self.input_size)
+        self.policy = ActorCritic(params=params, input_size=self.input_size, output_size=self.action_size, \
+            n_hidden=self.n_hidden, hidden_size=self.hidden_size, gmm=self.gmm_).to(device)
+
+        self.optimizer = torch.optim.Adam([
+             {'params': self.policy.actor.parameters(), 'lr': params.lr_actor},
+             {'params': self.policy.critic.parameters(), 'lr': params.lr_critic} 
+             ])
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
         
         self.train_returns_norm = []
         self.train_returns = []
@@ -32,6 +52,7 @@ class Reinforce():
         self.tmp_actions = []
         self.coop = []
         self.saved_losses = []
+        self.mutinfo_listening = []
 
         self.reset()
 
@@ -51,6 +72,9 @@ class Reinforce():
     def reset(self):
         self.logprobs = []
         self.rewards = []
+        self.buffer.clear()
+        self.mutinfo_listening_old = self.mutinfo_listening
+        self.mutinfo_listening = []
 
     def reset_episode(self):
         self.return_episode_old = self.return_episode
@@ -75,6 +99,7 @@ class Reinforce():
             action, action_logprob = self.policy.act(state)
 
             self.logprobs.append(action_logprob)
+        self.buffer.actions.append(action)
 
         return action
 
@@ -87,16 +112,14 @@ class Reinforce():
             obs_multiplier_norm = torch.Tensor([1.])
         return obs_multiplier_norm
 
-    def get_distribution(self, state):
+    def get_action_distribution(self, state):
 
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
             if (self.gmm_):
                 state = self.get_gmm_state(state, eval=True)
             else:
-                #print("state1 before", state)
                 state[1] = self.normalize_m_factor(state[1])
-                #print("state1 after", state)
             out = self.policy.get_distribution(state)
 
             return out
@@ -110,6 +133,7 @@ class Reinforce():
             self.logprobs[i] = -self.logprobs[i] * rew_norm[i]
 
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.logprobs])))
+        
         self.optimizer.zero_grad()
         tmp = [torch.ones(a.data.shape) for a in self.logprobs]
         autograd.backward(self.logprobs, tmp, retain_graph=True)
@@ -132,31 +156,15 @@ class Reinforce():
                 self.gmm = GMM(n_components = len(self.mult_fact), max_iter=1000, random_state=0, covariance_type = 'full')
                 input_ = self.mf_history.reshape(-1, 1)
                 self.gmm.fit(input_)
-            p = torch.Tensor(self.gmm.predict(state[1].reshape(1).reshape(-1, 1))).long()
-            #print("self.gmm.means=", self.gmm.means_)
-            #print("shape=", self.gmm.means_.shape)
-            #print("prediction=", p)
-            #value_to_feed = self.gmm.means_[p]
-            #print("value_to_feed=", value_to_feed)
             self.gmm_probs = self.gmm.predict_proba(state[1].reshape(1).reshape(-1, 1))[0]
-            #print("probs=", self.gmm_probs)
-            #state_in = torch.FloatTensor(np.array(self.gmm_probs))
-            #state_in = F.one_hot(p, num_classes=len(self.mult_fact))[0].to(torch.float32)
-            #print("state=", state_in)
-
 
             self.means = copy.deepcopy(self.gmm.means_)
             self.means = np.sort(self.means, axis=0)
-            #print("means ordered=", means_ordered)
             ordering_values = [np.where(self.means == i)[0][0] for i in self.gmm.means_]
-            #print("sort values=", ordering_values)
             self.probs = torch.zeros(len(self.gmm_probs)).to(device)
             for i, value in enumerate(ordering_values):
                 self.probs[value] = self.gmm_probs[i] 
-            #print("sort probs=", ordered_probs)
             state_in = self.probs
-            #print("state=", state_in)
-
         else: 
             state_in = torch.zeros(len(self.mult_fact)).to(device)
 

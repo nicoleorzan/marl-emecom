@@ -2,11 +2,20 @@ import functools
 from gym.spaces import Discrete, Box
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
-from pettingzoo.utils import parallel_to_aec, aec_to_parallel
-import numpy as np
+from pettingzoo.utils import parallel_to_aec
 import random
-
+from torch.distributions import uniform, normal
+import torch
 # azione 1 e` cooperativa
+
+# set device to cpu or cuda
+device = torch.device('cpu')
+if(torch.cuda.is_available()): 
+    device = torch.device('cuda:0') 
+    torch.cuda.empty_cache()
+    print("Device set to : " + str(torch.cuda.get_device_name(device)))
+else:
+    print("Device set to : cpu")
 
 def env(n_agents, threshold, num_iterations=1, uncertainties=None, fraction=False, comm=False):
     """
@@ -75,6 +84,8 @@ class parallel_env(ParallelEnv):
             self._action_spaces = {agent: Discrete(self.n_actions) for agent in self.possible_agents}
         self._observation_spaces = {agent: Discrete(self.obs_space_size) for agent in self.possible_agents}
 
+        self.uncertainty_min = torch.Tensor([0.0000001])
+
     # this cache ensures that same space object is returned for the same agent
     # allows action space seeding to work as expected
     @functools.lru_cache(maxsize=None)
@@ -85,7 +96,7 @@ class parallel_env(ParallelEnv):
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
         if (self.fraction == True):
-            return Box(low=np.array([-0.001],dtype=np.float32), high=np.array([1.001],dtype=np.float32))            
+            return Box(low=torch.Tensor([-0.001]), high=torch.Tensor([1.001]))            
         else:
             return Discrete(self.n_actions)
 
@@ -97,18 +108,16 @@ class parallel_env(ParallelEnv):
         #if coins is not None:
         #    self.coins = coins
         #else:
-        a = [random.randint(0,10) for i in range(self.n_agents)]
+        a = torch.randint(low=0, high=10, size=(self.n_agents,))
         while (all(elem == a[0] for elem in a)):
-            a = [random.randint(0,10) for i in range(self.n_agents)]
-        sum_a = np.sum(a)
+            a = torch.randint(low=0, high=10, size=(self.n_agents,))
+        sum_a = torch.sum(a)
         coins = a/sum_a
         self.coins = {agent: coins[idx]*1.5 for idx, agent in enumerate(self.agents)}
         #print("coins=", self.coins)
 
 
-    def reset(self, seed=123):
-
-        self.seed = seed
+    def reset(self):
         self.agents = self.possible_agents[:]
         self.rewards = {agent: 0 for agent in self.agents}
         self._cumulative_rewards = {agent: 0 for agent in self.agents}
@@ -126,8 +135,9 @@ class parallel_env(ParallelEnv):
  
         observations = {}
         for agent in self.agents:
-            obs_coins = np.random.normal(self.coins[agent], self.uncertainties[agent], 1)[0]
-            observations[agent] = np.array(([obs_coins]))
+            d = normal.Normal(torch.Tensor([self.coins[agent]]),  self.uncertainties[agent]+self.uncertainty_min) # is not var, is std. wrong name I put
+            obs_coins = d.sample()
+            observations[agent] = obs_coins.to(device)
         return observations    
 
     def step(self, actions):
@@ -148,7 +158,7 @@ class parallel_env(ParallelEnv):
         # rewards for all agents are placed in the rewards dictionary to be returned
         rewards = {}
 
-        num_contributors = np.sum([actions[agent] for agent in self.agents])
+        num_contributors = torch.sum(torch.Tensor([actions[agent] for agent in self.agents]))
         #print("coins=", self.coins)
         #print("actions=", actions)
 
@@ -182,8 +192,8 @@ class parallel_env(ParallelEnv):
 
             observations = {}
             for agent in self.agents:
-                obs_coins = np.random.normal(self.coins[agent], self.uncertainties[agent], 1)[0]
-                observations[agent] = np.array(([obs_coins]))
+                d = normal.Normal(torch.Tensor([self.coins[agent]]), self.uncertainties[agent]+self.uncertainty_min) # is not var, is std. wrong name I put
+                observations[agent] = d.sample.to(device)
 
             #print("coins=", self.coins)
 

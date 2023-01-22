@@ -94,7 +94,7 @@ def eval(config, parallel_env, agents_dict, m, _print=False):
         
         #for idx in range(config.n_agents):
         #    actions_agents[idx] = actions["agent_"+str(idx)]
-        out = {agent: agents_dict[agent].get_distribution(observations[agent]) for agent in parallel_env.agents}
+        out = {agent: agents_dict[agent].get_action_distribution(observations[agent]) for agent in parallel_env.agents}
 
         _, rewards_eval, _, _ = parallel_env.step(actions)
         
