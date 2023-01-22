@@ -210,10 +210,10 @@ def training_function(args, repo_name):
 
     func = lambda trial: objective(trial, args, repo_name)
 
-    storage = optuna.storages.RDBStorage(url="sqlite:///1speaker1listener-db")
+    storage = optuna.storages.RDBStorage(url="sqlite:///1c1l-db")
 
     study = optuna.create_study(
-        study_name="1speaker1listener",
+        study_name="1c1l",
         storage=storage,
         load_if_exists=True,
         direction="maximize", 
@@ -221,7 +221,6 @@ def training_function(args, repo_name):
         n_startup_trials=0, n_warmup_steps=40, interval_steps=3
         )
     )
-
     study.optimize(func, n_trials=100, timeout=600)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
