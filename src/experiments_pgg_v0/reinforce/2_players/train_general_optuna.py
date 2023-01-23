@@ -235,6 +235,8 @@ def training_function(args, repo_name):
 
     print("Best trial:")
     trial = study.best_trial
+    print("Running with best params:")
+    objective(study.best_trial, args, repo_name)
 
     print("  Value: ", trial.value)
 
