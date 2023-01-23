@@ -46,4 +46,4 @@ if __name__ == '__main__':
     assert(len(args.communicating_agents) == args.n_agents)
     assert(len(args.listening_agents) == args.n_agents)
 
-    training_function(args, args.repo_wandb)
+    training_function(args, args.repo)
