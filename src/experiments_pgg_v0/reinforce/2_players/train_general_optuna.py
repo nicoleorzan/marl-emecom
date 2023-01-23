@@ -10,7 +10,7 @@ import src.analysis.utils as U
 from utils_train_reinforce_comm import eval1
 from utils_train_reinforce import find_max_min
 
-EPOCHS = 500
+EPOCHS = 600
 OBS_SIZE = 1
 ACTION_SIZE = 2
 DECAY_RATE = 0.999
@@ -44,14 +44,14 @@ def setup_training_hyperparams(trial, args):
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        batch_size = trial.suggest_categorical("batch_size", [64, 128]),# 256]),
+        batch_size = trial.suggest_categorical("batch_size", [64, 128, 256]),
         lr_actor = trial.suggest_float("lr_actor", 1e-3, 1e-1, log=True),
         lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-3, 1e-1, log=True),
         n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
         n_hidden_comm = trial.suggest_int("n_hidden_comm", 1, 2),
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
-        mex_size = trial.suggest_int("mex_size", 2, 2),
+        mex_size = trial.suggest_int("mex_size", 2, 10),
         sign_lambda = trial.suggest_float("sign_lambda", 0.1, 0.8),
         list_lambda = trial.suggest_float("list_lambda", 0.1, 0.8),
         wandb_mode = WANDB_MODE
@@ -210,10 +210,10 @@ def training_function(args, repo_name):
 
     func = lambda trial: objective(trial, args, repo_name)
 
-    storage = optuna.storages.RDBStorage(url="sqlite:///1c1l-db")
+    storage = optuna.storages.RDBStorage(url="sqlite:///"+repo_name+"-db")
 
     study = optuna.create_study(
-        study_name="1c1l",
+        study_name=repo_name,
         storage=storage,
         load_if_exists=True,
         direction="maximize", 
@@ -221,15 +221,17 @@ def training_function(args, repo_name):
         n_startup_trials=0, n_warmup_steps=40, interval_steps=3
         )
     )
-    study.optimize(func, n_trials=100, timeout=600)
-
-    pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
-    complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
     
-    print("Study statistics: ")
-    print("  Number of finished trials: ", len(study.trials))
-    print("  Number of pruned trials: ", len(pruned_trials))
-    print("  Number of complete trials: ", len(complete_trials))
+    if (args.optimize):
+        study.optimize(func, n_trials=100, timeout=600)
+
+        pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+        complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+        
+        print("Study statistics: ")
+        print("  Number of finished trials: ", len(study.trials))
+        print("  Number of pruned trials: ", len(pruned_trials))
+        print("  Number of complete trials: ", len(complete_trials))
 
     print("Best trial:")
     trial = study.best_trial

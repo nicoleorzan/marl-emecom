@@ -31,7 +31,8 @@ if __name__ == '__main__':
         type=int,
         default=[])
     parser.add_argument('--random_baseline', type=str, default="False")
-    parser.add_argument('--repo_wandb', type=str)
+    parser.add_argument('--repo', type=str)
+    parser.add_argument('--optimize', type=int) # 1 for true 0 for false
 
     args = parser.parse_args()
     args.random_baseline = ast.literal_eval(args.random_baseline)

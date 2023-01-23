@@ -62,6 +62,7 @@ class ReinforceGeneral():
             print("input_comm=", input_comm)
             self.policy_comm = ActorCritic(params=params, input_size=input_comm, output_size=self.mex_size, \
                 n_hidden=self.n_hidden_comm, hidden_size=self.hidden_size_comm, gmm=self.gmm_).to(device)
+            print("output comm=", self.mex_size)
             
             opt_params_comm = {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm}
             opt_params.append(opt_params_comm)
@@ -210,7 +211,7 @@ class ReinforceGeneral():
 
     def get_gmm_state(self, state, _eval=False):
 
-        self.state_to_comm = torch.zeros(len(self.mult_fact)).to(device)
+        self.state_to_comm = torch.zeros(self.n_gmm_components).to(device)
         if hasattr(self, 'mf_history'):
             if (len(self.mf_history) < 50000 and _eval == False):
                 self.mf_history = torch.cat((self.mf_history, state.reshape(1)), 0)
