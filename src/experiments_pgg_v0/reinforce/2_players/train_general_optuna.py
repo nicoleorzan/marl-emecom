@@ -81,7 +81,7 @@ def objective(trial, args, repo_name):
     agents = define_agents(config)
 
     #### TRAINING LOOP
-    avg_norm_returns_train_list = []; avg_cooperation_time = []
+    avg_norm_returns_train_list = []; avg_rew_time = []
     for epoch in range(config.n_epochs): 
         for _ in range(config.batch_size):
 
@@ -153,9 +153,9 @@ def objective(trial, args, repo_name):
         avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in agents.items()])
         avg_norm_returns_train_list.append(avg_norm_return)
 
-        coop_values = [actions_eval_m[2.5][ag_idx]+actions_eval_m[1.5][ag_idx]-actions_eval_m[0.5][ag_idx] for ag_idx, _ in agents.items()]
-        avg_cooperation_time.append(np.mean(coop_values))
-        measure = np.mean(avg_cooperation_time[-10:])
+        rew_values = [rewards_eval_m[2.5][ag_idx]+rewards_eval_m[1.5][ag_idx]+rewards_eval_m[0.5][ag_idx] for ag_idx, _ in agents.items()]
+        avg_rew_time.append(np.mean(rew_values))
+        measure = np.mean(avg_rew_time[-10:])
         
         trial.report(measure, epoch)
         
@@ -194,7 +194,7 @@ def objective(trial, args, repo_name):
                 "current_multiplier": mf,
                 "avg_return_train": avg_norm_return,
                 "avg_return_train_time": np.mean(avg_norm_returns_train_list[-10:]),
-                "avg_cooperation_time": measure,
+                "avg_rew_time": measure,
                 "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents.items()]),
                 #"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents.items()]),
                 },
@@ -221,7 +221,7 @@ def training_function(args, repo_name):
         n_startup_trials=0, n_warmup_steps=40, interval_steps=3
         )
     )
-    
+
     if (args.optimize):
         study.optimize(func, n_trials=100, timeout=600)
 
