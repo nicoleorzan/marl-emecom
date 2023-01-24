@@ -42,6 +42,7 @@ if __name__ == '__main__':
     print("n_unc", n_uncertain)
 
     assert(args.n_agents > 1)
+    assert(len(args.gmm_) == args.n_agents)
     assert(len(args.uncertainties) == args.n_agents)
     assert(len(args.communicating_agents) == args.n_agents)
     assert(len(args.listening_agents) == args.n_agents)

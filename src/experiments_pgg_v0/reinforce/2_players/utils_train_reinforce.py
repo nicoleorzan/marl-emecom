@@ -1,65 +1,23 @@
 import numpy as np
 import itertools
 
-def find_max_min1(multipliers, coins):
-    n_agents = 2
+def find_max_min(config, coins):
+    n_agents = config.n_agents
+    multipliers = config.mult_fact
     max_values = {}
     min_values = {}
-    coins_per_agent = np.array([coins, coins, coins])
-
-    possible_actions = ["C", "D"]
-    possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
-    scenarios_returns = {}
-    for multiplier in multipliers:
-        print("\nMultiplier=", multiplier)
-        possible_actions = ["C", "D"]
-        possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
-        returns = np.zeros((len(possible_scenarios), n_agents)) # TUTTI I POSSIBILI RITORNI CHE UN AGENTE PUO OTTENERE, PER OGNI AGENTE
-
-        for idx_scenario, scenario in enumerate(possible_scenarios):
-            common_pot = np.sum([coins_per_agent[i] for i in range(n_agents) if scenario[i] == "C"])
-
-            for ag_idx in range(n_agents):
-                if (scenario[ag_idx] == 'C'):
-                    returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier
-                else: 
-                    returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier + coins_per_agent[ag_idx]
-            print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
-        max_values[multiplier] = np.amax(returns)
-        min_values[multiplier] = np.amin(returns)
-        #print("super min values=", min_values([min(min_values, key=min_values.get)]))
-        #print("super max=", min_values([min(min_values, key=min_values.get)]))
-        print(" max_values[", multiplier, "]=",  max_values[multiplier])
-        print(" min_values[", multiplier, "]=",  min_values[multiplier])
-        print("normalized=", (returns-min(min_values))/(max(max_values) - min(min_values)))
-
-        scenarios_returns[multiplier] = returns
-    print(max_values)
-    print(min_values)
-    min_min = min(min_values.items(), key=lambda x: x[1])
-    max_max = max(max_values.items(), key=lambda x: x[1])
-    print(scenarios_returns)
-
-    return max_values
-
-
-def find_max_min(multipliers, coins):
-    n_agents = 2
-    max_values = {}
-    min_values = {}
-    coins_per_agent = np.array([coins, coins, coins])
+    coins_per_agent = np.array([coins for i in range(n_agents)])
 
     possible_actions = ["C", "D"]
     possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
 
     for multiplier in multipliers:
         print("\nMultiplier=", multiplier)
-        a = 0; b = 0; c = 0
         possible_actions = ["C", "D"]
         possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
         returns = np.zeros((len(possible_scenarios), n_agents)) # TUTTI I POSSIBILI RITORNI CHE UN AGENTE PUO OTTENERE, PER OGNI AGENTE
 
-        scenarios_returns = {}
+        #scenarios_returns = {}
         for idx_scenario, scenario in enumerate(possible_scenarios):
             common_pot = np.sum([coins_per_agent[i] for i in range(n_agents) if scenario[i] == "C"])
 

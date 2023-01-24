@@ -44,7 +44,7 @@ def setup_training_hyperparams(trial, args):
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        batch_size = trial.suggest_categorical("batch_size", [64, 128, 256]),
+        batch_size = trial.suggest_categorical("batch_size", [64, 128]),
         lr_actor = trial.suggest_float("lr_actor", 1e-3, 1e-1, log=True),
         lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-3, 1e-1, log=True),
         n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
@@ -74,7 +74,7 @@ def objective(trial, args, repo_name):
     print("config=", config)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
-    max_values = find_max_min(config.mult_fact, 4)
+    max_values = find_max_min(config, 4)
     idx_comm_agents = [j for j,val in enumerate(config.communicating_agents) if val==1]
     num_comm_agents = config.communicating_agents.count(1)
 
@@ -107,7 +107,6 @@ def objective(trial, args, repo_name):
                 #print("\nlistening")
                 if (num_comm_agents != 0):
                     message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
-                    #print("concat mex=", message)
                     [agents[agent].get_message(message) for agent in parallel_env.agents if (agents[agent].is_listening)]
 
                 # acting
@@ -147,14 +146,14 @@ def objective(trial, args, repo_name):
             rewards_eval_m[m] = rewards_eval
             rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
             actions_eval_m[m] = act_eval
-            #print("m=", m)
-            #print("actions_eval_m=", actions_eval_m)
 
         avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in agents.items()])
         avg_norm_returns_train_list.append(avg_norm_return)
 
-        rew_values = [rewards_eval_m[2.5][ag_idx]+rewards_eval_m[1.5][ag_idx]+rewards_eval_m[0.5][ag_idx] for ag_idx, _ in agents.items()]
+        rew_values = [(np.sum([rewards_eval_m[m_val][ag_idx] for m_val in config.mult_fact])) for ag_idx, _ in agents.items()]
+        
         avg_rew_time.append(np.mean(rew_values))
+        #print(avg_rew_time)
         measure = np.mean(avg_rew_time[-10:])
         
         trial.report(measure, epoch)
@@ -225,18 +224,18 @@ def training_function(args, repo_name):
     if (args.optimize):
         study.optimize(func, n_trials=100, timeout=600)
 
-        pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
-        complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
-        
-        print("Study statistics: ")
-        print("  Number of finished trials: ", len(study.trials))
-        print("  Number of pruned trials: ", len(pruned_trials))
-        print("  Number of complete trials: ", len(complete_trials))
+    pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+    complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+    
+    print("Study statistics: ")
+    print("  Number of finished trials: ", len(study.trials))
+    print("  Number of pruned trials: ", len(pruned_trials))
+    print("  Number of complete trials: ", len(complete_trials))
 
     print("Best trial:")
     trial = study.best_trial
     print("Running with best params:")
-    objective(study.best_trial, args, repo_name+"_best")
+    objective(study.best_trial, args, repo_name+"_BEST")
 
     print("  Value: ", trial.value)
 
