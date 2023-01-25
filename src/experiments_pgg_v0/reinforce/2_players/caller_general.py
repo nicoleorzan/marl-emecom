@@ -30,6 +30,8 @@ if __name__ == '__main__':
         nargs="*",
         type=int,
         default=[])
+    parser.add_argument('--n_gmm_components', type=int)
+
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--repo', type=str)
     parser.add_argument('--optimize', type=int) # 1 for true 0 for false

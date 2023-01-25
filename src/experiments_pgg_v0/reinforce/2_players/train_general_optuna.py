@@ -14,7 +14,6 @@ EPOCHS = 600
 OBS_SIZE = 1
 ACTION_SIZE = 2
 DECAY_RATE = 0.999
-N_GMM_COMPONENTS = 3
 WANDB_MODE = "online"
 RANDOM_BASELINE = False
 
@@ -36,7 +35,7 @@ def setup_training_hyperparams(trial, args):
         n_epochs = EPOCHS,
         obs_size = OBS_SIZE,
         action_size = ACTION_SIZE,
-        n_gmm_components = N_GMM_COMPONENTS,
+        n_gmm_components = args.n_gmm_components,
         decayRate = DECAY_RATE,
         mult_fact = args.mult_fact,
         uncertainties = args.uncertainties,
