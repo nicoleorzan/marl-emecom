@@ -109,6 +109,8 @@ def train(args):
 
                 for ag_idx, agent in agents.items():
                     if (agent.is_communicating):
+                        for m_val in config.mult_fact:
+                            agent.sc_m[m_val].append(U.calc_mutinfo(agent.buffer.actions_given_m[m_val], agent.buffer.messages_given_m[m_val], config.action_size, config.mex_size))
                         agent.sc.append(U.calc_mutinfo(agent.buffer.actions, agent.buffer.messages, config.action_size, config.mex_size))
                     if (agent.is_listening):
                         for i in idx_comm_agents:
@@ -142,6 +144,7 @@ def train(args):
         if (config.wandb_mode == "online"):
             for ag_idx, agent in agents.items():
                 df_actions = {ag_idx+"actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
+                df_sc_m = {ag_idx+"sc_given_m"+str(i): agent.sc_m[i] for i in config.mult_fact}
                 df_rew = {ag_idx+"rewards_eval_m"+str(i): rewards_eval_m[i][ag_idx] for i in config.mult_fact}
                 df_rew_norm = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
                 df_agent = {**{
@@ -150,7 +153,7 @@ def train(args):
                     ag_idx+"gmm_means": agent.means,
                     ag_idx+"gmm_probabilities": agent.probs,
                     'epoch': epoch}, 
-                    **df_actions, **df_rew, **df_rew_norm}
+                    **df_actions, **df_rew, **df_rew_norm, **df_sc_m}
                 
                 if (config.communicating_agents[agent.idx] == 1.):
                     df_mex = {ag_idx+"messages_prob_distrib_m_"+str(i): mex_distrib_given_m[i][ag_idx] for i in config.mult_fact}
