@@ -13,7 +13,6 @@ from utils_train_reinforce import find_max_min
 EPOCHS = 600
 OBS_SIZE = 1
 ACTION_SIZE = 2
-DECAY_RATE = 0.999
 WANDB_MODE = "online"
 RANDOM_BASELINE = False
 
@@ -35,8 +34,8 @@ def setup_training_hyperparams(trial, args):
         n_epochs = EPOCHS,
         obs_size = OBS_SIZE,
         action_size = ACTION_SIZE,
-        n_gmm_components = args.n_gmm_components,
-        decayRate = DECAY_RATE,
+        n_gmm_components = trial.suggest_categorical("n_gmm_components", [3, len(args.mult_fact)]),
+        decayRate = trial.suggest_categorical("decay_rate", [0.99, 0.999]),
         mult_fact = args.mult_fact,
         uncertainties = args.uncertainties,
         gmm_ = args.gmm_,
@@ -207,7 +206,16 @@ def objective(trial, args, repo_name):
     wandb.finish()
     return measure
 
-def training_function(args, repo_name):
+def training_function(args):
+
+    name_gmm = "_noGmm"
+    if (1 in args.gmm_):
+        name_gmm = "_yesGmm"
+
+    repo_name = str(args.n_agents) + "agents_" + "comm" + str(args.communicating_agents) + \
+        "_list" + str(args.listening_agents) + name_gmm + "_unc" + str(args.uncertainties) + \
+        "_mfact" + str(args.mult_fact)
+    print("repo_name=", repo_name)
 
     func = lambda trial: objective(trial, args, repo_name)
 

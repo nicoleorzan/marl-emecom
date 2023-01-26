@@ -32,7 +32,6 @@ def setup_training_hyperparameters(args):
         n_epochs = EPOCHS,
         obs_size = OBS_SIZE,
         action_size = ACTION_SIZE,
-        decayRate = DECAY_RATE,
         random_baseline = RANDOM_BASELINE,
         wandb_mode = WANDB_MODE
     )
@@ -49,10 +48,10 @@ def define_agents(config):
         agents['agent_'+str(idx)] = ReinforceGeneral(config, idx)
     return agents
 
-def train(args):
+def train(args, repo_name):
     print("inside train")
     all_params = setup_training_hyperparameters(args)
-    wandb.init(project=all_params["repo"], entity="nicoleorzan", config=all_params, mode=WANDB_MODE)#, sync_tensorboard=True)
+    wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=WANDB_MODE)#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
 
@@ -184,5 +183,14 @@ def train(args):
     
 
 def training_function(args):
-    print("wandb: saving data in ", args.repo)
-    train(args)
+
+    name_gmm = "_noGmm"
+    if (1 in args.gmm_):
+        name_gmm = "_yesGmm"
+
+    repo_name = str(args.n_agents) + "agents_" + "comm" + str(args.communicating_agents) + \
+        "_list" + str(args.listening_agents) + name_gmm + "_unc" + str(args.uncertainties) + \
+        "_mfact" + str(args.mult_fact)
+
+    print("wandb: saving data in ", repo_name)
+    train(args, repo_name)

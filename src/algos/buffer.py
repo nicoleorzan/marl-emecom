@@ -37,7 +37,9 @@ class RolloutBufferComm:
         self.states_c = []
         self.states_a = []
         self.messages = []
+        self.messages_given_m = {}
         self.actions = []
+        self.actions_given_m = {}
         self.act_logprobs = []
         self.comm_logprobs = []
         self.rewards = []
@@ -54,6 +56,8 @@ class RolloutBufferComm:
         del self.states_c[:]
         del self.states_a[:]
         del self.messages[:]
+        self.messages_given_m = {}
+        self.actions_given_m = {}
         del self.actions[:]
         del self.act_logprobs[:]
         del self.comm_logprobs[:]

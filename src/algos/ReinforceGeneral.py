@@ -86,6 +86,7 @@ class ReinforceGeneral():
 
         #### == this needs to be there, is not a repetition == 
         self.sc = []
+        self.sc_m = {}
         self.mutinfo_signaling = []
         self.mutinfo_listening = []
         self.return_episode_norm = 0
@@ -106,8 +107,10 @@ class ReinforceGeneral():
         self.rewards = []
         self.mutinfo_signaling_old = self.mutinfo_signaling
         self.mutinfo_listening_old = self.mutinfo_listening
+        self.sc_m_old = self.sc_m
         self.sc_old = self.sc
         self.sc = []
+        self.sc_m = {}
         self.mutinfo_signaling = []
         self.mutinfo_listening = []
         self.buffer.clear()
@@ -134,7 +137,7 @@ class ReinforceGeneral():
         #print("state to comm=",self.state_to_comm)
         self.state_to_act = self.state_to_comm
 
-    def select_message(self, _eval=False):
+    def select_message(self, m_val=None, _eval=False):
 
         if (_eval == True):
             with torch.no_grad():
@@ -145,6 +148,10 @@ class ReinforceGeneral():
 
             self.buffer.states_c.append(self.state_to_comm)
             self.buffer.messages.append(message_out)
+            if (m_val in self.buffer.messages_given_m):
+                self.buffer.messages_given_m[m_val].append(message_out)
+            else: 
+                self.buffer.messages_given_m[m_val] = [message_out]
 
             self.comm_logprobs.append(message_logprob)
             self.comm_entropy.append(entropy)
@@ -154,11 +161,15 @@ class ReinforceGeneral():
         #print("send message=", message_out)
         return message_out
 
-    def random_messages(self):
+    def random_messages(self, m_val=None):
 
         message_out = torch.randint(0, self.mex_size, (self.mex_size-1,))[0]
         self.buffer.states_c.append(self.state_to_comm)
         self.buffer.messages.append(message_out)
+        if (m_val in self.buffer.messages_given_m):
+            self.buffer.messages_given_m[m_val].append(message_out)
+        else: 
+            self.buffer.messages_given_m[m_val] = [message_out]
 
         self.comm_logprobs.append(torch.tensor(0.0001))
 
@@ -173,7 +184,7 @@ class ReinforceGeneral():
         #print("listen_message=", self.message_in)
         #print("state to act becomes=", self.state_to_act)
 
-    def select_action(self, _eval=False):
+    def select_action(self, m_val=None, _eval=False):
             
         if (_eval == True):
             with torch.no_grad():
@@ -191,6 +202,10 @@ class ReinforceGeneral():
 
             self.buffer.states_a.append(self.state_to_act)
             self.buffer.actions.append(action)
+            if (m_val in self.buffer.actions_given_m):
+                self.buffer.actions_given_m[m_val].append(action)
+            else: 
+                self.buffer.actions_given_m[m_val] = [action]
 
             self.act_logprobs.append(action_logprob)
             self.act_entropy.append(entropy)

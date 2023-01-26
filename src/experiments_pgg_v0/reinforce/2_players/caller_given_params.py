@@ -30,12 +30,8 @@ if __name__ == '__main__':
         nargs="*",
         type=int,
         default=[])
-    parser.add_argument('--n_gmm_components', type=int)
 
     parser.add_argument('--random_baseline', type=str, default="False")
-    parser.add_argument('--repo', type=str)
-
-
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--lr_actor', type=float)
     parser.add_argument('--lr_actor_comm', type=float)
@@ -46,6 +42,7 @@ if __name__ == '__main__':
     parser.add_argument('--mex_size', type=int)
     parser.add_argument('--sign_lambda', type=float)
     parser.add_argument('--list_lambda', type=float)
+    parser.add_argument('--decay_rate', type=float)
 
     args = parser.parse_args()
     args.random_baseline = ast.literal_eval(args.random_baseline)
