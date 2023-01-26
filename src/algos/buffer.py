@@ -37,9 +37,9 @@ class RolloutBufferComm:
         self.states_c = []
         self.states_a = []
         self.messages = []
-        self.messages_given_m = {}
         self.actions = []
         self.actions_given_m = {}
+        self.messages_given_m = {}
         self.act_logprobs = []
         self.comm_logprobs = []
         self.rewards = []
@@ -51,6 +51,10 @@ class RolloutBufferComm:
             self.cstates_c = []
             self.hstates_a = []
             self.cstates_a = []
+
+    def clear_batch(self):
+        self.messages_given_m = {}
+        self.actions_given_m = {}
         
     def clear(self):
         del self.states_c[:]

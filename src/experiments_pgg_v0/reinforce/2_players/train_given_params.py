@@ -106,18 +106,24 @@ def train(args, repo_name):
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     agent.return_episode =+ rewards[ag_idx]
 
-                for ag_idx, agent in agents.items():
-                    if (agent.is_communicating):
-                        for m_val in config.mult_fact:
-                            agent.sc_m[m_val].append(U.calc_mutinfo(agent.buffer.actions_given_m[m_val], agent.buffer.messages_given_m[m_val], config.action_size, config.mex_size))
-                        agent.sc.append(U.calc_mutinfo(agent.buffer.actions, agent.buffer.messages, config.action_size, config.mex_size))
-                    if (agent.is_listening):
-                        for i in idx_comm_agents:
-                            agent.mutinfo_listening.append(U.calc_mutinfo(agent.buffer.actions, agents['agent_'+str(i)].buffer.messages, config.action_size, config.mex_size))
-
                 # break; if the episode is over
                 if done:
                     break
+            
+        for ag_idx, agent in agents.items():
+            if (agent.is_communicating):
+                #print("\n",agent.buffer.actions_given_m)
+                for m_val in config.mult_fact:
+                    if (m_val in agent.sc_m):
+                        agent.sc_m[m_val].append(U.calc_mutinfo(agent.buffer.actions_given_m[m_val], agent.buffer.messages_given_m[m_val], config.action_size, config.mex_size))
+                    else:
+                        agent.sc_m[m_val] = [U.calc_mutinfo(agent.buffer.actions_given_m[m_val], agent.buffer.messages_given_m[m_val], config.action_size, config.mex_size)]
+                #print("\n\n==========>SC_m:",agent.sc_m)
+                agent.sc.append(U.calc_mutinfo(agent.buffer.actions, agent.buffer.messages, config.action_size, config.mex_size))
+            if (agent.is_listening):
+                for i in idx_comm_agents:
+                    agent.mutinfo_listening.append(U.calc_mutinfo(agent.buffer.actions, agents['agent_'+str(i)].buffer.messages, config.action_size, config.mex_size))
+
 
         # update agents     
         for ag_idx, agent in agents.items():
@@ -143,7 +149,6 @@ def train(args, repo_name):
         if (config.wandb_mode == "online"):
             for ag_idx, agent in agents.items():
                 df_actions = {ag_idx+"actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
-                df_sc_m = {ag_idx+"sc_given_m"+str(i): agent.sc_m[i] for i in config.mult_fact}
                 df_rew = {ag_idx+"rewards_eval_m"+str(i): rewards_eval_m[i][ag_idx] for i in config.mult_fact}
                 df_rew_norm = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
                 df_agent = {**{
@@ -152,13 +157,14 @@ def train(args, repo_name):
                     ag_idx+"gmm_means": agent.means,
                     ag_idx+"gmm_probabilities": agent.probs,
                     'epoch': epoch}, 
-                    **df_actions, **df_rew, **df_rew_norm, **df_sc_m}
+                    **df_actions, **df_rew, **df_rew_norm}
                 
                 if (config.communicating_agents[agent.idx] == 1.):
                     df_mex = {ag_idx+"messages_prob_distrib_m_"+str(i): mex_distrib_given_m[i][ag_idx] for i in config.mult_fact}
                     df_sc = {ag_idx+"sc": agent.sc_old[-1]}
+                    df_sc_m = {ag_idx+"sc_given_m"+str(i): agent.sc_m[i] for i in config.mult_fact}
                     df_ent = {ag_idx+"_avg_mex_entropy": torch.mean(agent.entropy)}
-                    df_agent = {**df_agent, **df_mex, **df_sc, **df_ent}
+                    df_agent = {**df_agent, **df_mex, **df_sc, **df_ent, **df_sc_m}
                 if (config.listening_agents[agent.idx] == 1.):
                     df_listen = {ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1]}
                     df_agent = {**df_agent, **df_listen}

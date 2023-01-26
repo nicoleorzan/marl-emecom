@@ -94,6 +94,7 @@ class ReinforceGeneral():
         #### ==
 
         self.reset()
+        self.reset_batch()
 
         self.saved_losses_comm = []
         self.saved_losses = []
@@ -107,14 +108,17 @@ class ReinforceGeneral():
         self.rewards = []
         self.mutinfo_signaling_old = self.mutinfo_signaling
         self.mutinfo_listening_old = self.mutinfo_listening
-        self.sc_m_old = self.sc_m
         self.sc_old = self.sc
         self.sc = []
-        self.sc_m = {}
         self.mutinfo_signaling = []
         self.mutinfo_listening = []
         self.buffer.clear()
         self.reset_episode()
+
+    def reset_batch(self):
+        self.sc_m_old = self.sc_m
+        self.sc_m = {}
+        self.buffer.clear_batch()
 
     def reset_episode(self):
         self.return_episode_old_norm = self.return_episode_norm
