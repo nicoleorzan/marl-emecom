@@ -1,6 +1,6 @@
 import argparse
 import ast
-from train_general_optuna import training_function
+from train_given_params import training_function
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -34,14 +34,23 @@ if __name__ == '__main__':
 
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--repo', type=str)
-    parser.add_argument('--optimize', type=int) # 1 for true 0 for false
+
+
+    parser.add_argument('--batch_size', type=int)
+    parser.add_argument('--lr_actor', type=float)
+    parser.add_argument('--lr_actor_comm', type=float)
+    parser.add_argument('--n_hidden_act', type=int)
+    parser.add_argument('--n_hidden_comm', type=int)
+    parser.add_argument('--hidden_size_act', type=int)
+    parser.add_argument('--hidden_size_comm', type=int)
+    parser.add_argument('--mex_size', type=int)
+    parser.add_argument('--sign_lambda', type=float)
+    parser.add_argument('--list_lambda', type=float)
 
     args = parser.parse_args()
     args.random_baseline = ast.literal_eval(args.random_baseline)
-    print("args=", args)
     n_certain_agents = args.uncertainties.count(0.)
     n_uncertain = args.n_agents - n_certain_agents
-    print("n_unc", n_uncertain)
 
     assert(args.n_agents > 1)
     assert(len(args.gmm_) == args.n_agents)
@@ -49,4 +58,4 @@ if __name__ == '__main__':
     assert(len(args.communicating_agents) == args.n_agents)
     assert(len(args.listening_agents) == args.n_agents)
 
-    training_function(args, args.repo)
+    training_function(args)

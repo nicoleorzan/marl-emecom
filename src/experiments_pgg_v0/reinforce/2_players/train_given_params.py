@@ -1,10 +1,7 @@
 from src.environments import pgg_parallel_v0
 from src.algos.ReinforceGeneral import ReinforceGeneral
 import numpy as np
-import optuna
-from optuna.trial import TrialState
 import torch
-from optuna.integration.wandb import WeightsAndBiasesCallback
 import wandb
 import src.analysis.utils as U
 from utils_train_reinforce_comm import eval1
@@ -27,37 +24,24 @@ else:
     print("Device set to : cpu")
 
 
-def setup_training_hyperparams(trial, args):
+def setup_training_hyperparameters(args):
+    print("inside setup training hyp")
 
-    all_params = dict(
-        n_agents = args.n_agents,
+    params = dict(
         num_game_iterations = 1,
         n_epochs = EPOCHS,
         obs_size = OBS_SIZE,
         action_size = ACTION_SIZE,
-        n_gmm_components = args.n_gmm_components,
         decayRate = DECAY_RATE,
-        mult_fact = args.mult_fact,
-        uncertainties = args.uncertainties,
-        gmm_ = args.gmm_,
         random_baseline = RANDOM_BASELINE,
-        communicating_agents = args.communicating_agents,
-        listening_agents = args.listening_agents,
-        batch_size = trial.suggest_categorical("batch_size", [64, 128]),
-        lr_actor = trial.suggest_float("lr_actor", 1e-3, 1e-1, log=True),
-        lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-3, 1e-1, log=True),
-        n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
-        n_hidden_comm = trial.suggest_int("n_hidden_comm", 1, 2),
-        hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
-        hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
-        mex_size = trial.suggest_int("mex_size", 2, 10),
-        sign_lambda = trial.suggest_float("sign_lambda", 0.1, 0.8),
-        list_lambda = trial.suggest_float("list_lambda", 0.1, 0.8),
         wandb_mode = WANDB_MODE
     )
+    #print("params=", params)
+    #print("args=", vars(args))
+    all_params = {**params, **vars(args)}
+    print("all_params=",all_params)
 
     return all_params
-
 
 def define_agents(config):
     agents = {}
@@ -65,10 +49,10 @@ def define_agents(config):
         agents['agent_'+str(idx)] = ReinforceGeneral(config, idx)
     return agents
 
-def objective(trial, args, repo_name):
-
-    all_params = setup_training_hyperparams(trial, args)
-    wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=WANDB_MODE)#, sync_tensorboard=True)
+def train(args):
+    print("inside train")
+    all_params = setup_training_hyperparameters(args)
+    wandb.init(project=all_params["repo"], entity="nicoleorzan", config=all_params, mode=WANDB_MODE)#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
 
@@ -154,14 +138,6 @@ def objective(trial, args, repo_name):
         avg_rew_time.append(np.mean(rew_values))
         #print(avg_rew_time)
         measure = np.mean(avg_rew_time[-10:])
-        
-        trial.report(measure, epoch)
-        
-        if trial.should_prune():
-            print("is time to pruneee")
-            wandb.finish()
-            raise optuna.exceptions.TrialPruned()
-            break
 
         if (config.wandb_mode == "online"):
             for ag_idx, agent in agents.items():
@@ -202,42 +178,8 @@ def objective(trial, args, repo_name):
             print("Epoch : {} \t Mult factor: {}  \t Measure: {} ".format(epoch, mf, measure))
     
     wandb.finish()
-    return measure
-
-def training_function(args, repo_name):
-
-    func = lambda trial: objective(trial, args, repo_name)
-
-    storage = optuna.storages.RDBStorage(url="sqlite:///"+repo_name+"-db")
-
-    study = optuna.create_study(
-        study_name=repo_name,
-        storage=storage,
-        load_if_exists=True,
-        direction="maximize", 
-        pruner=optuna.pruners.MedianPruner(
-        n_startup_trials=0, n_warmup_steps=40, interval_steps=3
-        )
-    )
-
-    if (args.optimize):
-        study.optimize(func, n_trials=100, timeout=600)
-
-    pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
-    complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
     
-    print("Study statistics: ")
-    print("  Number of finished trials: ", len(study.trials))
-    print("  Number of pruned trials: ", len(pruned_trials))
-    print("  Number of complete trials: ", len(complete_trials))
 
-    print("Best trial:")
-    trial = study.best_trial
-    print("Running with best params:")
-    objective(study.best_trial, args, repo_name+"_BEST")
-
-    print("  Value: ", trial.value)
-
-    print("  Params: ")
-    for key, value in trial.params.items():
-        print("    {}: {}".format(key, value))
+def training_function(args):
+    print("wandb: saving data in ", args.repo)
+    train(args)
