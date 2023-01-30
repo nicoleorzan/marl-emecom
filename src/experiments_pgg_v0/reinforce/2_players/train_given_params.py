@@ -164,7 +164,7 @@ def train(args, repo_name):
                 if (config.communicating_agents[agent.idx] == 1.):
                     df_mex = {ag_idx+"messages_prob_distrib_m_"+str(i): mex_distrib_given_m[i][ag_idx] for i in config.mult_fact}
                     df_sc = {ag_idx+"sc": agent.sc_old[-1]}
-                    df_sc_m = {ag_idx+"sc_given_m"+str(i): agent.sc_m[i] for i in config.mult_fact}
+                    df_sc_m = {ag_idx+"sc_given_m"+str(i): agent.sc_m[i][0] for i in config.mult_fact}
                     df_ent = {ag_idx+"_avg_mex_entropy": torch.mean(agent.entropy)}
                     df_agent = {**df_agent, **df_mex, **df_sc, **df_ent, **df_sc_m}
                 if (config.listening_agents[agent.idx] == 1.):
