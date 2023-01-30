@@ -196,7 +196,7 @@ def training_function(args):
 
     repo_name = str(args.n_agents) + "agents_" + "comm" + str(args.communicating_agents) + \
         "_list" + str(args.listening_agents) + name_gmm + "_unc" + str(args.uncertainties) + \
-        "_mfact" + str(args.mult_fact)
+        "_mfact" + str(args.mult_fact) +"_BEST"
 
     print("wandb: saving data in ", repo_name)
     train(args, repo_name)
