@@ -65,6 +65,8 @@ def train(args, repo_name):
     #### TRAINING LOOP
     avg_norm_returns_train_list = []; avg_rew_time = []
     for epoch in range(config.n_epochs): 
+        [agent.reset_batch() for _, agent in agents.items()]
+
         for _ in range(config.batch_size):
 
             observations = parallel_env.reset()
@@ -74,7 +76,7 @@ def train(args, repo_name):
             done = False
             while not done:
                 mf = parallel_env.current_multiplier
-                #print("\n\nmf=", mf)
+                #print("\n\nmf=", mf.numpy()[0])
 
                 messages = {}; actions = {}
                 [agents[agent].set_state(observations[agent]) for agent in parallel_env.agents]
@@ -83,7 +85,7 @@ def train(args, repo_name):
                 #print("\nspeaking")
                 for agent in parallel_env.agents:
                     if (agents[agent].is_communicating):
-                        messages[agent] = agents[agent].select_message()
+                        messages[agent] = agents[agent].select_message(m_val=mf.numpy()[0]) # m value is given only to compute metrics
 
                 # listening
                 #print("\nlistening")
@@ -93,7 +95,7 @@ def train(args, repo_name):
 
                 # acting
                 for agent in parallel_env.agents:
-                    actions[agent] = agents[agent].select_action()
+                    actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
