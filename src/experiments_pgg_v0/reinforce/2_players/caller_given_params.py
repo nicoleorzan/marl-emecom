@@ -42,7 +42,7 @@ if __name__ == '__main__':
     parser.add_argument('--mex_size', type=int, default = 0)
     parser.add_argument('--sign_lambda', type=float, default = 0.)
     parser.add_argument('--list_lambda', type=float, default = 0.)
-    parser.add_argument('--decay_rate', type=float, default = 0.999)
+    parser.add_argument('--decayRate', type=float, default = 0.999)
 
     args = parser.parse_args()
     args.random_baseline = ast.literal_eval(args.random_baseline)
