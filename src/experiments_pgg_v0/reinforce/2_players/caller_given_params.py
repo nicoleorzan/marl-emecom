@@ -32,6 +32,7 @@ if __name__ == '__main__':
         default=[])
 
     parser.add_argument('--random_baseline', type=str, default="False")
+    parser.add_argument('--n_gmm_components', type=int, default=0)
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--lr_actor', type=float)
     parser.add_argument('--lr_actor_comm', type=float, default = 0.)
