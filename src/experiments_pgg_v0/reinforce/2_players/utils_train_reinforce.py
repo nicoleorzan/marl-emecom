@@ -1,8 +1,12 @@
 import numpy as np
 import itertools
 
-def find_max_min(config, coins):
-    n_agents = config.n_agents
+def find_max_min(config, coins, n_playing_agents=None):
+
+    if (n_playing_agents is not None):
+        n_agents=n_playing_agents
+    else:
+        n_agents = config.n_agents
     multipliers = config.mult_fact
     max_values = {}
     min_values = {}
@@ -26,13 +30,13 @@ def find_max_min(config, coins):
                     returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier
                 else: 
                     returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier + coins_per_agent[ag_idx]
-            print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
+            #print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
 
         max_values[multiplier] = np.amax(returns)
         min_values[multiplier] = np.amin(returns)
-        print(" max_values[", multiplier, "]=",  max_values[multiplier])
-        print(" min_values[", multiplier, "]=",  min_values[multiplier])
-        print("normalized=", returns/max_values[multiplier]) #(returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
+        #print(" max_values[", multiplier, "]=",  max_values[multiplier])
+        #print(" min_values[", multiplier, "]=",  min_values[multiplier])
+        #print("normalized=", returns/max_values[multiplier]) #(returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
     return max_values
 
 

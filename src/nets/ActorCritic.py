@@ -6,8 +6,12 @@ from torch.distributions import Categorical, Normal
 # check hidden layer
 class ActorCritic(nn.Module):
 
-    def __init__(self, params, input_size, output_size, n_hidden, hidden_size, gmm=False):
+    def __init__(self, params, input_size, output_size, n_hidden, hidden_size, mask=None, gmm=False):
         super(ActorCritic, self).__init__()
+
+        self.mask = mask
+        if (self.mask is not None):
+            print("mask", mask)
 
         # absorb all parameters to self
         for key, val in params.items():  setattr(self, key, val)
@@ -53,9 +57,11 @@ class ActorCritic(nn.Module):
     def reset_state(self):
         pass
 
-    def act(self, state, ent=False, greedy=False):
+    def act(self, state, greedy=False):
 
         out = self.actor(state)
+        if self.mask is not None:
+            out = out*self.mask
         dist = Categorical(out)
 
         if (self.random_baseline == True): 
@@ -68,10 +74,7 @@ class ActorCritic(nn.Module):
 
         logprob = dist.log_prob(act) # negativi
 
-        if (ent):
-            return act.detach(), logprob, dist.entropy().detach()
-
-        return act.detach(), logprob #.detach() --> moved from here be necessary for REINFORCE,put it in PPO code
+        return act.detach(), logprob, dist.entropy().detach()
 
     def get_dist_entropy(self, state):
         out = self.actor(state)

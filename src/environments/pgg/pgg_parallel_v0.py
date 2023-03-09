@@ -173,6 +173,8 @@ class parallel_env(ParallelEnv):
         - infos
         dicts where each dict looks like {agent_1: item_1, agent_2: item_2}
         '''
+        n_playing_agents = len(actions)
+
         # If a user passes in actions with no agents, then just return empty observations, etc.
         if not actions:
             self.agents = []
@@ -181,11 +183,18 @@ class parallel_env(ParallelEnv):
         # rewards for all agents are placed in the rewards dictionary to be returned
         rewards = {}
         
-        common_pot = torch.sum(torch.Tensor([self.coins[agent]*actions[agent] for agent in self.agents])).to(device)
+        #common_pot = torch.sum(torch.Tensor([self.coins[agent]*actions[agent] for agent in self.agents])).to(device)
+        common_pot = torch.sum(torch.Tensor([self.coins[agent]*actions[agent] for agent in self.agents if agent in actions.keys()])).to(device)
 
+        #for agent in self.agents:
+        #    rewards[agent] = common_pot/self.n_agents*self.current_multiplier + \
+        #            (self.coins[agent]-self.coins[agent]*actions[agent])
+        
         for agent in self.agents:
-            rewards[agent] = common_pot/self.n_agents*self.current_multiplier + \
-                (self.coins[agent]-self.coins[agent]*actions[agent])
+            if agent in actions.keys():
+                rewards[agent] = common_pot/n_playing_agents*self.current_multiplier + \
+                    (self.coins[agent]-self.coins[agent]*actions[agent])
+        print("reward", rewards)
 
         self.num_moves += 1
         env_done = self.num_moves >= self.num_game_iterations

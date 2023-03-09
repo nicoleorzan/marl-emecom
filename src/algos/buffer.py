@@ -1,10 +1,10 @@
-
 class RolloutBuffer:
     
     def __init__(self, recurrent = False):
         self.actions = []
         self.states = []
         self.logprobs = []
+        self.entropy = []
         self.rewards = []
         self.is_terminals = []
         self.recurrent = recurrent
@@ -16,6 +16,7 @@ class RolloutBuffer:
         del self.actions[:]
         del self.states[:]
         del self.logprobs[:]
+        del self.entropy[:]
         del self.rewards[:]
         del self.is_terminals[:]
         if self.recurrent:
@@ -33,6 +34,7 @@ class RolloutBuffer:
         print("is_terminals=", len(self.is_terminals))
         
 class RolloutBufferComm:
+
     def __init__(self, recurrent = False):
         self.states_c = []
         self.states_a = []
@@ -42,6 +44,8 @@ class RolloutBufferComm:
         self.messages_given_m = {}
         self.act_logprobs = []
         self.comm_logprobs = []
+        self.comm_logprobs = []
+        self.act_entropy = []
         self.rewards = []
         self.is_terminals = []
         self.mut_info = []
@@ -65,6 +69,8 @@ class RolloutBufferComm:
         del self.actions[:]
         del self.act_logprobs[:]
         del self.comm_logprobs[:]
+        del self.comm_logprobs[:]
+        del self.act_entropy[:]
         del self.rewards[:]
         del self.is_terminals[:]
         del self.mut_info[:]
@@ -89,3 +95,14 @@ class RolloutBufferComm:
             print("cstates_c=", len(self.cstates_c))
             print("hstates_a=", len(self.hstates_a))
             print("cstates_a=", len(self.cstates_a))
+
+
+class RolloutBufferPS(RolloutBufferComm):
+
+    def __init__(self, recurrent = False):
+        super().__init__(recurrent)
+
+        self.states_part_sel = []
+        self.states_punishment = []
+        self.part_sel_out = []
+        self.punishment_out = []
