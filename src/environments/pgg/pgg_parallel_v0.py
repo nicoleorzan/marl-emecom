@@ -194,7 +194,7 @@ class parallel_env(ParallelEnv):
             if agent in actions.keys():
                 rewards[agent] = common_pot/n_playing_agents*self.current_multiplier + \
                     (self.coins[agent]-self.coins[agent]*actions[agent])
-        print("reward", rewards)
+        #print("reward", rewards)
 
         self.num_moves += 1
         env_done = self.num_moves >= self.num_game_iterations

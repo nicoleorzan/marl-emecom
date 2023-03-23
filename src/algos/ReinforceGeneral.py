@@ -20,17 +20,24 @@ else:
 
 class ReinforceGeneral():
 
-    #def __init__(self, params, idx=0):
-    def __init__(self, params, is_communicating, is_listening, gmm_, n_communicating_agents):
+    def __init__(self, params, idx):
 
         for key, val in params.items(): setattr(self, key, val)
 
-        self.is_communicating = is_communicating
+        self.idx = idx
+        self.is_communicating = self.communicating_agents[idx]
+        self.is_listening = self.listening_agents[idx]
+        self.gmm_ = self.gmm_[idx]
+        self.n_communicating_agents = len(self.communicating_agents)
+        self.max_f = max(self.mult_fact)
+        self.min_f = min(self.mult_fact)
+
+        """self.is_communicating = is_communicating
         self.is_listening = is_listening
         self.gmm_ = gmm_
         self.n_communicating_agents = n_communicating_agents
         self.max_f = max(self.mult_fact)
-        self.min_f = min(self.mult_fact)
+        self.min_f = min(self.mult_fact)"""
 
         self.buffer = RolloutBufferComm()
 
@@ -40,8 +47,8 @@ class ReinforceGeneral():
         input_act = self.obs_size
         if (self.gmm_):
             input_act = self.n_gmm_components  #gmm components for the m factor, 1 for the coins I get
-        if (self.partner_selection):
-            input_act += self.n_agents # add one hot encoding of partner agent index
+        #if (self.partner_selection):
+        #    input_act += self.n_agents # add one hot encoding of partner agent index
         if (self.is_listening):
             input_act += self.mex_size*self.n_communicating_agents
 
@@ -176,10 +183,11 @@ class ReinforceGeneral():
         self.message_in = message_in
         self.state_to_act = torch.cat((self.state_to_comm, self.message_in)).to(device)
 
-    def select_action(self, partner_id = None, m_val=None, _eval=False):
+    #def select_action(self, partner_id = None, m_val=None, _eval=False):
+    def select_action(self, m_val=None, _eval=False):
 
-        if (partner_id is not None):
-            self.state_to_act = torch.cat((partner_id, self.state_to_act)).to(device)
+        #if (partner_id is not None):
+        #    self.state_to_act = torch.cat((partner_id, self.state_to_act)).to(device)
         #print("state to act=", self.state_to_act)
             
         if (_eval == True):
@@ -247,9 +255,9 @@ class ReinforceGeneral():
         # I do not normalize rewards here because I already give normalized rewards to the agent
         rew_norm = self.rewards # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
         if (self.rewards != []):
-            print("rew norm=", rew_norm)
-            print("actions=", self.buffer.actions)
-            print("logp=", self.buffer.act_logprobs)
+            #print("rew norm=", rew_norm)
+            #print("actions=", self.buffer.actions)
+            #print("logp=", self.buffer.act_logprobs)
 
             entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
             self.entropy = entropy
@@ -353,9 +361,9 @@ class Reinforce():
 
         rew_norm = self.rewards
         if (self.rewards != []):
-            print("rew norm=", rew_norm)
-            print("actions=", self.buffer.actions)
-            print("logp=", self.buffer.logprobs)
+            #("rew norm=", rew_norm)
+            #print("actions=", self.buffer.actions)
+            #print("logp=", self.buffer.logprobs)
 
             entropy = torch.FloatTensor([self.policy.get_dist_entropy(state).detach() for state in self.buffer.states]) #
             self.entropy = entropy
