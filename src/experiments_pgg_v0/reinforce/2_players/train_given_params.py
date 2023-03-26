@@ -1,5 +1,6 @@
 from src.environments import pgg_parallel_v0
 from src.algos.ReinforceGeneral import ReinforceGeneral
+from src.algos.PPOGeneral import PPOGeneral
 import numpy as np
 import torch
 import wandb
@@ -11,7 +12,7 @@ EPOCHS = 600
 OBS_SIZE = 1
 ACTION_SIZE = 2
 DECAY_RATE = 0.999
-WANDB_MODE = "online"
+WANDB_MODE = "offline"
 RANDOM_BASELINE = False
 
 # set device to cpu or cuda
@@ -45,11 +46,14 @@ def setup_training_hyperparameters(args):
 def define_agents(config):
     agents = {}
     for idx in range(config.n_agents):
-        agents['agent_'+str(idx)] = ReinforceGeneral(config, idx)
+        if (config.algorithm == "reinforce"):
+            agents['agent_'+str(idx)] = ReinforceGeneral(config, idx)
+        elif (config.algorithm == "PPO"):
+            agents['agent_'+str(idx)] = PPOGeneral(config, idx)
     return agents
 
 def train(args, repo_name):
-    print("inside train")
+    #print("inside train")
     all_params = setup_training_hyperparameters(args)
     wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=WANDB_MODE)#, sync_tensorboard=True)
     config = wandb.config
@@ -94,17 +98,18 @@ def train(args, repo_name):
                     [agents[agent].get_message(message) for agent in parallel_env.agents if (agents[agent].is_listening)]
 
                 # acting
+                #print("acting")
                 for agent in parallel_env.agents:
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
+                #print(actions)
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
-                #print("rewards=", rewards)
-                #print("rewards_norm=", rewards_norm)
 
                 for ag_idx, agent in agents.items():
                     
                     agent.rewards.append(rewards[ag_idx])
+                    agent.is_terminals.append(done)
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     agent.return_episode =+ rewards[ag_idx]
 
@@ -127,7 +132,8 @@ def train(args, repo_name):
                     agent.mutinfo_listening.append(U.calc_mutinfo(agent.buffer.actions, agents['agent_'+str(i)].buffer.messages, config.action_size, config.mex_size))
 
 
-        # update agents     
+        # update agents 
+        #print("update")    
         for ag_idx, agent in agents.items():
             agent.update()
         
@@ -185,7 +191,8 @@ def train(args, repo_name):
                 step=epoch, commit=True)
 
         if (epoch%10 == 0):
-            print("Epoch : {} \t Mult factor: {}  \t Measure: {} ".format(epoch, mf, measure))
+            print("Epoch : {}, \t M: {}, Actions: {}".format(epoch, min(actions_eval_m.keys()), actions_eval_m[min(actions_eval_m.keys())] ))
+            print("            \t M: {}, Actions: {}".format(max(actions_eval_m.keys()), actions_eval_m[max(actions_eval_m.keys())] ))
     
     wandb.finish()
     
@@ -198,7 +205,7 @@ def training_function(args):
 
     repo_name = str(args.n_agents) + "agents_" + "comm" + str(args.communicating_agents) + \
         "_list" + str(args.listening_agents) + name_gmm + "_unc" + str(args.uncertainties) + \
-        "_mfact" + str(args.mult_fact) +"_BEST"
+        "_mfact" + str(args.mult_fact) + args.algorithm + "_BEST"
 
     print("wandb: saving data in ", repo_name)
     train(args, repo_name)

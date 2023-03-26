@@ -3,10 +3,12 @@ from src.algos.buffer import RolloutBufferComm
 from src.nets.ActorCritic import ActorCritic
 import torch
 import copy
-import torch.nn.functional as F
-import torch.autograd as autograd
+import torch.nn as nn
 import numpy as np
+import torch.nn.functional as F
 from sklearn.mixture import GaussianMixture as GMM
+
+#https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -17,7 +19,8 @@ if(torch.cuda.is_available()):
 else:
     print("Device set to : cpu")
 
-class ReinforceGeneral():
+
+class PPOGeneral():
 
     def __init__(self, params, idx=0):
 
@@ -49,9 +52,15 @@ class ReinforceGeneral():
         print("input_act:", input_act)
         self.policy_act = ActorCritic(params=params, input_size=input_act, output_size=self.action_size, \
             n_hidden=self.n_hidden_act, hidden_size=self.hidden_size_act, gmm=self.gmm_).to(device)
+        self.policy_act_old = copy.deepcopy(self.policy_act).to(device)
+        self.policy_act_old.load_state_dict(self.policy_act.state_dict())
     
-        opt_params_act = {'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor}
-        opt_params.append(opt_params_act)
+        #opt_params_act = {'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor},
+        #                 {'params': self.policy_act.critic.parameters(), 'lr': self.lr_critic},
+        opt_params.append({'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor})
+        opt_params.append({'params': self.policy_act.critic.parameters(), 'lr': self.lr_critic})
+        
+        #opt_params.append(opt_params_act)
 
         # Communication Policy
         if (self.is_communicating):
@@ -59,13 +68,18 @@ class ReinforceGeneral():
             if (self.gmm_):
                 input_comm = self.n_gmm_components #gmm components for the m factor, 1 for the coins I get
 
-            print("input_comm=", input_comm)
             self.policy_comm = ActorCritic(params=params, input_size=input_comm, output_size=self.mex_size, \
                 n_hidden=self.n_hidden_comm, hidden_size=self.hidden_size_comm, gmm=self.gmm_).to(device)
+            self.policy_comm_old = copy.deepcopy(self.policy_comm).to(device)
+            self.policy_comm_old.load_state_dict(self.policy_comm.state_dict())
+
+            print("input_comm=", input_comm)
             print("output comm=", self.mex_size)
             
-            opt_params_comm = {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm}
-            opt_params.append(opt_params_comm)
+            #opt_params_comm = {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm}
+            #opt_params.append(opt_params_comm)
+            opt_params.append({'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm})
+            opt_params.append({'params': self.policy_comm.critic.parameters(), 'lr': self.lr_critic_comm})
 
         self.optimizer = torch.optim.Adam(opt_params)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
@@ -78,7 +92,7 @@ class ReinforceGeneral():
         self.comm_loss = True
 
         self.ent = True
-        self.param_entropy = 0.1
+
         #self.entropy = 0.
 
         self.means = []
@@ -97,7 +111,9 @@ class ReinforceGeneral():
         self.reset_batch()
 
         self.saved_losses_comm = []
-        self.saved_losses = []
+        self.saved_losses = []        
+        
+        self.MseLoss = nn.MSELoss()
 
     def reset(self):
         self.comm_logprobs = []
@@ -139,7 +155,6 @@ class ReinforceGeneral():
             # otherwise I just need to normalize the observed f
             state = (state - self.min_f)/(self.max_f - self.min_f)
             self.state_to_comm = state
-        #print("state to comm=",self.state_to_comm)
         self.state_to_act = self.state_to_comm
 
     def select_message(self, m_val=None, _eval=False):
@@ -158,29 +173,11 @@ class ReinforceGeneral():
             else: 
                 self.buffer.messages_given_m[m_val] = [message_out]
 
-            self.comm_logprobs.append(message_logprob)
-            self.comm_entropy.append(entropy)
+            self.buffer.comm_logprobs.append(message_logprob)
+            self.buffer.comm_entropy.append(entropy)
 
         message_out = torch.Tensor([message_out.item()]).long().to(device)
         message_out = F.one_hot(message_out, num_classes=self.mex_size)[0]
-        #print("send message=", message_out)
-        return message_out
-
-    def random_messages(self, m_val=None):
-
-        message_out = torch.randint(0, self.mex_size, (self.mex_size-1,))[0]
-        self.buffer.states_c.append(self.state_to_comm)
-        self.buffer.messages.append(message_out)
-        if (m_val in self.buffer.messages_given_m):
-            self.buffer.messages_given_m[m_val].append(message_out)
-        else: 
-            self.buffer.messages_given_m[m_val] = [message_out]
-
-        self.comm_logprobs.append(torch.tensor(0.0001))
-
-        message_out = torch.Tensor([message_out.item()]).long().to(device)
-        message_out = F.one_hot(message_out, num_classes=self.mex_size)[0]
-
         return message_out
 
     def get_message(self, message_in):
@@ -210,8 +207,8 @@ class ReinforceGeneral():
             else: 
                 self.buffer.actions_given_m[m_val] = [action]
 
-            self.act_logprobs.append(action_logprob)
-            self.act_entropy.append(entropy)
+            self.buffer.act_logprobs.append(action_logprob)
+            self.buffer.act_entropy.append(entropy)
         
         return action
 
@@ -243,50 +240,116 @@ class ReinforceGeneral():
             self.gmm_probs = self.gmm.predict_proba(state.reshape(1).reshape(-1, 1))[0]
 
             self.means = copy.deepcopy(self.gmm.means_)
-            #print("means=", self.means)
             self.means = np.sort(self.means, axis=0)
-            ##print("means sort=", self.means)
             ordering_values = [np.where(self.means == i)[0][0] for i in self.gmm.means_]
             self.state_to_comm = torch.zeros(len(self.gmm_probs)).to(device)
-            #print("self.probs=", self.gmm_probs)
             for i, value in enumerate(ordering_values):
                 self.state_to_comm[value] = self.gmm_probs[i] 
-            #print(self.state_to_comm.shape)
+
+    def eval_mex(self, state_c):
+    
+        messages_logprobs = []
+        with torch.no_grad():
+            state_c = torch.FloatTensor(state_c).to(device)
+            for mex in range(self.mex_size):
+                m = torch.Tensor([mex])
+                _, mex_logprob, _= self.policy_comm_old.evaluate(state_c, m)
+                messages_logprobs.append(mex_logprob.item())
+
+        return messages_logprobs
+
+    def eval_action(self, state_a, message):
+    
+        actions_logprobs = []
+        with torch.no_grad():
+            state_a = torch.FloatTensor(state_a).to(device)
+            for action in range(self.action_size):
+                a = torch.Tensor([action])
+                _, action_logprob, _= self.policy_act_old.evaluate(state_a, message, a)
+                actions_logprobs.append(action_logprob.item())
+
+        return actions_logprobs
 
     def update(self):
+        rewards = []
+        discounted_reward = 0
+        #for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
+        for reward, is_terminal in zip(reversed(self.rewards), reversed(self.is_terminals)):
+            if is_terminal:
+                discounted_reward = 0
+            discounted_reward = reward + (self.gamma * discounted_reward)
+            rewards.insert(0, discounted_reward)
 
-        #rewards = self.rewards
-        #print("rewards=", rewards)
-        # I do not normalize rewards here because I already give normalized rewards to the agent
-        rew_norm = self.rewards # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
+        # Normalizing the rewards
+        rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
+        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
+        
+        if (self.policy_act.input_size == 1):
+            old_states_a = torch.stack(self.buffer.states_a, dim=0).detach().to(device)
+            old_actions = torch.stack(self.buffer.actions, dim=0).detach().to(device)
+            old_logprobs_act = torch.stack(self.buffer.act_logprobs, dim=0).detach().to(device)
+        else:
+            old_states_a = torch.squeeze(torch.stack(self.buffer.states_a, dim=0)).detach().to(device)
+            old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
+            old_logprobs_act = torch.squeeze(torch.stack(self.buffer.act_logprobs, dim=0)).detach().to(device)
 
-        entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
-        self.entropy = entropy
-        hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
-        for i in range(len(self.act_logprobs)):
+        if (self.is_communicating):
+            if (self.policy_comm.input_size == 1):
+                old_states_c = torch.stack(self.buffer.states_c, dim=0).detach().to(device)
+                old_messages = torch.stack(self.buffer.messages, dim=0).detach().to(device)
+                old_logprobs_comm = torch.stack(self.buffer.comm_logprobs, dim=0).detach().to(device)
+            else:
+                old_states_c = torch.squeeze(torch.stack(self.buffer.states_c, dim=0)).detach().to(device)
+                old_messages = torch.squeeze(torch.stack(self.buffer.messages, dim=0)).detach().to(device)
+                old_logprobs_comm = torch.squeeze(torch.stack(self.buffer.comm_logprobs, dim=0)).detach().to(device)
+    
+        for _ in range(self.K_epochs):
+
             if (self.is_communicating):
-                self.comm_logprobs[i] = -self.comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i]
-            self.act_logprobs[i] = -self.act_logprobs[i] * (rew_norm[i] - self.baseline) 
-            if (self.is_listening and self.n_communicating_agents != 0.):
-                self.act_logprobs[i] += self.list_lambda*self.List_loss_list[i]
-       
-        self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.act_logprobs])))
-        
-        self.optimizer.zero_grad()
-        if(self.is_communicating):
-            self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
-            tmp = [torch.ones(a.data.shape) for a in self.comm_logprobs]
-            autograd.backward(self.comm_logprobs, tmp, retain_graph=True)
+                logprobs_comm, dist_entropy_comm, state_values_comm = self.policy_comm.evaluate(old_states_c, old_messages)
+                state_values_comm = torch.squeeze(state_values_comm)
+                ratios_comm = torch.exp(logprobs_comm - old_logprobs_comm.detach())
+                mutinfo = torch.tensor(self.buffer.mut_info, dtype=torch.float32).to(device)
+                advantages_comm = rewards - state_values_comm.detach()
+                surr1c = ratios_comm*advantages_comm
+                surr2c = torch.clamp(ratios_comm, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_comm
 
-        tmp1 = [torch.ones(a.data.shape) for a in self.act_logprobs]
-        autograd.backward(self.act_logprobs, tmp1, retain_graph=True)
-        
-        self.optimizer.step()
+                loss_c = (-torch.min(surr1c, surr2c) + \
+                    self.c3*self.MseLoss(state_values_comm, rewards) - \
+                    self.c4*dist_entropy_comm)
 
-        #diminish learning rate
+            #print(old_states_a[0], old_actions[0])
+            logprobs_act, dist_entropy_act, state_values_act = self.policy_act.evaluate(old_states_a, old_actions)
+            state_values_act = torch.squeeze(state_values_act)
+            ratios_act = torch.exp(logprobs_act - old_logprobs_act.detach())
+            advantages_act = rewards - state_values_act.detach()
+            surr1a = ratios_act*advantages_act
+            surr2a = torch.clamp(ratios_act, 1.0 - self.eps_clip, 1.0 + self.eps_clip)*advantages_act
+
+            loss_a = (-torch.min(surr1a, surr2a) + \
+                self.c1*self.MseLoss(state_values_act, rewards) - \
+                self.c2*dist_entropy_act)
+            #print("loss_a=", loss_a)
+
+            if (self.is_communicating):
+                loss_a += loss_c
+                #self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in self.comm_logprobs])))
+                #tmp = [torch.ones(a.data.shape) for a in self.comm_logprobs]
+                #autograd.backward(self.comm_logprobs, tmp, retain_graph=True)
+            self.saved_losses.append(torch.mean(loss_a.detach()))
+
+            self.optimizer.zero_grad()
+            loss_a.mean().backward()
+            self.optimizer.step()
+            #print(self.scheduler.get_lr())
+
         self.scheduler.step()
 
-        self.n_update += 1.
-        self.baseline += (np.mean([i[0] for i in rew_norm]) - self.baseline) / (self.n_update)
+        # Copy new weights into old policy
+        self.policy_act_old.load_state_dict(self.policy_act.state_dict())
+        if (self.is_communicating):
+            self.policy_comm_old.load_state_dict(self.policy_comm.state_dict())
 
+        # clear buffer
+        self.buffer.clear()
         self.reset()

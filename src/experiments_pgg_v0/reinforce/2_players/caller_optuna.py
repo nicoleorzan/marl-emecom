@@ -31,6 +31,7 @@ if __name__ == '__main__':
         type=int,
         default=[])
 
+    parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--optimize', type=int) # 1 for true 0 for false
 

@@ -31,11 +31,14 @@ if __name__ == '__main__':
         type=int,
         default=[])
 
+    parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--n_gmm_components', type=int, default=0)
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--lr_actor', type=float)
+    parser.add_argument('--lr_critic', type=float, default = 0.)
     parser.add_argument('--lr_actor_comm', type=float, default = 0.)
+    parser.add_argument('--lr_critic_comm', type=float, default = 0.)
     parser.add_argument('--n_hidden_act', type=int)
     parser.add_argument('--n_hidden_comm', type=int, default = 0)
     parser.add_argument('--hidden_size_act', type=int)
@@ -45,11 +48,19 @@ if __name__ == '__main__':
     parser.add_argument('--list_lambda', type=float, default = 0.)
     parser.add_argument('--decayRate', type=float, default = 0.999)
 
+    parser.add_argument('--c1', type=float, default=0)
+    parser.add_argument('--c2', type=float, default=0)
+    parser.add_argument('--c3', type=float, default=0)
+    parser.add_argument('--c4', type=float, default=0)
+    parser.add_argument('--K_epochs', type=int, default=40)
+    parser.add_argument('--eps_clip', type=float, default=0.2)
+    parser.add_argument('--gamma', type=float, default=0.99)
+
     args = parser.parse_args()
     args.random_baseline = ast.literal_eval(args.random_baseline)
     n_certain_agents = args.uncertainties.count(0.)
     n_uncertain = args.n_agents - n_certain_agents
-
+    
     assert(args.n_agents > 1)
     assert(len(args.gmm_) == args.n_agents)
     assert(len(args.uncertainties) == args.n_agents)

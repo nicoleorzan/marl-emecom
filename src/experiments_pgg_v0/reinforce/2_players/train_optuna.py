@@ -1,5 +1,6 @@
 from src.environments import pgg_parallel_v0
 from src.algos.ReinforceGeneral import ReinforceGeneral
+from src.algos.PPOGeneral import PPOGeneral
 import numpy as np
 import optuna
 from optuna.trial import TrialState
@@ -13,7 +14,7 @@ from utils_train_reinforce import find_max_min
 EPOCHS = 600
 OBS_SIZE = 1
 ACTION_SIZE = 2
-WANDB_MODE = "online"
+WANDB_MODE = "offline"
 RANDOM_BASELINE = False
 
 # set device to cpu or cuda
@@ -30,6 +31,7 @@ def setup_training_hyperparams(trial, args):
 
     all_params = dict(
         n_agents = args.n_agents,
+        algorithm = args.algorithm,
         num_game_iterations = 1,
         n_epochs = EPOCHS,
         obs_size = OBS_SIZE,
@@ -44,9 +46,18 @@ def setup_training_hyperparams(trial, args):
         listening_agents = args.listening_agents,
         batch_size = trial.suggest_categorical("batch_size", [64, 128]),
         lr_actor = trial.suggest_float("lr_actor", 1e-3, 1e-1, log=True),
+        lr_critic = trial.suggest_float("lr_critic", 1e-3, 1e-1, log=True),
         lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-3, 1e-1, log=True),
+        lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-3, 1e-1, log=True),
         n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
         n_hidden_comm = trial.suggest_int("n_hidden_comm", 1, 2),
+        K_epochs = trial.suggest_int("K_epochs", 30, 80),
+        eps_clip = trial.suggest_float("eps_clip", 0.1, 0.4),
+        gamma = trial.suggest_float("gamma", 0.99, 0.999, log=True),
+        c1 = trial.suggest_float("c1", 0.01, 0.5, log=True),
+        c2 = trial.suggest_float("c2", 0.0001, 0.1, log=True),
+        c3 = trial.suggest_float("c3", 0.01, 0.5, log=True),
+        c4 = trial.suggest_float("c4", 0.0001, 0.1, log=True),
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
         mex_size = trial.suggest_int("mex_size", 2, 10),
@@ -61,7 +72,10 @@ def setup_training_hyperparams(trial, args):
 def define_agents(config):
     agents = {}
     for idx in range(config.n_agents):
-        agents['agent_'+str(idx)] = ReinforceGeneral(config, idx)
+        if (config.algorithm == "reinforce"):
+            agents['agent_'+str(idx)] = ReinforceGeneral(config, idx)
+        elif (config.algorithm == "PPO"):
+            agents['agent_'+str(idx)] = PPOGeneral(config, idx)
     return agents
 
 def objective(trial, args, repo_name):
@@ -121,6 +135,7 @@ def objective(trial, args, repo_name):
                 for ag_idx, agent in agents.items():
                     
                     agent.rewards.append(rewards[ag_idx])
+                    agent.is_terminals.append(done)
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     agent.return_episode =+ rewards[ag_idx]
 
@@ -141,7 +156,6 @@ def objective(trial, args, repo_name):
             if (agent.is_listening):
                 for i in idx_comm_agents:
                     agent.mutinfo_listening.append(U.calc_mutinfo(agent.buffer.actions, agents['agent_'+str(i)].buffer.messages, config.action_size, config.mex_size))
-
 
         # update agents     
         for ag_idx, agent in agents.items():
@@ -214,6 +228,7 @@ def objective(trial, args, repo_name):
     wandb.finish()
     return measure
 
+
 def training_function(args):
 
     name_gmm = "_noGmm"
@@ -222,7 +237,7 @@ def training_function(args):
 
     repo_name = str(args.n_agents) + "agents_" + "comm" + str(args.communicating_agents) + \
         "_list" + str(args.listening_agents) + name_gmm + "_unc" + str(args.uncertainties) + \
-        "_mfact" + str(args.mult_fact)
+        "_mfact" + str(args.mult_fact) + args.algorithm
     print("repo_name=", repo_name)
 
     func = lambda trial: objective(trial, args, repo_name)

@@ -42,6 +42,8 @@ class RolloutBufferComm:
         self.messages_given_m = {}
         self.act_logprobs = []
         self.comm_logprobs = []
+        self.act_entropy = []
+        self.comm_entropy = []
         self.rewards = []
         self.is_terminals = []
         self.mut_info = []
@@ -65,6 +67,8 @@ class RolloutBufferComm:
         del self.actions[:]
         del self.act_logprobs[:]
         del self.comm_logprobs[:]
+        del self.act_entropy[:]
+        del self.comm_entropy[:]
         del self.rewards[:]
         del self.is_terminals[:]
         del self.mut_info[:]
