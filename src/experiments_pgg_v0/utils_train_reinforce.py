@@ -1,4 +1,5 @@
 import torch
+import itertools
 
 def eval(config, parallel_env, agents, m, device, _print=False):
     observations = parallel_env.reset(m)
