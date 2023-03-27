@@ -192,7 +192,10 @@ class parallel_env(ParallelEnv):
         # The dones dictionary must be updated for all players.
         #self.dones = {agent: self.num_moves >= self.num_game_iterations for agent in self.agents}
 
-        observations = {}
+        if (env_done):
+            observations = {agent: torch.Tensor([0.]) for agent in self.agents}
+            #print("next obs=", observations)
+        #observations = {}
 
         if (self.num_game_iterations > 1):
 

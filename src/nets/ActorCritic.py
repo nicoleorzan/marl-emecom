@@ -16,9 +16,6 @@ class ActorCritic(nn.Module):
         self.output_size = output_size
         self.n_hidden = n_hidden
         self.hidden_size = hidden_size
-        self.gmm_ = gmm
-        #print("setto gmm=", self.gmm_)
-        #print("num_hidden=", self.n_hidden)
 
         if (self.n_hidden == 2):
             self.actor = nn.Sequential(
@@ -53,7 +50,7 @@ class ActorCritic(nn.Module):
     def reset_state(self):
         pass
 
-    def act(self, state, ent=False, greedy=False):
+    def act(self, state, greedy=False):
 
         out = self.actor(state)
         dist = Categorical(out)
@@ -68,10 +65,9 @@ class ActorCritic(nn.Module):
 
         logprob = dist.log_prob(act) # negativi
 
-        if (ent):
-            return act.detach(), logprob, dist.entropy().detach()
+        return act.detach(), logprob, dist.entropy().detach()
 
-        return act.detach(), logprob #.detach() --> moved from here be necessary for REINFORCE,put it in PPO code
+    #return act.detach(), logprob #.detach() --> moved from here be necessary for REINFORCE,put it in PPO code
 
     def get_dist_entropy(self, state):
         out = self.actor(state)

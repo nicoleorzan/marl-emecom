@@ -1,6 +1,7 @@
 from src.environments import pgg_parallel_v0
-from src.algos.ReinforceGeneral import ReinforceGeneral
-from src.algos.PPOGeneral import PPOGeneral
+from src.algos.Reinforce import Reinforce
+from src.algos.DQN import DQN
+from src.algos.PPO import PPO
 import numpy as np
 import optuna
 from optuna.trial import TrialState
@@ -73,9 +74,11 @@ def define_agents(config):
     agents = {}
     for idx in range(config.n_agents):
         if (config.algorithm == "reinforce"):
-            agents['agent_'+str(idx)] = ReinforceGeneral(config, idx)
+            agents['agent_'+str(idx)] = Reinforce(config, idx)
         elif (config.algorithm == "PPO"):
-            agents['agent_'+str(idx)] = PPOGeneral(config, idx)
+            agents['agent_'+str(idx)] = PPO(config, idx)
+        elif (config.algorithm == "dqn"):
+            agents['agent_'+str(idx)] = DQN(config, idx)
     return agents
 
 def objective(trial, args, repo_name):
@@ -109,7 +112,7 @@ def objective(trial, args, repo_name):
                 #print("\n\nmf=", mf.numpy()[0])
 
                 messages = {}; actions = {}
-                [agents[agent].set_state(observations[agent]) for agent in parallel_env.agents]
+                [agents[agent].set_observation(observations[agent]) for agent in parallel_env.agents]
 
                 # speaking
                 #print("\nspeaking")

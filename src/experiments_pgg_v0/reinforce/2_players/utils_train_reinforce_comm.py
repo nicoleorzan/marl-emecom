@@ -15,7 +15,7 @@ def eval1(config, parallel_env, agents, m, device, _print=False):
         actions = {}
         mex_distrib = {}
         act_distrib = {}
-        [agents[agent].set_state(state=observations[agent], _eval=True) for agent in parallel_env.agents]
+        [agents[agent].set_observation(obs=observations[agent], _eval=True) for agent in parallel_env.agents]
 
         # speaking
         for agent in parallel_env.agents:

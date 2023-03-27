@@ -31,7 +31,7 @@ if __name__ == '__main__':
         type=int,
         default=[])
 
-    parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO"], default="reinforce")
+    parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--n_gmm_components', type=int, default=0)
     parser.add_argument('--batch_size', type=int)
@@ -44,6 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('--hidden_size_act', type=int)
     parser.add_argument('--hidden_size_comm', type=int, default = 0)
     parser.add_argument('--mex_size', type=int, default = 0)
+    parser.add_argument('--capacity', type=int, default = 1000)
     parser.add_argument('--sign_lambda', type=float, default = 0.)
     parser.add_argument('--list_lambda', type=float, default = 0.)
     parser.add_argument('--decayRate', type=float, default = 0.999)
@@ -55,6 +56,8 @@ if __name__ == '__main__':
     parser.add_argument('--K_epochs', type=int, default=40)
     parser.add_argument('--eps_clip', type=float, default=0.2)
     parser.add_argument('--gamma', type=float, default=0.99)
+    parser.add_argument('--tau', type=float, default=0.005)
+    parser.add_argument('--memory_size', type=int, default=500)
 
     args = parser.parse_args()
     args.random_baseline = ast.literal_eval(args.random_baseline)

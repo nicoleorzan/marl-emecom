@@ -1,6 +1,7 @@
 from src.environments import pgg_parallel_v0
-from src.algos.ReinforceGeneral import ReinforceGeneral
-from src.algos.PPOGeneral import PPOGeneral
+from src.algos.Reinforce import Reinforce
+from src.algos.PPO import PPO
+from src.algos.DQN import DQN
 import numpy as np
 import torch
 import wandb
@@ -47,9 +48,11 @@ def define_agents(config):
     agents = {}
     for idx in range(config.n_agents):
         if (config.algorithm == "reinforce"):
-            agents['agent_'+str(idx)] = ReinforceGeneral(config, idx)
+            agents['agent_'+str(idx)] = Reinforce(config, idx)
         elif (config.algorithm == "PPO"):
-            agents['agent_'+str(idx)] = PPOGeneral(config, idx)
+            agents['agent_'+str(idx)] = PPO(config, idx)
+        elif (config.algorithm == "dqn"):
+            agents['agent_'+str(idx)] = DQN(config, idx)
     return agents
 
 def train(args, repo_name):
@@ -71,7 +74,7 @@ def train(args, repo_name):
     for epoch in range(config.n_epochs): 
         [agent.reset_batch() for _, agent in agents.items()]
 
-        for _ in range(config.batch_size):
+        for i in range(config.batch_size):
 
             observations = parallel_env.reset()
             
@@ -83,7 +86,9 @@ def train(args, repo_name):
                 #print("\n\nmf=", mf.numpy()[0])
 
                 messages = {}; actions = {}
-                [agents[agent].set_state(observations[agent]) for agent in parallel_env.agents]
+                #print("observations=",observations)
+                #print("agents=", agents)
+                [agents[agent].set_observation(observations[agent]) for agent in parallel_env.agents]
 
                 # speaking
                 #print("\nspeaking")
@@ -108,8 +113,9 @@ def train(args, repo_name):
 
                 for ag_idx, agent in agents.items():
                     
-                    agent.rewards.append(rewards[ag_idx])
-                    agent.is_terminals.append(done)
+                    agent.buffer.rewards.append(rewards[ag_idx])
+                    agent.buffer.next_states_a.append(observations[ag_idx])
+                    agent.buffer.is_terminals.append(done)
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     agent.return_episode =+ rewards[ag_idx]
 

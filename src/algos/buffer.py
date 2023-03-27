@@ -1,5 +1,84 @@
+from collections import deque
+import numpy as np
 
-class RolloutBuffer:
+        
+class RolloutBufferComm:
+    def __init__(self):
+        self.states_c = []
+        self.states_a = []
+        self.next_states_a = []
+        self.messages = []
+        self.actions = []
+        self.actions_given_m = {}
+        self.messages_given_m = {}
+        self.act_logprobs = []
+        self.comm_logprobs = []
+        self.act_entropy = []
+        self.comm_entropy = []
+        self.rewards = []
+        self.is_terminals = []
+        self.mut_info = []
+
+    def clear_batch(self):
+        self.messages_given_m = {}
+        self.actions_given_m = {}
+
+    def len_(self):
+        return len(self.states_a)
+        
+    def clear(self):
+        del self.states_c[:]
+        del self.states_a[:]
+        del self.next_states_a[:]
+        del self.messages[:]
+        self.messages_given_m = {}
+        self.actions_given_m = {}
+        del self.actions[:]
+        del self.act_logprobs[:]
+        del self.comm_logprobs[:]
+        del self.act_entropy[:]
+        del self.comm_entropy[:]
+        del self.rewards[:]
+        del self.is_terminals[:]
+        del self.mut_info[:]
+    
+
+class DQNBuffer(RolloutBufferComm):
+
+    def __init__(self, capacity=200):
+        RolloutBufferComm.__init__(self)
+        self.capacity = capacity
+
+    def sample_comm(self, batch_size):
+        print("len=", len(self.states_a))
+        print("batch_size=", batch_size)
+        ind = np.random.randint(0, len(self.states_a), size=batch_size)
+        print("ind=",  ind)
+        print("states=", self.states_a)
+        s_c = [self.states_a[i] for i in ind]
+        s_a = [self.states_a[i] for i in ind]
+        m = [self.messages[i] for i in ind]
+        a = [self.actions[i] for i in ind]
+        r = [self.rewards[i] for i in ind]
+        t = [self.is_terminals[i] for i in ind]
+        return s_c, m, s_a, a, r, t
+    
+    def sample(self, batch_size):
+        ind = np.random.randint(0, len(self.states_a), size=batch_size)
+        #print("self.states_a=",self.states_a)
+        #print("self.next_states_a",self.next_states_a)
+        s_a = [self.states_a[i] for i in ind]
+        next_s_a = [self.next_states_a[i] for i in ind]
+        a = [self.actions[i] for i in ind]
+        r = [self.rewards[i] for i in ind]
+        return s_a, a, r, next_s_a
+
+    def __len__(self):
+        return len(self.states_a)
+    
+
+
+"""class RolloutBuffer:
     
     def __init__(self, recurrent = False):
         self.actions = []
@@ -20,76 +99,4 @@ class RolloutBuffer:
         del self.is_terminals[:]
         if self.recurrent:
             del self.hstates[:]
-            del self.cstates[:]
-
-    def __print__(self):
-        print("states=", len(self.states))
-        if self.recurrent:
-            print("hstates=", len(self.hstates))
-            print("cstates=", len(self.cstates))
-        print("actions=", len(self.actions))
-        print("logprobs=", len(self.logprobs))
-        print("rewards=", len(self.rewards))
-        print("is_terminals=", len(self.is_terminals))
-        
-class RolloutBufferComm:
-    def __init__(self, recurrent = False):
-        self.states_c = []
-        self.states_a = []
-        self.messages = []
-        self.actions = []
-        self.actions_given_m = {}
-        self.messages_given_m = {}
-        self.act_logprobs = []
-        self.comm_logprobs = []
-        self.act_entropy = []
-        self.comm_entropy = []
-        self.rewards = []
-        self.is_terminals = []
-        self.mut_info = []
-        self.recurrent = recurrent
-        if self.recurrent:
-            self.hstates_c = []
-            self.cstates_c = []
-            self.hstates_a = []
-            self.cstates_a = []
-
-    def clear_batch(self):
-        self.messages_given_m = {}
-        self.actions_given_m = {}
-        
-    def clear(self):
-        del self.states_c[:]
-        del self.states_a[:]
-        del self.messages[:]
-        self.messages_given_m = {}
-        self.actions_given_m = {}
-        del self.actions[:]
-        del self.act_logprobs[:]
-        del self.comm_logprobs[:]
-        del self.act_entropy[:]
-        del self.comm_entropy[:]
-        del self.rewards[:]
-        del self.is_terminals[:]
-        del self.mut_info[:]
-        if self.recurrent:
-            del self.hstates_c[:]
-            del self.cstates_c[:]
-            del self.hstates_a[:]
-            del self.cstates_a[:]
-
-    def __print__(self):
-        print("states_c=", len(self.states_c))
-        print("states_a=", len(self.states_a))
-        print("messages_out=", len(self.messages))
-        print("actions=", len(self.actions))
-        print("act logprobs=", len(self.act_logprobs))
-        print("mex_logprobs=", len(self.comm_logprobs))
-        print("rewards=", len(self.rewards))
-        print("is_terminals=", len(self.is_terminals))
-        print("mutinfo:", len(self.mut_info))
-        if self.recurrent:
-            print("hstates_c=", len(self.hstates_c))
-            print("cstates_c=", len(self.cstates_c))
-            print("hstates_a=", len(self.hstates_a))
-            print("cstates_a=", len(self.cstates_a))
+            del self.cstates[:]"""
