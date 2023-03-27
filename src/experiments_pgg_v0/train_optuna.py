@@ -1,18 +1,19 @@
 from src.environments import pgg_parallel_v0
 from src.algos.Reinforce import Reinforce
-from src.algos.PPO import PPO
 from src.algos.DQN import DQN
+from src.algos.PPO import PPO
 import numpy as np
+import optuna
+from optuna.trial import TrialState
 import torch
+from optuna.integration.wandb import WeightsAndBiasesCallback
 import wandb
 import src.analysis.utils as U
-from utils_train_reinforce_comm import eval1
-from utils_train_reinforce import find_max_min
+from src.experiments_pgg_v0.utils_train_reinforce_old import eval, find_min_max
 
 EPOCHS = 600
 OBS_SIZE = 1
 ACTION_SIZE = 2
-DECAY_RATE = 0.999
 WANDB_MODE = "online"
 RANDOM_BASELINE = False
 
@@ -26,23 +27,47 @@ else:
     print("Device set to : cpu")
 
 
-def setup_training_hyperparameters(args):
-    print("inside setup training hyp")
+def setup_training_hyperparams(trial, args):
 
-    params = dict(
+    all_params = dict(
+        n_agents = args.n_agents,
+        algorithm = args.algorithm,
         num_game_iterations = 1,
         n_epochs = EPOCHS,
         obs_size = OBS_SIZE,
         action_size = ACTION_SIZE,
+        n_gmm_components = trial.suggest_categorical("n_gmm_components", [3, len(args.mult_fact)]),
+        decayRate = trial.suggest_categorical("decay_rate", [0.99, 0.999]),
+        mult_fact = args.mult_fact,
+        uncertainties = args.uncertainties,
+        gmm_ = args.gmm_,
         random_baseline = RANDOM_BASELINE,
+        communicating_agents = args.communicating_agents,
+        listening_agents = args.listening_agents,
+        batch_size = trial.suggest_categorical("batch_size", [64, 128]),
+        lr_actor = trial.suggest_float("lr_actor", 1e-3, 1e-1, log=True),
+        lr_critic = trial.suggest_float("lr_critic", 1e-3, 1e-1, log=True),
+        lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-3, 1e-1, log=True),
+        lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-3, 1e-1, log=True),
+        n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
+        n_hidden_comm = trial.suggest_int("n_hidden_comm", 1, 2),
+        K_epochs = trial.suggest_int("K_epochs", 30, 80),
+        eps_clip = trial.suggest_float("eps_clip", 0.1, 0.4),
+        gamma = trial.suggest_float("gamma", 0.99, 0.999, log=True),
+        c1 = trial.suggest_float("c1", 0.01, 0.5, log=True),
+        c2 = trial.suggest_float("c2", 0.0001, 0.1, log=True),
+        c3 = trial.suggest_float("c3", 0.01, 0.5, log=True),
+        c4 = trial.suggest_float("c4", 0.0001, 0.1, log=True),
+        hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
+        hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
+        mex_size = trial.suggest_int("mex_size", 2, 10),
+        sign_lambda = trial.suggest_float("sign_lambda", 0.1, 0.8),
+        list_lambda = trial.suggest_float("list_lambda", 0.1, 0.8),
         wandb_mode = WANDB_MODE
     )
-    #print("params=", params)
-    #print("args=", vars(args))
-    all_params = {**params, **vars(args)}
-    print("all_params=",all_params)
 
     return all_params
+
 
 def define_agents(config):
     agents = {}
@@ -55,9 +80,9 @@ def define_agents(config):
             agents['agent_'+str(idx)] = DQN(config, idx)
     return agents
 
-def train(args, repo_name):
-    #print("inside train")
-    all_params = setup_training_hyperparameters(args)
+def objective(trial, args, repo_name):
+
+    all_params = setup_training_hyperparams(trial, args)
     wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=WANDB_MODE)#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
@@ -73,8 +98,8 @@ def train(args, repo_name):
     avg_norm_returns_train_list = []; avg_rew_time = []
     for epoch in range(config.n_epochs): 
         [agent.reset_batch() for _, agent in agents.items()]
-
-        for i in range(config.batch_size):
+        
+        for _ in range(config.batch_size):
 
             observations = parallel_env.reset()
             
@@ -86,8 +111,6 @@ def train(args, repo_name):
                 #print("\n\nmf=", mf.numpy()[0])
 
                 messages = {}; actions = {}
-                #print("observations=",observations)
-                #print("agents=", agents)
                 [agents[agent].set_observation(observations[agent]) for agent in parallel_env.agents]
 
                 # speaking
@@ -103,26 +126,25 @@ def train(args, repo_name):
                     [agents[agent].get_message(message) for agent in parallel_env.agents if (agents[agent].is_listening)]
 
                 # acting
-                #print("acting")
                 for agent in parallel_env.agents:
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
-                #print(actions)
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
+                #print("rewards=", rewards)
+                #print("rewards_norm=", rewards_norm)
 
                 for ag_idx, agent in agents.items():
                     
-                    agent.buffer.rewards.append(rewards[ag_idx])
-                    agent.buffer.next_states_a.append(observations[ag_idx])
-                    agent.buffer.is_terminals.append(done)
+                    agent.rewards.append(rewards[ag_idx])
+                    agent.is_terminals.append(done)
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     agent.return_episode =+ rewards[ag_idx]
 
                 # break; if the episode is over
                 if done:
                     break
-            
+
         for ag_idx, agent in agents.items():
             if (agent.is_communicating):
                 #print("\n",agent.buffer.actions_given_m)
@@ -137,15 +159,13 @@ def train(args, repo_name):
                 for i in idx_comm_agents:
                     agent.mutinfo_listening.append(U.calc_mutinfo(agent.buffer.actions, agents['agent_'+str(i)].buffer.messages, config.action_size, config.mex_size))
 
-
-        # update agents 
-        #print("update")    
+        # update agents     
         for ag_idx, agent in agents.items():
             agent.update()
         
         mex_distrib_given_m = {}; rewards_eval_m = {}; rewards_eval_norm_m = {}; actions_eval_m = {}
         for m in config.mult_fact:
-            act_eval, mex_distrib, _, rewards_eval = eval1(config, parallel_env, agents, m, device, False)
+            act_eval, mex_distrib, _, rewards_eval = eval(config, parallel_env, agents, m, device, False)
             mex_distrib_given_m[m] = mex_distrib # distrib dei messaggei per ogni agente, calcolata con dato input
             rewards_eval_m[m] = rewards_eval
             rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
@@ -159,6 +179,14 @@ def train(args, repo_name):
         avg_rew_time.append(np.mean(rew_values))
         #print(avg_rew_time)
         measure = np.mean(avg_rew_time[-10:])
+        
+        trial.report(measure, epoch)
+        
+        if trial.should_prune():
+            print("is time to pruneee")
+            wandb.finish()
+            raise optuna.exceptions.TrialPruned()
+            break
 
         if (config.wandb_mode == "online"):
             for ag_idx, agent in agents.items():
@@ -197,11 +225,11 @@ def train(args, repo_name):
                 step=epoch, commit=True)
 
         if (epoch%10 == 0):
-            print("Epoch : {}, \t M: {}, Actions: {}".format(epoch, min(actions_eval_m.keys()), actions_eval_m[min(actions_eval_m.keys())] ))
-            print("            \t M: {}, Actions: {}".format(max(actions_eval_m.keys()), actions_eval_m[max(actions_eval_m.keys())] ))
+            print("Epoch : {} \t Mult factor: {}  \t Measure: {} ".format(epoch, mf, measure))
     
     wandb.finish()
-    
+    return measure
+
 
 def training_function(args):
 
@@ -211,7 +239,42 @@ def training_function(args):
 
     repo_name = str(args.n_agents) + "agents_" + "comm" + str(args.communicating_agents) + \
         "_list" + str(args.listening_agents) + name_gmm + "_unc" + str(args.uncertainties) + \
-        "_mfact" + str(args.mult_fact) + args.algorithm + "_BEST"
+        "_mfact" + str(args.mult_fact) + args.algorithm
+    print("repo_name=", repo_name)
 
-    print("wandb: saving data in ", repo_name)
-    train(args, repo_name)
+    func = lambda trial: objective(trial, args, repo_name)
+
+    storage = optuna.storages.RDBStorage(url="sqlite:///"+repo_name+"-db")
+
+    study = optuna.create_study(
+        study_name=repo_name,
+        storage=storage,
+        load_if_exists=True,
+        direction="maximize", 
+        pruner=optuna.pruners.MedianPruner(
+        n_startup_trials=0, n_warmup_steps=40, interval_steps=3
+        )
+    )
+
+    if (args.optimize):
+        study.optimize(func, n_trials=100, timeout=600)
+
+    else:
+        pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+        complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+        
+        print("Study statistics: ")
+        print("  Number of finished trials: ", len(study.trials))
+        print("  Number of pruned trials: ", len(pruned_trials))
+        print("  Number of complete trials: ", len(complete_trials))
+
+        print("Best trial:")
+        trial = study.best_trial
+        print("  Value: ", trial.value)
+        print("  Params: ")
+
+        for key, value in trial.params.items():
+            print("    {}: {}".format(key, value))
+        
+        print("Running with best params:")
+        objective(study.best_trial, args, repo_name+"_BEST")

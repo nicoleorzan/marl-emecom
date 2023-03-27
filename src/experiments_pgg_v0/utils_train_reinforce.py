@@ -1,6 +1,6 @@
 import torch
 
-def eval1(config, parallel_env, agents, m, device, _print=False):
+def eval(config, parallel_env, agents, m, device, _print=False):
     observations = parallel_env.reset(m)
 
     if (_print == True):
@@ -43,7 +43,7 @@ def eval1(config, parallel_env, agents, m, device, _print=False):
     return actions, mex_distrib, act_distrib, rewards_eval 
 
 
-def eval(config, parallel_env, agents, m, device, _print=False):
+def eval_old(config, parallel_env, agents, m, device, _print=False):
     observations = parallel_env.reset(m)
 
     if (_print == True):
@@ -71,3 +71,37 @@ def eval(config, parallel_env, agents, m, device, _print=False):
         observations, _, done, _ = parallel_env.step(actions)
 
     return actions, mex_distrib, acts_distrib, rewards_eval 
+
+def find_max_min(config, coins):
+    n_agents = config.n_agents
+    multipliers = config.mult_fact
+    max_values = {}
+    min_values = {}
+    coins_per_agent = np.array([coins for i in range(n_agents)])
+
+    possible_actions = ["C", "D"]
+    possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
+
+    for multiplier in multipliers:
+        print("\nMultiplier=", multiplier)
+        possible_actions = ["C", "D"]
+        possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
+        returns = np.zeros((len(possible_scenarios), n_agents)) # TUTTI I POSSIBILI RITORNI CHE UN AGENTE PUO OTTENERE, PER OGNI AGENTE
+
+        #scenarios_returns = {}
+        for idx_scenario, scenario in enumerate(possible_scenarios):
+            common_pot = np.sum([coins_per_agent[i] for i in range(n_agents) if scenario[i] == "C"])
+
+            for ag_idx in range(n_agents):
+                if (scenario[ag_idx] == 'C'):
+                    returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier
+                else: 
+                    returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier + coins_per_agent[ag_idx]
+            print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
+
+        max_values[multiplier] = np.amax(returns)
+        min_values[multiplier] = np.amin(returns)
+        print(" max_values[", multiplier, "]=",  max_values[multiplier])
+        print(" min_values[", multiplier, "]=",  min_values[multiplier])
+        print("normalized=", returns/max_values[multiplier]) #(returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
+    return max_values
