@@ -67,6 +67,7 @@ class DQNBuffer(RolloutBufferComm):
         ind = np.random.randint(0, len(self.states_a), size=batch_size)
         #print("self.states_a=",self.states_a)
         #print("self.next_states_a",self.next_states_a)
+        #print("ind=", ind)
         s_a = [self.states_a[i] for i in ind]
         next_s_a = [self.next_states_a[i] for i in ind]
         a = [self.actions[i] for i in ind]

@@ -61,8 +61,10 @@ def setup_training_hyperparams(trial, args):
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
         mex_size = trial.suggest_int("mex_size", 2, 10),
+        memory_size = trial.suggest_int("memory_size", 100, 1000),
         sign_lambda = trial.suggest_float("sign_lambda", 0.1, 0.8),
         list_lambda = trial.suggest_float("list_lambda", 0.1, 0.8),
+        tau = trial.suggest_float("tau", 0.001, 0.5),
         wandb_mode = WANDB_MODE
     )
 
@@ -136,8 +138,9 @@ def objective(trial, args, repo_name):
 
                 for ag_idx, agent in agents.items():
                     
-                    agent.rewards.append(rewards[ag_idx])
-                    agent.is_terminals.append(done)
+                    agent.buffer.rewards.append(rewards[ag_idx])
+                    agent.buffer.next_states_a.append(observations[ag_idx])
+                    agent.buffer.is_terminals.append(done)
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     agent.return_episode =+ rewards[ag_idx]
 

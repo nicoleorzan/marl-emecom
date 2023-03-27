@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import wandb
 import src.analysis.utils as U
-from src.experiments_pgg_v0.utils_train_reinforce import eval, find_min_max
+from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min
 
 EPOCHS = 600
 OBS_SIZE = 1
