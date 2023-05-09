@@ -36,6 +36,11 @@ class Reinforce(Agent):
         self.n_update = 0.
         self.baseline = 0.
 
+    def embed_opponent_idx(self, idx):
+        #print("embed_opponent_idx, inside reinforce")
+        out = self.policy_act.embed_opponent_index(idx).t()[0]
+        return out
+
     def update(self):
 
         # I do not normalize rewards here because I already give normalized rewards to the agent

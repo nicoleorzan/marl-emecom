@@ -1,6 +1,5 @@
 
 from src.algos.buffer import RolloutBufferComm
-from src.nets.ActorCritic import ActorCritic
 import torch
 import copy
 import torch.nn.functional as F
@@ -25,6 +24,8 @@ class Agent():
 
         self.buffer = RolloutBufferComm()
 
+        self.reputation = 0.5
+
         self.idx = idx
         self.gmm_ = self.gmm_[idx]
         self.is_communicating = self.communicating_agents[self.idx]
@@ -37,7 +38,6 @@ class Agent():
         print("gmm=", self.gmm_)
 
         self.n_communicating_agents = self.communicating_agents.count(1)
-        opt_params = []
 
         self.max_f = max(self.mult_fact)
         self.min_f = min(self.mult_fact)
@@ -96,22 +96,39 @@ class Agent():
         self.return_episode = 0
         self.return_episode_norm = 0
 
-    def set_observation(self, obs, _eval=False):
+    def digest_input(self, input):
+        obs_m_fact, opponent_idx, reputation = input
 
-        # set the internal state of the agent, called self.state_in
-        obs = torch.FloatTensor(obs).to(device)
+        ##### set multiplier factor observation (if uncertainty is modeled, gmm is used)
+        digested_m_factor = self.set_mult_fact_obs(obs_m_fact)
+        #print("digested_m_factor=",digested_m_factor)
+        ##### embed adversary index
+        digested_opponent_idx = self.embed_opponent_idx(opponent_idx)
+        #print("digested_opponent_idx=",digested_opponent_idx)
+        ##### make reputation a tensor
+        reputation = torch.Tensor([reputation])
+        ##### concatenate all stuff in a single vector
+        self.state = torch.cat((digested_m_factor, digested_opponent_idx, reputation), 0)
+        #print("self.state=", self.state)      
+
+    def embed_opponent_idx(self, idx):
+        pass
+
+    def set_mult_fact_obs(self, obs_m_fact, _eval=False):
+
+        ##### set the iternal state of the agent regarding the observation of the m factor, called self.state_in
+        obs_m_fact = torch.FloatTensor(obs_m_fact).to(device)
         if (self.gmm_):
             # If I have uncerainty and use gmm_, the obs of f will become a tensor with probabilities for every posisble m
-            self.set_gmm_state(obs, _eval)
+            obs_m_fact = self.set_gmm_state(obs_m_fact, _eval)
         else:
             # otherwise I just need to normalize the observed f
-            obs = (obs - self.min_f)/(self.max_f - self.min_f)
-            self.state = obs
-        #print("internal state=", self.state)
+            obs_m_fact = (obs_m_fact - self.min_f)/(self.max_f - self.min_f)
+        return obs_m_fact
     
     def set_gmm_state(self, obs, _eval=False):
 
-        self.state = torch.zeros(self.n_gmm_components).to(device)
+        gmm_state = torch.zeros(self.n_gmm_components).to(device)
         if hasattr(self, 'obs_history'):
             if (len(self.obs_history) < 50000 and _eval == False):
                 self.obs_history = torch.cat((self.obs_history, obs.reshape(1)), 0)
@@ -129,9 +146,11 @@ class Agent():
             self.means = copy.deepcopy(self.gmm.means_)
             self.means = np.sort(self.means, axis=0)
             ordering_values = [np.where(self.means == i)[0][0] for i in self.gmm.means_]
-            self.state = torch.zeros(len(self.gmm_probs)).to(device)
+            gmm_state = torch.zeros(len(self.gmm_probs)).to(device)
             for i, value in enumerate(ordering_values):
-                self.state[value] = self.gmm_probs[i] 
+                gmm_state[value] = self.gmm_probs[i] 
+
+        return gmm_state
 
     def select_message(self, m_val=None, _eval=False):
 

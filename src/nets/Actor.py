@@ -11,11 +11,21 @@ class Actor(nn.Module):
         # absorb all parameters to self
         for key, val in params.items():  setattr(self, key, val)
 
-        self.input_size = input_size
+        #self.input_size = input_size
         self.output_size = output_size
         self.n_hidden = n_hidden
         self.hidden_size = hidden_size
         self.softmax = nn.Softmax(dim=0)
+
+        #print("embedding dim=", self.embedding_dim)
+        self.embedding = nn.Embedding(num_embeddings=2, embedding_dim=self.embedding_dim)
+
+        # inputs: 
+        # multiplication factor (scalar) already considered
+        # possible message (already considered)
+        # opponent index (embedded) new
+        # opponent reputation (scalar) new
+        self.input_size = input_size + self.n_agents + 1
 
         if (self.n_hidden == 2):
             self.actor = nn.Sequential(
@@ -33,6 +43,14 @@ class Actor(nn.Module):
                 nn.Linear(self.hidden_size, self.output_size)#,
                 #nn.Softmax(dim=0)
             )
+
+    def embed_opponent_index(self, idx):
+        #print("embed_opponent_idx, inside actor")
+        # turn index into one-hot encoding and then embed it
+        idx_one_hot = torch.nn.functional.one_hot(torch.Tensor([idx]).long(), num_classes=self.n_agents)[0]
+        #print("idx_one_hot=", idx_one_hot)
+        self.emb = self.embedding(idx_one_hot)
+        return self.emb
 
     def act(self, state, greedy=False):
         out = self.actor(state)

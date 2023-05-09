@@ -2,7 +2,7 @@ import torch
 import itertools
 import numpy as np
 
-def eval(config, parallel_env, agents, m, device, _print=False):
+def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _print=False):
     observations = parallel_env.reset(m)
 
     if (_print == True):
@@ -17,22 +17,23 @@ def eval(config, parallel_env, agents, m, device, _print=False):
         actions = {}
         mex_distrib = {}
         act_distrib = {}
-        [agents[agent].set_observation(obs=observations[agent], _eval=True) for agent in parallel_env.agents]
+        active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
+        active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
 
         # speaking
-        for agent in parallel_env.agents:
-            if (agents[agent].is_communicating):
-                messages[agent] = agents[agent].select_message(_eval=True)
-                mex_distrib[agent] = agents[agent].get_message_distribution()
+        for agent in parallel_env.active_agents:
+            if (active_agents[agent].is_communicating):
+                messages[agent] = active_agents[agent].select_message(_eval=True)
+                mex_distrib[agent] = active_agents[agent].get_message_distribution()
         # listening
         if (config.communicating_agents.count(1) != 0):
             message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
-            [agents[agent].get_message(message) for agent in parallel_env.agents if (agents[agent].is_listening)]
+            [active_agents[agent].get_message(message) for agent in parallel_env.active_agents if (active_agents[agent].is_listening)]
 
         # acting
-        for agent in parallel_env.agents:
-            actions[agent] = agents[agent].select_action(_eval=True)
-            act_distrib[agent] = agents[agent].get_action_distribution()
+        for agent in parallel_env.active_agents:
+            actions[agent] = active_agents[agent].select_action(_eval=True)
+            act_distrib[agent] = active_agents[agent].get_action_distribution()
                 
         _, rewards_eval, _, _ = parallel_env.step(actions)
 
@@ -85,7 +86,7 @@ def find_max_min(config, coins):
     possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
 
     for multiplier in multipliers:
-        print("\nMultiplier=", multiplier)
+        #print("\nMultiplier=", multiplier)
         possible_actions = ["C", "D"]
         possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
         returns = np.zeros((len(possible_scenarios), n_agents)) # TUTTI I POSSIBILI RITORNI CHE UN AGENTE PUO OTTENERE, PER OGNI AGENTE
@@ -99,11 +100,26 @@ def find_max_min(config, coins):
                     returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier
                 else: 
                     returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier + coins_per_agent[ag_idx]
-            print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
+            #print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
 
         max_values[multiplier] = np.amax(returns)
         min_values[multiplier] = np.amin(returns)
-        print(" max_values[", multiplier, "]=",  max_values[multiplier])
-        print(" min_values[", multiplier, "]=",  min_values[multiplier])
-        print("normalized=", returns/max_values[multiplier]) #(returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
+        #print(" max_values[", multiplier, "]=",  max_values[multiplier])
+        #print(" min_values[", multiplier, "]=",  min_values[multiplier])
+        #print("normalized=", returns/max_values[multiplier]) #(returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
     return max_values
+
+def apply_norm(active_agents, active_agents_idxs, actions):
+    #print("actions=", actions)
+    for idx in active_agents_idxs:
+        #print("agent=", idx)
+        agent = active_agents["agent_"+str(idx)]
+        change_reputation(agent, actions["agent_"+str(idx)])
+
+def change_reputation(agent, action):
+    #print("reputation before=", agent.reputation)
+    if (action == 0 and agent.reputation >= 0.05):
+        agent.reputation -= 0.01
+    if (action == 1 and agent.reputation <= (1.-0.05)):
+        agent.reputation += 0.01
+    #print("reputation after=", agent.reputation)

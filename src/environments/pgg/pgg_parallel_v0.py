@@ -86,6 +86,10 @@ class parallel_env(ParallelEnv):
 
         self.current_multiplier = torch.Tensor([0.]).to(device)
 
+    def set_active_agents(self, idxs):
+        self.active_agents = ["agent_" + str(r) for r in idxs]
+        self.n_active_agents = len(idxs)
+
     # this cache ensures that same space object is returned for the same agent
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
@@ -120,7 +124,7 @@ class parallel_env(ParallelEnv):
     def observe(self):
 
         self.observations = {}
-        for agent in self.agents:
+        for agent in self.active_agents:
             d = normal.Normal(torch.Tensor([self.current_multiplier]), torch.Tensor([self.uncertainties_dict[agent]+self.uncertainty_eps])) # is not var, is std. wrong name I put
             obs_multiplier = d.sample() 
             #print("mult=", self.current_multiplier)
@@ -141,7 +145,7 @@ class parallel_env(ParallelEnv):
         Returns the observations for each agent
         """
         self.agents = self.possible_agents[:]
-        self.dones = {agent: False for agent in self.agents}
+        self.dones = {agent: False for agent in self.active_agents}
 
         if (mult_in is not None):
             self.current_multiplier = mult_in
@@ -151,7 +155,7 @@ class parallel_env(ParallelEnv):
             else: 
                 self.current_multiplier = self.mult_fact.to(device)
 
-        self.state = {agent: None for agent in self.agents}
+        self.state = {agent: None for agent in self.active_agents}
 
         self.assign_coins_fixed()
 
@@ -181,19 +185,19 @@ class parallel_env(ParallelEnv):
         # rewards for all agents are placed in the rewards dictionary to be returned
         rewards = {}
         
-        common_pot = torch.sum(torch.Tensor([self.coins[agent]*actions[agent] for agent in self.agents])).to(device)
+        common_pot = torch.sum(torch.Tensor([self.coins[agent]*actions[agent] for agent in self.active_agents])).to(device)
 
-        for agent in self.agents:
-            rewards[agent] = common_pot/self.n_agents*self.current_multiplier + \
+        for agent in self.active_agents:
+            rewards[agent] = common_pot/self.n_active_agents*self.current_multiplier + \
                 (self.coins[agent]-self.coins[agent]*actions[agent])
 
         self.num_moves += 1
         env_done = self.num_moves >= self.num_game_iterations
         # The dones dictionary must be updated for all players.
-        #self.dones = {agent: self.num_moves >= self.num_game_iterations for agent in self.agents}
+        #self.dones = {agent: self.num_moves >= self.num_game_iterations for agent in self.active_agents}
 
         if (env_done):
-            observations = {agent: torch.Tensor([0.]) for agent in self.agents}
+            observations = {agent: torch.Tensor([0.]) for agent in self.active_agents}
             #print("next obs=", observations)
         #observations = {}
 

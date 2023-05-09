@@ -4,15 +4,16 @@ from src.algos.DQN import DQN
 from src.algos.PPO import PPO
 import numpy as np
 import optuna
+import random
 from optuna.trial import TrialState
 import torch
 from optuna.integration.wandb import WeightsAndBiasesCallback
 import wandb
 import src.analysis.utils as U
-from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min
+from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm
 
-EPOCHS = 600
-OBS_SIZE = 1
+EPOCHS = 300 # learning epochs for 2 sampled agents playing with each other
+OBS_SIZE = 1 # input: multiplication factor (with noise), opponent index, opponent reputation
 ACTION_SIZE = 2
 WANDB_MODE = "online"
 RANDOM_BASELINE = False
@@ -29,7 +30,7 @@ else:
 
 def setup_training_hyperparams(trial, args):
 
-    all_params = dict(
+    game_params = dict(
         n_agents = args.n_agents,
         algorithm = args.algorithm,
         num_game_iterations = 1,
@@ -47,29 +48,48 @@ def setup_training_hyperparams(trial, args):
         batch_size = trial.suggest_categorical("batch_size", [64, 128]),
         lr_actor = trial.suggest_float("lr_actor", 1e-3, 1e-1, log=True),
         lr_critic = trial.suggest_float("lr_critic", 1e-3, 1e-1, log=True),
-        lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-3, 1e-1, log=True),
-        lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-3, 1e-1, log=True),
         n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
-        n_hidden_comm = trial.suggest_int("n_hidden_comm", 1, 2),
-        K_epochs = trial.suggest_int("K_epochs", 30, 80),
-        eps_clip = trial.suggest_float("eps_clip", 0.1, 0.4),
-        gamma = trial.suggest_float("gamma", 0.99, 0.999, log=True),
-        c1 = trial.suggest_float("c1", 0.01, 0.5, log=True),
-        c2 = trial.suggest_float("c2", 0.0001, 0.1, log=True),
-        c3 = trial.suggest_float("c3", 0.01, 0.5, log=True),
-        c4 = trial.suggest_float("c4", 0.0001, 0.1, log=True),
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
-        hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
-        mex_size = trial.suggest_int("mex_size", 2, 10),
-        memory_size = trial.suggest_int("memory_size", 100, 1000),
-        sign_lambda = trial.suggest_float("sign_lambda", 0.1, 0.8),
-        list_lambda = trial.suggest_float("list_lambda", 0.1, 0.8),
-        tau = trial.suggest_float("tau", 0.001, 0.5),
+        embedding_dim = 1,
         wandb_mode = WANDB_MODE
     )
 
-    return all_params
+    if (args.algorithm == "reinforce"):
+        algo_params = dict()
+    elif (args.algorithm == "ppo"):
+        algo_params = dict(
+            K_epochs = trial.suggest_int("K_epochs", 30, 80),
+            eps_clip = trial.suggest_float("eps_clip", 0.1, 0.4),
+            gamma = trial.suggest_float("gamma", 0.99, 0.999, log=True),
+            c1 = trial.suggest_float("c1", 0.01, 0.5, log=True),
+            c2 = trial.suggest_float("c2", 0.0001, 0.1, log=True),
+            c3 = trial.suggest_float("c3", 0.01, 0.5, log=True),
+            c4 = trial.suggest_float("c4", 0.0001, 0.1, log=True),
+            tau = trial.suggest_float("tau", 0.001, 0.5)
+        )
+    elif (args.algorithm == "dqn"):
+        algo_params = dict(
+            memory_size = trial.suggest_int("memory_size", 100, 1000)
+        )
 
+    print("args.communicating_agents.count(1.)=",args.communicating_agents.count(1.))
+    if (args.communicating_agents.count(1.) != 0):
+        comm_params = dict(
+            n_hidden_comm = trial.suggest_int("n_hidden_comm", 1, 2),
+            hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
+            lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-3, 1e-1, log=True),
+            lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-3, 1e-1, log=True),
+            mex_size = trial.suggest_int("mex_size", 2, 10),
+            sign_lambda = trial.suggest_float("sign_lambda", 0.1, 0.8),
+            list_lambda = trial.suggest_float("list_lambda", 0.1, 0.8)
+        )
+    else: 
+        comm_params = dict()
+
+    all_params = {**game_params,**algo_params, **comm_params}
+    print("all_params=", all_params)
+
+    return all_params
 
 def define_agents(config):
     agents = {}
@@ -95,17 +115,29 @@ def objective(trial, args, repo_name):
     num_comm_agents = config.communicating_agents.count(1)
 
     agents = define_agents(config)
-
+    print("\nAGENTS=",agents)
+    
     #### TRAINING LOOP
     avg_norm_returns_train_list = []; avg_rew_time = []
-    for epoch in range(config.n_epochs): 
-        [agent.reset_batch() for _, agent in agents.items()]
+
+    for epoch in range(config.n_epochs):
+        print("\nEpoch=", epoch)
+
+        #pick a pair of agents
+        active_agents_idxs = random.sample(range(config.n_agents), 2)
+        print("active_agents_idxs=",active_agents_idxs)
+        active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)} #{agents[i] for i in active_agents_idxs}
+        #print("ACTIVE AGENTS=", active_agents)
+
+        parallel_env.set_active_agents(active_agents_idxs)
+
+        [agent.reset_batch() for _, agent in active_agents.items()]
         
         for _ in range(config.batch_size):
 
             observations = parallel_env.reset()
             
-            [agent.reset_episode() for _, agent in agents.items()]
+            [agent.reset_episode() for _, agent in active_agents.items()]
 
             done = False
             while not done:
@@ -113,11 +145,15 @@ def objective(trial, args, repo_name):
                 #print("\n\nmf=", mf.numpy()[0])
 
                 messages = {}; actions = {}
-                [agents[agent].set_observation(observations[agent]) for agent in parallel_env.agents]
+                #print("obs agent 0", (observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
+                
+                #[agents[agent].set_observation(observations[agent]) for agent in parallel_env.active_agents]
+                active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
+                active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
 
                 # speaking
                 #print("\nspeaking")
-                for agent in parallel_env.agents:
+                for agent in parallel_env.active_agents:
                     if (agents[agent].is_communicating):
                         messages[agent] = agents[agent].select_message(m_val=mf.numpy()[0]) # m value is given only to compute metrics
 
@@ -125,10 +161,10 @@ def objective(trial, args, repo_name):
                 #print("\nlistening")
                 if (num_comm_agents != 0):
                     message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
-                    [agents[agent].get_message(message) for agent in parallel_env.agents if (agents[agent].is_listening)]
+                    [agents[agent].get_message(message) for agent in parallel_env.active_agents if (agents[agent].is_listening)]
 
                 # acting
-                for agent in parallel_env.agents:
+                for agent in parallel_env.active_agents:
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
@@ -136,7 +172,7 @@ def objective(trial, args, repo_name):
                 #print("rewards=", rewards)
                 #print("rewards_norm=", rewards_norm)
 
-                for ag_idx, agent in agents.items():
+                for ag_idx, agent in active_agents.items():
                     
                     agent.buffer.rewards.append(rewards[ag_idx])
                     agent.buffer.next_states_a.append(observations[ag_idx])
@@ -144,11 +180,15 @@ def objective(trial, args, repo_name):
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     agent.return_episode =+ rewards[ag_idx]
 
+                #print("applying norm")
+                apply_norm(active_agents, active_agents_idxs, actions)
+                #print("norm has been applied")
+
                 # break; if the episode is over
                 if done:
                     break
 
-        for ag_idx, agent in agents.items():
+        for ag_idx, agent in active_agents.items():
             if (agent.is_communicating):
                 #print("\n",agent.buffer.actions_given_m)
                 for m_val in config.mult_fact:
@@ -163,21 +203,22 @@ def objective(trial, args, repo_name):
                     agent.mutinfo_listening.append(U.calc_mutinfo(agent.buffer.actions, agents['agent_'+str(i)].buffer.messages, config.action_size, config.mex_size))
 
         # update agents     
-        for ag_idx, agent in agents.items():
+        for ag_idx, agent in active_agents.items():
+            #print("update")
             agent.update()
         
         mex_distrib_given_m = {}; rewards_eval_m = {}; rewards_eval_norm_m = {}; actions_eval_m = {}
         for m in config.mult_fact:
-            act_eval, mex_distrib, _, rewards_eval = eval(config, parallel_env, agents, m, device, False)
+            act_eval, mex_distrib, _, rewards_eval = eval(config, parallel_env, active_agents, active_agents_idxs, m, device, False)
             mex_distrib_given_m[m] = mex_distrib # distrib dei messaggei per ogni agente, calcolata con dato input
             rewards_eval_m[m] = rewards_eval
             rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
             actions_eval_m[m] = act_eval
 
-        avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in agents.items()])
+        avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
         avg_norm_returns_train_list.append(avg_norm_return)
 
-        rew_values = [(np.sum([rewards_eval_m[m_val][ag_idx] for m_val in config.mult_fact])) for ag_idx, _ in agents.items()]
+        rew_values = [(np.sum([rewards_eval_m[m_val][ag_idx] for m_val in config.mult_fact])) for ag_idx, _ in active_agents.items()]
         
         avg_rew_time.append(np.mean(rew_values))
         #print(avg_rew_time)
@@ -189,15 +230,15 @@ def objective(trial, args, repo_name):
             print("is time to pruneee")
             wandb.finish()
             raise optuna.exceptions.TrialPruned()
-            break
 
         if (config.wandb_mode == "online"):
-            for ag_idx, agent in agents.items():
+            for ag_idx, agent in active_agents.items():
                 df_actions = {ag_idx+"actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
                 df_rew = {ag_idx+"rewards_eval_m"+str(i): rewards_eval_m[i][ag_idx] for i in config.mult_fact}
                 df_rew_norm = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
                 df_agent = {**{
                     ag_idx+"_return_train_norm": agent.return_episode_old_norm,
+                    ag_idx+"_reputation": agent.reputation,
                     ag_idx+"_return_train_"+str(mf[0]): agent.return_episode_old,
                     ag_idx+"gmm_means": agent.means,
                     ag_idx+"gmm_probabilities": agent.probs,
@@ -222,7 +263,7 @@ def objective(trial, args, repo_name):
                 "avg_return_train": avg_norm_return,
                 "avg_return_train_time": np.mean(avg_norm_returns_train_list[-10:]),
                 "avg_rew_time": measure,
-                "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in agents.items()]),
+                "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in active_agents.items()]),
                 #"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents.items()]),
                 },
                 step=epoch, commit=True)
