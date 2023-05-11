@@ -14,7 +14,7 @@ from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, app
 
 torch.autograd.set_detect_anomaly(True)
 
-EPOCHS = 30 # learning epochs for 2 sampled agents playing with each other
+EPOCHS = 500 # learning epochs for 2 sampled agents playing with each other
 OBS_SIZE = 1 # input: multiplication factor (with noise), opponent index, opponent reputation
 ACTION_SIZE = 2
 WANDB_MODE = "online"
