@@ -12,7 +12,9 @@ import wandb
 import src.analysis.utils as U
 from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm
 
-EPOCHS = 300 # learning epochs for 2 sampled agents playing with each other
+torch.autograd.set_detect_anomaly(True)
+
+EPOCHS = 30 # learning epochs for 2 sampled agents playing with each other
 OBS_SIZE = 1 # input: multiplication factor (with noise), opponent index, opponent reputation
 ACTION_SIZE = 2
 WANDB_MODE = "online"
@@ -46,10 +48,12 @@ def setup_training_hyperparams(trial, args):
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
         batch_size = trial.suggest_categorical("batch_size", [64, 128]),
+        #batch_size = trial.suggest_categorical("batch_size", [5]),
         lr_actor = trial.suggest_float("lr_actor", 1e-3, 1e-1, log=True),
         lr_critic = trial.suggest_float("lr_critic", 1e-3, 1e-1, log=True),
         n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
+        #hidden_size_act = trial.suggest_categorical("hidden_size_act", [8]),
         embedding_dim = 1,
         wandb_mode = WANDB_MODE
     )
@@ -77,11 +81,13 @@ def setup_training_hyperparams(trial, args):
         comm_params = dict(
             n_hidden_comm = trial.suggest_int("n_hidden_comm", 1, 2),
             hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
+            #hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8]),
             lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-3, 1e-1, log=True),
             lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-3, 1e-1, log=True),
             mex_size = trial.suggest_int("mex_size", 2, 10),
-            sign_lambda = trial.suggest_float("sign_lambda", 0.1, 0.8),
-            list_lambda = trial.suggest_float("list_lambda", 0.1, 0.8)
+            #mex_size = trial.suggest_categorical("mex_size", [2]),
+            sign_lambda = trial.suggest_float("sign_lambda", 0.0, 0.0),
+            list_lambda = trial.suggest_float("list_lambda", 0.0, 0.0)
         )
     else: 
         comm_params = dict()
@@ -111,8 +117,8 @@ def objective(trial, args, repo_name):
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
     max_values = find_max_min(config, 4)
-    idx_comm_agents = [j for j,val in enumerate(config.communicating_agents) if val==1]
-    num_comm_agents = config.communicating_agents.count(1)
+
+    n_communicating_agents = config.communicating_agents.count(1)
 
     agents = define_agents(config)
     print("\nAGENTS=",agents)
@@ -121,11 +127,12 @@ def objective(trial, args, repo_name):
     avg_norm_returns_train_list = []; avg_rew_time = []
 
     for epoch in range(config.n_epochs):
-        print("\nEpoch=", epoch)
+        #print("\n=========================")
+        #print("\n==========>Epoch=", epoch)
 
         #pick a pair of agents
         active_agents_idxs = random.sample(range(config.n_agents), 2)
-        print("active_agents_idxs=",active_agents_idxs)
+        #print("active_agents_idxs=",active_agents_idxs)
         active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)} #{agents[i] for i in active_agents_idxs}
         #print("ACTIVE AGENTS=", active_agents)
 
@@ -133,7 +140,7 @@ def objective(trial, args, repo_name):
 
         [agent.reset_batch() for _, agent in active_agents.items()]
         
-        for _ in range(config.batch_size):
+        for batch_idx in range(config.batch_size):
 
             observations = parallel_env.reset()
             
@@ -145,9 +152,9 @@ def objective(trial, args, repo_name):
                 #print("\n\nmf=", mf.numpy()[0])
 
                 messages = {}; actions = {}
-                #print("obs agent 0", (observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
+                #print("obs agent",active_agents_idxs[0],"=",(observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
+                #print("obs agent",active_agents_idxs[1],"=",(observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
                 
-                #[agents[agent].set_observation(observations[agent]) for agent in parallel_env.active_agents]
                 active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
                 active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
 
@@ -156,14 +163,20 @@ def objective(trial, args, repo_name):
                 for agent in parallel_env.active_agents:
                     if (agents[agent].is_communicating):
                         messages[agent] = agents[agent].select_message(m_val=mf.numpy()[0]) # m value is given only to compute metrics
+                    #print("messages=", messages)
 
                 # listening
                 #print("\nlistening")
-                if (num_comm_agents != 0):
-                    message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
-                    [agents[agent].get_message(message) for agent in parallel_env.active_agents if (agents[agent].is_listening)]
+                for agent in parallel_env.active_agents:
+                    other = list(set(active_agents_idxs) - set([active_agents[agent].idx]))[0]
+                    if (active_agents[agent].is_listening and len(messages) != 0):
+                        active_agents[agent].get_message(messages["agent_"+str(other)])
+                    if (active_agents[agent].is_listening and n_communicating_agents != 0 and len(messages) == 0):
+                        message = torch.zeros(config.mex_size)
+                        active_agents[agent].get_message(message)
 
                 # acting
+                #print("acting")
                 for agent in parallel_env.active_agents:
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
                 
@@ -190,23 +203,29 @@ def objective(trial, args, repo_name):
 
         for ag_idx, agent in active_agents.items():
             if (agent.is_communicating):
+                #print("is communicating")
                 #print("\n",agent.buffer.actions_given_m)
                 for m_val in config.mult_fact:
-                    if (m_val in agent.sc_m):
-                        agent.sc_m[m_val].append(U.calc_mutinfo(agent.buffer.actions_given_m[m_val], agent.buffer.messages_given_m[m_val], config.action_size, config.mex_size))
-                    else:
-                        agent.sc_m[m_val] = [U.calc_mutinfo(agent.buffer.actions_given_m[m_val], agent.buffer.messages_given_m[m_val], config.action_size, config.mex_size)]
+                    if (m_val in agent.buffer.actions_given_m):
+                        if (m_val in agent.sc_m):
+                            agent.sc_m[m_val].append(U.calc_mutinfo(agent.buffer.actions_given_m[m_val], agent.buffer.messages_given_m[m_val], config.action_size, config.mex_size))
+                        else:
+                            agent.sc_m[m_val] = [U.calc_mutinfo(agent.buffer.actions_given_m[m_val], agent.buffer.messages_given_m[m_val], config.action_size, config.mex_size)]
                 #print("\n\n==========>SC_m:",agent.sc_m)
                 agent.sc.append(U.calc_mutinfo(agent.buffer.actions, agent.buffer.messages, config.action_size, config.mex_size))
             if (agent.is_listening):
-                for i in idx_comm_agents:
-                    agent.mutinfo_listening.append(U.calc_mutinfo(agent.buffer.actions, agents['agent_'+str(i)].buffer.messages, config.action_size, config.mex_size))
-
+                #print("is listening")
+                #print("set(active_agents_idxs)", set(active_agents_idxs))
+                #print("set([agent.idx])=", set([agent.idx]))
+                other = list(set(active_agents_idxs) - set([agent.idx]))[0] #active_agents_idxs.pop("agent_"+str(ag_idx))
+                if (active_agents["agent_"+str(other)].is_communicating):
+                    agent.mutinfo_listening.append(U.calc_mutinfo(agent.buffer.actions, agents['agent_'+str(other)].buffer.messages, config.action_size, config.mex_size))
+           
         # update agents     
         for ag_idx, agent in active_agents.items():
-            #print("update")
+            #print("update", ag_idx)
             agent.update()
-        
+
         mex_distrib_given_m = {}; rewards_eval_m = {}; rewards_eval_norm_m = {}; actions_eval_m = {}
         for m in config.mult_fact:
             act_eval, mex_distrib, _, rewards_eval = eval(config, parallel_env, active_agents, active_agents_idxs, m, device, False)
@@ -223,7 +242,7 @@ def objective(trial, args, repo_name):
         avg_rew_time.append(np.mean(rew_values))
         #print(avg_rew_time)
         measure = np.mean(avg_rew_time[-10:])
-        
+        #print("measure=", measure)
         trial.report(measure, epoch)
         
         if trial.should_prune():
@@ -247,13 +266,15 @@ def objective(trial, args, repo_name):
                 
                 if (config.communicating_agents[agent.idx] == 1.):
                     df_mex = {ag_idx+"messages_prob_distrib_m_"+str(i): mex_distrib_given_m[i][ag_idx] for i in config.mult_fact}
-                    df_sc = {ag_idx+"sc": agent.sc_old[-1]}
-                    df_sc_m = {ag_idx+"sc_given_m"+str(i): agent.sc_m[i][0] for i in config.mult_fact}
+                    #df_sc = {ag_idx+"sc": agent.sc_old[-1]}
+                    #df_sc_m = {ag_idx+"sc_given_m"+str(i): agent.sc_m[i][0] for i in config.mult_fact}
                     df_ent = {ag_idx+"_avg_mex_entropy": np.mean(agent.buffer.comm_entropy)}
-                    df_agent = {**df_agent, **df_mex, **df_sc, **df_ent, **df_sc_m}
+                    df_agent = {**df_agent, **df_mex}#, **df_sc, **df_ent, **df_sc_m}
                 if (config.listening_agents[agent.idx] == 1.):
-                    df_listen = {ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1]}
-                    df_agent = {**df_agent, **df_listen}
+                    other = list(set(active_agents_idxs) - set([agent.idx]))[0]
+                    if (active_agents["agent_"+str(other)].is_communicating):
+                        #df_listen = {ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1]}
+                        df_agent = {**df_agent}#, **df_listen}
                 
                 wandb.log(df_agent, step=epoch, commit=False)
 
@@ -263,7 +284,7 @@ def objective(trial, args, repo_name):
                 "avg_return_train": avg_norm_return,
                 "avg_return_train_time": np.mean(avg_norm_returns_train_list[-10:]),
                 "avg_rew_time": measure,
-                "avg_loss": np.mean([agent.saved_losses[-1] for _, agent in active_agents.items()]),
+                ###"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in active_agents.items()]),
                 #"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents.items()]),
                 },
                 step=epoch, commit=True)

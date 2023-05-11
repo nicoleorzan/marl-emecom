@@ -71,6 +71,7 @@ class Actor(nn.Module):
     
     def get_dist_entropy(self, state):
         out = self.actor(state)
+        out = self.softmax(out)
         dist = Categorical(out)
         return dist.entropy()
 

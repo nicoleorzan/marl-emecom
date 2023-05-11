@@ -4,3 +4,4 @@ matplotlib
 wandb
 scikit-learn
 pandas
+optuna

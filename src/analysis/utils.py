@@ -132,6 +132,10 @@ def calc_mutinfo(acts, comms, n_acts, n_comm):
     # If the actions and messages come from different agents, this is the instantaneous coordinatino (IC)
     #print(acts)
     #print(comms)
+    #print("acts", acts)
+    #print("comms", comms)
+    #print("n_acts", n_acts)
+    #print("n_comm", n_comm)
     if (comms[0].size() != torch.Size()):
         comms = [torch.argmax(c) for c in comms]
     comms = [to_int(m) for m in comms]

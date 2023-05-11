@@ -38,6 +38,7 @@ class Agent():
         print("gmm=", self.gmm_)
 
         self.n_communicating_agents = self.communicating_agents.count(1)
+        print("self.n_communicating_agents=",self.n_communicating_agents)
 
         self.max_f = max(self.mult_fact)
         self.min_f = min(self.mult_fact)
@@ -45,8 +46,8 @@ class Agent():
         self.input_act = self.obs_size
         if (self.gmm_):
             self.input_act = self.n_gmm_components  #gmm components for the m factor, 1 for the coins I get
-        if (self.is_listening):
-            self.input_act += self.mex_size*self.n_communicating_agents
+        if (self.is_listening and self.n_communicating_agents != 0):
+            self.input_act += self.mex_size#*self.n_communicating_agents
     
         # Communication Policy
         if (self.is_communicating):
@@ -97,22 +98,37 @@ class Agent():
         self.return_episode_norm = 0
 
     def digest_input(self, input):
-        obs_m_fact, opponent_idx, reputation = input
+        obs_m_fact, opponent_idx, opponent_reputation = input
 
         ##### set multiplier factor observation (if uncertainty is modeled, gmm is used)
         digested_m_factor = self.set_mult_fact_obs(obs_m_fact)
         #print("digested_m_factor=",digested_m_factor)
         ##### embed adversary index
-        digested_opponent_idx = self.embed_opponent_idx(opponent_idx)
+        #digested_opponent_idx = self.embed_opponent_idx(opponent_idx)
         #print("digested_opponent_idx=",digested_opponent_idx)
         ##### make reputation a tensor
-        reputation = torch.Tensor([reputation])
+        opponent_reputation = torch.Tensor([opponent_reputation])
         ##### concatenate all stuff in a single vector
-        self.state = torch.cat((digested_m_factor, digested_opponent_idx, reputation), 0)
-        #print("self.state=", self.state)      
+        #self.state = torch.cat((digested_m_factor, digested_opponent_idx, reputation), 0)
+        #print("digested state=", self.state)
 
-    def embed_opponent_idx(self, idx):
+        digested_opponent_idx_act = self.embed_opponent_idx_act(opponent_idx)
+        self.state_act = torch.cat((digested_m_factor, digested_opponent_idx_act, opponent_reputation), 0)
+        #print("self.state_act=", self.state_act)
+
+        if (self.is_communicating):
+            digested_opponent_idx_comm = self.embed_opponent_idx_comm(opponent_idx)
+            self.state_comm = torch.cat((digested_m_factor, digested_opponent_idx_comm, opponent_reputation), 0)
+            #print("self.state_comm=", self.state_comm)
+
+    # ===============
+    # Abstract functions implemented in the specific algorithmic models
+    def embed_opponent_idx_act(self, idx):
         pass
+
+    def embed_opponent_idx_comm(self, idx):
+        pass
+    # ===============
 
     def set_mult_fact_obs(self, obs_m_fact, _eval=False):
 
@@ -123,7 +139,7 @@ class Agent():
             obs_m_fact = self.set_gmm_state(obs_m_fact, _eval)
         else:
             # otherwise I just need to normalize the observed f
-            obs_m_fact = (obs_m_fact - self.min_f)/(self.max_f - self.min_f)
+            obs_m_fact = (obs_m_fact - self.min_f)/(self.max_f - self.min_f + 0.0001)
         return obs_m_fact
     
     def set_gmm_state(self, obs, _eval=False):
@@ -153,15 +169,16 @@ class Agent():
         return gmm_state
 
     def select_message(self, m_val=None, _eval=False):
+        #print("state for mex=", self.state_comm)
 
         if (_eval == True):
             with torch.no_grad():
-                message_out, message_logprob, entropy = self.policy_comm.act(self.state)
+                message_out, message_logprob, entropy = self.policy_comm.act(self.state_comm)
 
         elif (_eval == False):
-            message_out, message_logprob, entropy = self.policy_comm.act(self.state)
+            message_out, message_logprob, entropy = self.policy_comm.act(self.state_comm)
 
-            self.buffer.states_c.append(self.state)
+            self.buffer.states_c.append(self.state_comm)
             self.buffer.messages.append(message_out)
             if (m_val in self.buffer.messages_given_m):
                 self.buffer.messages_given_m[m_val].append(message_out)
@@ -180,24 +197,30 @@ class Agent():
 
     def select_action(self, m_val=None, _eval=False):
 
-        self.state_to_act = self.state
-        if (self.is_listening):
-            self.state_to_act = torch.cat((self.state, self.message_in)).to(device)
+        state_to_act = self.state_act
+        #print("agent=", self.idx)
+        if (self.is_listening and self.n_communicating_agents != 0):
+            state_to_act = torch.cat((self.state_act, self.message_in)).to(device)
+        #print("state_act=", state_to_act)
             
         if (_eval == True):
             with torch.no_grad():
-                action, action_logprob, entropy = self.policy_act.act(self.state_to_act)
+                action, action_logprob, entropy = self.policy_act.act(state_to_act)
 
         elif (_eval == False):
-            action, action_logprob, entropy = self.policy_act.act(self.state_to_act)
+            action, action_logprob, entropy = self.policy_act.act(state_to_act)
             
             if (self.is_listening == True and self.n_communicating_agents != 0.):
-                state_empty_mex = torch.cat((self.state, torch.zeros_like(self.message_in))).to(device)
+                #print("self.state_act=", self.state_act)
+                state_empty_mex = torch.cat((self.state_act.detach(), torch.zeros_like(self.message_in))).to(device)
+                #print("state_empty_mex=", state_empty_mex)
                 dist_empty_mex = self.policy_act.get_distribution(state_empty_mex).detach()
-                dist_mex = self.policy_act.get_distribution(self.state_to_act)
+                #print("dist_empty_mex=", dist_empty_mex)
+                dist_mex = self.policy_act.get_distribution(state_to_act.detach()) #IL PROBLEMA E` QUI`
+                #print("dist_mex=", dist_mex)
                 self.List_loss_list.append(-torch.sum(torch.abs(dist_empty_mex - dist_mex)))
 
-            self.buffer.states_a.append(self.state_to_act)
+            self.buffer.states_a.append(state_to_act)
             self.buffer.actions.append(action)
             if (m_val in self.buffer.actions_given_m):
                 self.buffer.actions_given_m[m_val].append(action)
@@ -210,15 +233,15 @@ class Agent():
         return action
     
     def get_action_distribution(self):
-        self.state_to_act = self.state
-        if (self.is_listening):
-            self.state_to_act = torch.cat((self.state, self.message_in)).to(device)
+
+        if (self.is_listening == True and self.n_communicating_agents != 0.):
+            self.state_act = torch.cat((self.state_act, self.message_in)).to(device)
 
         with torch.no_grad():
-            out = self.policy_act.get_distribution(self.state_to_act)
+            out = self.policy_act.get_distribution(self.state_act)
             return out
 
     def get_message_distribution(self):
         with torch.no_grad():
-            out = self.policy_comm.get_distribution(self.state)
+            out = self.policy_comm.get_distribution(self.state_comm)
             return out.detach()

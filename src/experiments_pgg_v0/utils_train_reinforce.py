@@ -9,6 +9,7 @@ def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _pr
         print("\n Eval ===> Mult factor=", m)
         print("obs=", observations)
 
+    n_communicating_agents = config.communicating_agents.count(1)
     message = None
     done = False
     while not done:
@@ -25,10 +26,15 @@ def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _pr
             if (active_agents[agent].is_communicating):
                 messages[agent] = active_agents[agent].select_message(_eval=True)
                 mex_distrib[agent] = active_agents[agent].get_message_distribution()
+
         # listening
-        if (config.communicating_agents.count(1) != 0):
-            message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
-            [active_agents[agent].get_message(message) for agent in parallel_env.active_agents if (active_agents[agent].is_listening)]
+        for agent in parallel_env.active_agents:
+            other = list(set(active_agents_idxs) - set([active_agents[agent].idx]))[0]
+            if (active_agents[agent].is_listening and len(messages) != 0):
+                active_agents[agent].get_message(messages["agent_"+str(other)])
+            if (active_agents[agent].is_listening and n_communicating_agents != 0 and len(messages) == 0):
+                message = torch.zeros(config.mex_size)
+                active_agents[agent].get_message(message)
 
         # acting
         for agent in parallel_env.active_agents:
