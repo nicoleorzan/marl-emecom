@@ -67,6 +67,9 @@ class Reinforce(Agent):
                 loss_comm.append(-comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i])
             if (self.is_listening and self.n_communicating_agents != 0.):
                 #IL PROBLEMA E` QUI`
+                #print("act_logprobs[i]=", act_logprobs[i])
+                #print("(rew_norm[i] - self.baseline)=", (rew_norm[i] - self.baseline))
+                #print("self.list_lambda*self.List_loss_list[i]=", self.list_lambda*self.List_loss_list[i])
                 loss_act.append(-act_logprobs[i] * (rew_norm[i] - self.baseline))# + self.list_lambda*self.List_loss_list[i])
             else:
                 loss_act.append(-act_logprobs[i] * (rew_norm[i] - self.baseline))
@@ -75,6 +78,7 @@ class Reinforce(Agent):
         
         #self.optimizer.zero_grad()
         if (self.is_communicating):
+            #print("update comm loss")
             self.opt_comm.zero_grad()
             self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in loss_comm])))
             tmp = [torch.ones(a.data.shape) for a in loss_comm]
@@ -82,6 +86,7 @@ class Reinforce(Agent):
             self.opt_comm.step()
             self.scheduler_comm.step()
         
+        #print("update act loss")
         self.opt_act.zero_grad()
         tmp1 = [torch.ones(a.data.shape) for a in loss_act]
         autograd.backward(loss_act, tmp1, retain_graph=True)

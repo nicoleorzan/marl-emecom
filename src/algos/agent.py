@@ -176,6 +176,8 @@ class Agent():
                 message_out, message_logprob, entropy = self.policy_comm.act(self.state_comm)
 
         elif (_eval == False):
+            #print("self.state_comm", self.state_comm)
+            #print(self.policy_comm.act(self.state_comm))
             message_out, message_logprob, entropy = self.policy_comm.act(self.state_comm)
 
             self.buffer.states_c.append(self.state_comm)
@@ -205,10 +207,10 @@ class Agent():
             
         if (_eval == True):
             with torch.no_grad():
-                action, action_logprob, entropy = self.policy_act.act(state_to_act)
+                action, action_logprob, entropy = self.policy_act.act(state=state_to_act)
 
         elif (_eval == False):
-            action, action_logprob, entropy = self.policy_act.act(state_to_act)
+            action, action_logprob, entropy, distrib = self.policy_act.act(state=state_to_act, greedy=False, get_distrib=True)
             
             if (self.is_listening == True and self.n_communicating_agents != 0.):
                 #print("self.state_act=", self.state_act)
@@ -216,9 +218,9 @@ class Agent():
                 #print("state_empty_mex=", state_empty_mex)
                 dist_empty_mex = self.policy_act.get_distribution(state_empty_mex).detach()
                 #print("dist_empty_mex=", dist_empty_mex)
-                dist_mex = self.policy_act.get_distribution(state_to_act.detach()) #IL PROBLEMA E` QUI`
+                #dist_mex = self.policy_act.get_distribution(state_to_act.detach()) #IL PROBLEMA E` QUI`
                 #print("dist_mex=", dist_mex)
-                self.List_loss_list.append(-torch.sum(torch.abs(dist_empty_mex - dist_mex)))
+                self.List_loss_list.append(-torch.sum(torch.abs(dist_empty_mex - distrib)))
 
             self.buffer.states_a.append(state_to_act)
             self.buffer.actions.append(action)

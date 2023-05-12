@@ -52,7 +52,7 @@ class Actor(nn.Module):
         self.emb = self.embedding(idx_one_hot)
         return self.emb
 
-    def act(self, state, greedy=False):
+    def act(self, state, greedy=False, get_distrib=False):
         out = self.actor(state)
         out = self.softmax(out)
         dist = Categorical(out)
@@ -67,6 +67,9 @@ class Actor(nn.Module):
 
         logprob = dist.log_prob(act) # negativi
 
+        if (get_distrib == True):
+            return act.detach(), logprob, dist.entropy().detach(), out
+        
         return act.detach(), logprob, dist.entropy().detach()
     
     def get_dist_entropy(self, state):

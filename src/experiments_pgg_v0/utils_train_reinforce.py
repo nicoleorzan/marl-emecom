@@ -122,10 +122,18 @@ def apply_norm(active_agents, active_agents_idxs, actions):
         agent = active_agents["agent_"+str(idx)]
         change_reputation(agent, actions["agent_"+str(idx)])
 
-def change_reputation(agent, action):
+def change_reputation1(agent, action):
     #print("reputation before=", agent.reputation)
     if (action == 0 and agent.reputation >= 0.05):
         agent.reputation -= 0.01
     if (action == 1 and agent.reputation <= (1.-0.05)):
         agent.reputation += 0.01
+    #print("reputation after=", agent.reputation)
+
+def change_reputation(agent, action):
+    #print("reputation before=", agent.reputation)
+    if (action == 0):
+        agent.reputation = max(agent.reputation-0.5, 0.)
+    if (action == 1):
+        agent.reputation += 0.2
     #print("reputation after=", agent.reputation)
