@@ -194,7 +194,7 @@ def objective(trial, args, repo_name):
                     agent.return_episode =+ rewards[ag_idx]
 
                 #print("applying norm")
-                apply_norm(active_agents, active_agents_idxs, actions)
+                apply_norm(active_agents, active_agents_idxs, actions, mf)
                 #print("norm has been applied")
 
                 # break; if the episode is over

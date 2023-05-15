@@ -115,12 +115,12 @@ def find_max_min(config, coins):
         #print("normalized=", returns/max_values[multiplier]) #(returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
     return max_values
 
-def apply_norm(active_agents, active_agents_idxs, actions):
+def apply_norm(active_agents, active_agents_idxs, actions, f):
     #print("actions=", actions)
     for idx in active_agents_idxs:
         #print("agent=", idx)
         agent = active_agents["agent_"+str(idx)]
-        change_reputation(agent, actions["agent_"+str(idx)])
+        change_reputation_f_aware(f, agent, actions["agent_"+str(idx)])
 
 def change_reputation1(agent, action):
     #print("reputation before=", agent.reputation)
@@ -135,5 +135,15 @@ def change_reputation(agent, action):
     if (action == 0):
         agent.reputation = max(agent.reputation-0.5, 0.)
     if (action == 1):
-        agent.reputation += 0.2
+        agent.reputation = min(agent.reputation+0.2, 1.)
     #print("reputation after=", agent.reputation)
+
+def change_reputation_f_aware(f, agent, action):
+    # if the game is purely competitive (f<1), I do not encourage anyone to defect or cooperate. 
+    # Reputation therefore reamins unchanged for every action agents take
+    # if the game is cooperative or mixed motive (f>1), I want a metric that encourages cooperation
+    if (f > 1):       
+        if (action == 0):
+            agent.reputation = max(agent.reputation-0.5, 0.)
+        if (action == 1):
+            agent.reputation = min(agent.reputation+0.2, 1.)
