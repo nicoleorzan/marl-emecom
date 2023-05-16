@@ -7,7 +7,8 @@ import optuna
 import random
 from optuna.trial import TrialState
 import torch
-from optuna.integration.wandb import WeightsAndBiasesCallback
+#from optuna.integration.wandb import WeightsAndBiasesCallback
+from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
 from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm
@@ -17,7 +18,7 @@ torch.autograd.set_detect_anomaly(True)
 EPOCHS = 500 # learning epochs for 2 sampled agents playing with each other
 OBS_SIZE = 1 # input: multiplication factor (with noise), opponent index, opponent reputation
 ACTION_SIZE = 2
-WANDB_MODE = "online"
+WANDB_MODE = "offline"
 RANDOM_BASELINE = False
 
 # set device to cpu or cuda
@@ -309,7 +310,10 @@ def training_function(args):
 
     func = lambda trial: objective(trial, args, repo_name)
 
-    storage = optuna.storages.RDBStorage(url="sqlite:///"+repo_name+"-db")
+    # sql not optimized for paralel sync
+    #storage = optuna.storages.RDBStorage(url="sqlite:///"+repo_name+"-db") 
+
+    storage = JournalStorage(JournalFileStorage("optuna-journal"+repo_name+".log"))
 
     study = optuna.create_study(
         study_name=repo_name,
