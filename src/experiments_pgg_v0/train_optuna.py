@@ -5,6 +5,7 @@ from src.algos.PPO import PPO
 import numpy as np
 import optuna
 import random
+import functools, collections, operator
 from optuna.trial import TrialState
 import torch
 #from optuna.integration.wandb import WeightsAndBiasesCallback
@@ -182,8 +183,23 @@ def objective(trial, args, repo_name):
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
-                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
+
+                reputation_rewards, additions = apply_norm(active_agents, active_agents_idxs, actions, mf)
+                #print("actions=", actions)
                 #print("rewards=", rewards)
+                #print("reputation_rewards=", reputation_rewards)
+                #print("additions=", additions)
+                vals = [rewards, reputation_rewards]
+                rew1 = {k:sum(map(operator.itemgetter(k), vals)) for k in vals[0]} 
+                #rew1 = functools.reduce(operator.add, map(collections.Counter, vals))
+                
+                #print("rew1=", rew1)
+                #print("divisore=",max_values[float(parallel_env.current_multiplier[0])]+max_rep_rew)
+                rewards_norm_old = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
+                rewards_norm = {key: value/(max_values[float(parallel_env.current_multiplier[0])]+additions[key]) for key, value in rew1.items()}
+
+                #print("rewards=", rewards)
+                #print("rewards_norm_old=", rewards_norm_old)
                 #print("rewards_norm=", rewards_norm)
 
                 for ag_idx, agent in active_agents.items():
@@ -195,7 +211,7 @@ def objective(trial, args, repo_name):
                     agent.return_episode =+ rewards[ag_idx]
 
                 #print("applying norm")
-                apply_norm(active_agents, active_agents_idxs, actions, mf)
+                #apply_norm(active_agents, active_agents_idxs, actions, mf)
                 #print("norm has been applied")
 
                 # break; if the episode is over

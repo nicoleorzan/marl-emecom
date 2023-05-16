@@ -117,33 +117,36 @@ def find_max_min(config, coins):
 
 def apply_norm(active_agents, active_agents_idxs, actions, f):
     #print("actions=", actions)
+
+    reputation_rewards = {}
+    addition = {}
     for idx in active_agents_idxs:
         #print("agent=", idx)
+        old_reputation = active_agents["agent_"+str(idx)].reputation
         agent = active_agents["agent_"+str(idx)]
-        change_reputation_f_aware(f, agent, actions["agent_"+str(idx)])
+        change_reputation_f_aware(f, agent, actions["agent_"+str(idx)], addition)
+        reputation_rewards["agent_"+str(idx)] = active_agents["agent_"+str(idx)].reputation - old_reputation
+    return reputation_rewards, addition
 
-def change_reputation1(agent, action):
-    #print("reputation before=", agent.reputation)
-    if (action == 0 and agent.reputation >= 0.05):
-        agent.reputation -= 0.01
-    if (action == 1 and agent.reputation <= (1.-0.05)):
-        agent.reputation += 0.01
-    #print("reputation after=", agent.reputation)
-
-def change_reputation(agent, action):
-    #print("reputation before=", agent.reputation)
-    if (action == 0):
-        agent.reputation = max(agent.reputation-0.5, 0.)
-    if (action == 1):
-        agent.reputation = min(agent.reputation+0.2, 1.)
-    #print("reputation after=", agent.reputation)
-
-def change_reputation_f_aware(f, agent, action):
+def change_reputation_f_aware(f, agent, action, addition):
     # if the game is purely competitive (f<1), I do not encourage anyone to defect or cooperate. 
     # Reputation therefore reamins unchanged for every action agents take
     # if the game is cooperative or mixed motive (f>1), I want a metric that encourages cooperation
-    if (f > 1):       
+    #print("agent=", agent.idx)
+    #print("reputation before=", agent.reputation)
+    if (f > 1):
         if (action == 0):
             agent.reputation = max(agent.reputation-0.5, 0.)
         if (action == 1):
             agent.reputation = min(agent.reputation+0.2, 1.)
+
+        if (agent.reputation == 1.):
+            addition["agent_"+str(agent.idx)] = 0
+        else: 
+            addition["agent_"+str(agent.idx)] = 0.2
+            
+    else: 
+        addition["agent_"+str(agent.idx)] = 0
+    #print("reputation before=", agent.reputation)
+    
+    
