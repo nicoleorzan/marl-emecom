@@ -19,7 +19,7 @@ torch.autograd.set_detect_anomaly(True)
 EPOCHS = 500 # learning epochs for 2 sampled agents playing with each other
 OBS_SIZE = 1 # input: multiplication factor (with noise), opponent index, opponent reputation
 ACTION_SIZE = 2
-WANDB_MODE = "offline"
+#WANDB_MODE = "offline"
 RANDOM_BASELINE = False
 
 # set device to cpu or cuda
@@ -37,6 +37,7 @@ def setup_training_hyperparams(trial, args):
     game_params = dict(
         n_agents = args.n_agents,
         algorithm = args.algorithm,
+        wandb_mode = args.wandb_mode,
         num_game_iterations = 1,
         n_epochs = EPOCHS,
         obs_size = OBS_SIZE,
@@ -56,8 +57,7 @@ def setup_training_hyperparams(trial, args):
         n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         #hidden_size_act = trial.suggest_categorical("hidden_size_act", [8]),
-        embedding_dim = 1,
-        wandb_mode = WANDB_MODE
+        embedding_dim = 1
     )
 
     if (args.algorithm == "reinforce"):
@@ -195,7 +195,7 @@ def objective(trial, args, repo_name):
                 
                 #print("rew1=", rew1)
                 #print("divisore=",max_values[float(parallel_env.current_multiplier[0])]+max_rep_rew)
-                rewards_norm_old = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
+                #rewards_norm_old = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
                 rewards_norm = {key: value/(max_values[float(parallel_env.current_multiplier[0])]+additions[key]) for key, value in rew1.items()}
 
                 #print("rewards=", rewards)
@@ -342,7 +342,7 @@ def training_function(args):
     )
 
     if (args.optimize):
-        study.optimize(func, n_trials=100, timeout=600)
+        study.optimize(func, n_trials=100, timeout=None)
 
     else:
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])

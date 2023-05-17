@@ -29,8 +29,9 @@ if __name__ == '__main__':
         "--gmm_",
         nargs="*",
         type=int,
-        default=[])
-
+        default=[])        
+        
+    parser.add_argument('--wandb_mode', type=str, choices = ["online", "offline"], default="online")
     parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--optimize', type=int) # 1 for true 0 for false

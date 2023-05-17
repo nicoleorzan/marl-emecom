@@ -147,6 +147,30 @@ def change_reputation_f_aware(f, agent, action, addition):
             
     else: 
         addition["agent_"+str(agent.idx)] = 0
+    #print("reputation after=", agent.reputation)
+    
+    
+def change_reputation_given_comm(f, agent, action, addition):
+    # if the game is purely competitive (f<1), I do not encourage anyone to defect or cooperate. 
+    # Reputation therefore reamins unchanged for every action agents take
+    # if the game is cooperative or mixed motive (f>1), I want a metric that encourages cooperation
+    #print("agent=", agent.idx)
     #print("reputation before=", agent.reputation)
+    if (f > 1):
+        if (action == 0):
+            agent.reputation = max(agent.reputation-0.5, 0.)
+        if (action == 1):
+            agent.reputation = min(agent.reputation+0.2, 1.)
+
+        if (agent.reputation == 1.):
+            addition["agent_"+str(agent.idx)] = 0
+        else: 
+            addition["agent_"+str(agent.idx)] = 0.2
+            
+    else: 
+        addition["agent_"+str(agent.idx)] = 0
+    #print("reputation after=", agent.reputation)
     
     
+
+
