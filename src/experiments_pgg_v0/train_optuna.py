@@ -113,7 +113,7 @@ def define_agents(config):
 def objective(trial, args, repo_name):
 
     all_params = setup_training_hyperparams(trial, args)
-    wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=WANDB_MODE)#, sync_tensorboard=True)
+    wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=args.wandb_mode)#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
 
@@ -195,8 +195,8 @@ def objective(trial, args, repo_name):
                 
                 #print("rew1=", rew1)
                 #print("divisore=",max_values[float(parallel_env.current_multiplier[0])]+max_rep_rew)
-                #rewards_norm_old = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
-                rewards_norm = {key: value/(max_values[float(parallel_env.current_multiplier[0])]+additions[key]) for key, value in rew1.items()}
+                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
+                #rewards_norm = {key: value/(max_values[float(parallel_env.current_multiplier[0])]+additions[key]) for key, value in rew1.items()}
 
                 #print("rewards=", rewards)
                 #print("rewards_norm_old=", rewards_norm_old)
@@ -267,7 +267,7 @@ def objective(trial, args, repo_name):
             wandb.finish()
             raise optuna.exceptions.TrialPruned()
 
-        if (config.wandb_mode == "online"):
+        if (config.wandb_mode == "online" and epoch/2. == 0):
             for ag_idx, agent in active_agents.items():
                 df_actions = {ag_idx+"actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
                 df_rew = {ag_idx+"rewards_eval_m"+str(i): rewards_eval_m[i][ag_idx] for i in config.mult_fact}
@@ -342,7 +342,7 @@ def training_function(args):
     )
 
     if (args.optimize):
-        study.optimize(func, n_trials=100, timeout=None)
+        study.optimize(func, n_trials=100, timeout=1000)
 
     else:
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])

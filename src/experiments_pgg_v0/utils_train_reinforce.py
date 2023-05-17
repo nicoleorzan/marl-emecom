@@ -124,7 +124,10 @@ def apply_norm(active_agents, active_agents_idxs, actions, f):
         #print("agent=", idx)
         old_reputation = active_agents["agent_"+str(idx)].reputation
         agent = active_agents["agent_"+str(idx)]
-        change_reputation_f_aware(f, agent, actions["agent_"+str(idx)], addition)
+        other = list(set(active_agents_idxs) - set([idx]))[0]
+        #print("other=", other)
+        #change_reputation_f_aware(f, agent, actions["agent_"+str(idx)], addition)
+        binary_change_reputation(f, agent, actions["agent_"+str(idx)], active_agents["agent_"+str(other)].reputation, addition)
         reputation_rewards["agent_"+str(idx)] = active_agents["agent_"+str(idx)].reputation - old_reputation
     return reputation_rewards, addition
 
@@ -149,7 +152,22 @@ def change_reputation_f_aware(f, agent, action, addition):
         addition["agent_"+str(agent.idx)] = 0
     #print("reputation after=", agent.reputation)
     
-    
+def binary_change_reputation(f, agent, action, opponent_reputation, addition):
+
+    if ( f>1 ):
+        if (action == 1):
+            if (opponent_reputation == 1):
+                agent.reputation = 1.
+            elif (opponent_reputation == 0):
+                agent.reputation = 0.
+        
+        elif (action == 0):
+            if (opponent_reputation == 1):
+                agent.reputation = 0.
+            elif (opponent_reputation == 0):
+                agent.reputation = 1.
+
+
 def change_reputation_given_comm(f, agent, action, addition):
     # if the game is purely competitive (f<1), I do not encourage anyone to defect or cooperate. 
     # Reputation therefore reamins unchanged for every action agents take
@@ -172,5 +190,4 @@ def change_reputation_given_comm(f, agent, action, addition):
     #print("reputation after=", agent.reputation)
     
     
-
 
