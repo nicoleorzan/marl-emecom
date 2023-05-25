@@ -18,8 +18,8 @@ def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _pr
         actions = {}
         mex_distrib = {}
         act_distrib = {}
-        active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
-        active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
+        active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
+        active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
 
         # speaking
         for agent in parallel_env.active_agents:
@@ -40,7 +40,6 @@ def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _pr
         for agent in parallel_env.active_agents:
             actions[agent] = active_agents[agent].select_action(_eval=True)
             act_distrib[agent] = active_agents[agent].get_action_distribution()
-                
         _, rewards_eval, _, _ = parallel_env.step(actions)
 
         if (_print == True):
@@ -116,20 +115,65 @@ def find_max_min(config, coins):
     return max_values
 
 def apply_norm(active_agents, active_agents_idxs, actions, f):
-    #print("actions=", actions)
-
     reputation_rewards = {}
     addition = {}
     for idx in active_agents_idxs:
-        #print("agent=", idx)
-        old_reputation = active_agents["agent_"+str(idx)].reputation
         agent = active_agents["agent_"+str(idx)]
-        other = list(set(active_agents_idxs) - set([idx]))[0]
-        #print("other=", other)
-        #change_reputation_f_aware(f, agent, actions["agent_"+str(idx)], addition)
-        binary_change_reputation(f, agent, actions["agent_"+str(idx)], active_agents["agent_"+str(other)].reputation, addition)
-        reputation_rewards["agent_"+str(idx)] = active_agents["agent_"+str(idx)].reputation - old_reputation
+        if (agent.is_dummy == False):
+            #print("agent=", agent.idx)
+            old_reputation = active_agents["agent_"+str(idx)].reputation
+            #print("old rep=", old_reputation)
+            other = list(set(active_agents_idxs) - set([idx]))[0]
+            change_reputation(f, agent, actions["agent_"+str(idx)], active_agents["agent_"+str(other)].reputation, addition)
+            #print("new one=", agent.reputation)
+            reputation_rewards["agent_"+str(idx)] = active_agents["agent_"+str(idx)].reputation - old_reputation
     return reputation_rewards, addition
+   
+def apply_norm2(active_agents, active_agents_idxs, actions, f):
+    reputation_rewards = {}
+    addition = {}
+    #for idx in active_agents_idxs:
+    agent = active_agents["agent_0"]
+    #print("agent=", agent.idx)
+    old_reputation = active_agents["agent_0"].reputation
+    #print("old rep=", old_reputation)
+    print("actions=", actions)
+    avg_val = np.mean(actions)
+    print("avg=", avg_val)
+    other = list(set(active_agents_idxs) - set([0]))[0]
+    agent.reputation = avg_val
+    #change_reputation(f, agent, actions["agent_0"], active_agents["agent_"+str(other)].reputation, addition)
+    #print("new one=", agent.reputation)
+    reputation_rewards["agent_0"] = active_agents["agent_0"].reputation - old_reputation
+    return reputation_rewards, addition
+   
+def change_reputation(f, agent, action, opponent_reputation, addition):
+    if ( f > 1 and f < 2. ):
+        if (action == 1):
+            if (opponent_reputation == 1):
+                agent.reputation = min(agent.reputation + 0.1, 1.)
+            elif (opponent_reputation == 0):
+                agent.reputation = max(agent.reputation - 0.4, 0.)
+        
+        elif (action == 0):
+            if (opponent_reputation == 1):
+                agent.reputation = max(agent.reputation - 0.4, 0.)
+            elif (opponent_reputation == 0):
+                agent.reputation = min(agent.reputation + 0.1, 1.)
+
+def binary_change_reputation(f, agent, action, opponent_reputation, addition):
+    if ( f > 1. ):
+        if (action == 1):
+            if (opponent_reputation == 1):
+                agent.reputation = 1.
+            elif (opponent_reputation == 0):
+                agent.reputation = 0.
+        
+        elif (action == 0):
+            if (opponent_reputation == 1):
+                agent.reputation = 0.
+            elif (opponent_reputation == 0):
+                agent.reputation = 1.
 
 def change_reputation_f_aware(f, agent, action, addition):
     # if the game is purely competitive (f<1), I do not encourage anyone to defect or cooperate. 
@@ -151,43 +195,3 @@ def change_reputation_f_aware(f, agent, action, addition):
     else: 
         addition["agent_"+str(agent.idx)] = 0
     #print("reputation after=", agent.reputation)
-    
-def binary_change_reputation(f, agent, action, opponent_reputation, addition):
-
-    if ( f>1 ):
-        if (action == 1):
-            if (opponent_reputation == 1):
-                agent.reputation = 1.
-            elif (opponent_reputation == 0):
-                agent.reputation = 0.
-        
-        elif (action == 0):
-            if (opponent_reputation == 1):
-                agent.reputation = 0.
-            elif (opponent_reputation == 0):
-                agent.reputation = 1.
-
-
-def change_reputation_given_comm(f, agent, action, addition):
-    # if the game is purely competitive (f<1), I do not encourage anyone to defect or cooperate. 
-    # Reputation therefore reamins unchanged for every action agents take
-    # if the game is cooperative or mixed motive (f>1), I want a metric that encourages cooperation
-    #print("agent=", agent.idx)
-    #print("reputation before=", agent.reputation)
-    if (f > 1):
-        if (action == 0):
-            agent.reputation = max(agent.reputation-0.5, 0.)
-        if (action == 1):
-            agent.reputation = min(agent.reputation+0.2, 1.)
-
-        if (agent.reputation == 1.):
-            addition["agent_"+str(agent.idx)] = 0
-        else: 
-            addition["agent_"+str(agent.idx)] = 0.2
-            
-    else: 
-        addition["agent_"+str(agent.idx)] = 0
-    #print("reputation after=", agent.reputation)
-    
-    
-
