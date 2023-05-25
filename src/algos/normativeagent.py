@@ -17,7 +17,7 @@ class NormativeAgent():
 
         self.buffer = RolloutBufferComm()
 
-        self.reputation = 1.0
+        self.reputation = 0.5
         self.idx = idx
         self.is_communicating = 0
         self.is_listening = 0
@@ -62,7 +62,7 @@ class NormativeAgent():
         if (self.obs_m_fact > 1):
             if (self.opponent_reputation >= 0.5):
                 action = torch.Tensor([1.])
-        return action
+        return action[0]
         
     def update(self):
         pass

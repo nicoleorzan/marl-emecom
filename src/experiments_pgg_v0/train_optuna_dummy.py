@@ -14,7 +14,7 @@ import torch
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
-from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm2
+from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm2, SocialNorm
 
 torch.autograd.set_detect_anomaly(True)
 
@@ -99,7 +99,7 @@ def setup_training_hyperparams(trial, args):
     all_params = {**game_params,**algo_params, **comm_params}
     print("all_params=", all_params)
 
-    return all_params
+    return all_params    
 
 def define_agents(config, probs_coop_dummy=None):
     agents = {}
@@ -135,6 +135,8 @@ def objective(trial, args, repo_name):
     
     #### TRAINING LOOP
     avg_norm_returns_train_list = []; avg_rew_time = []
+
+    social_norm = SocialNorm(agents)
 
     for epoch in range(config.n_epochs):
         #print("\n=========================")
@@ -190,8 +192,7 @@ def objective(trial, args, repo_name):
                 observations, rewards, done, _ = parallel_env.step(actions)
 
                 if (mf > 1. and mf < 2.):
-                    pgg_actions.append(actions["agent_0"].item())
-                    #print(pgg_actions)
+                    social_norm.save_actions(actions, active_agents_idxs)
                 
                 rewards_norm = {key: value/max_values[parallel_env.get_multiplier()] for key, value in rewards.items()}
 
@@ -211,7 +212,9 @@ def objective(trial, args, repo_name):
                     break
             
         #apply_norm(active_agents, active_agents_idxs, actions, mf)
-        apply_norm2(active_agents, active_agents_idxs, pgg_actions, mf)
+        #apply_norm2(active_agents, active_agents_idxs, pgg_actions, mf)
+        #print("apply norm")
+        social_norm.update_reputation(active_agents_idxs)
 
         for ag_idx, agent in active_agents.items():
             if (agent.is_communicating):

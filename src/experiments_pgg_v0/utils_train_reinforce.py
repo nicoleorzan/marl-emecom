@@ -2,6 +2,35 @@ import torch
 import itertools
 import numpy as np
 
+
+class SocialNorm():
+
+    def __init__(self, agents):
+        self.agents = agents
+        self.n_agents = len(self.agents)
+        self.reset_saved_actions()
+
+    def reset_saved_actions(self):
+        self.saved_actions = {}
+
+    def save_actions(self, act, active_agents_idxs):
+        for ag_idx in active_agents_idxs:
+            if (ag_idx not in self.saved_actions.keys()):
+                self.saved_actions[ag_idx] = []
+            else:
+                self.saved_actions[ag_idx].append(act["agent_"+str(ag_idx)])
+
+    def update_reputation(self, active_agents_idxs):
+        for ag_idx in active_agents_idxs:
+            #print("saved act=", self.saved_actions[ag_idx])
+            #print("agent_"+str(ag_idx))
+            #print(self.agents["agent_"+str(ag_idx)])
+            #print("rep=",self.agents["agent_"+str(ag_idx)].reputation)
+            self.agents["agent_"+str(ag_idx)].reputation = np.mean(self.saved_actions[ag_idx])
+            #print("rep dopo",self.agents["agent_"+str(ag_idx)].reputation)
+        self.reset_saved_actions()
+        
+
 def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _print=False):
     observations = parallel_env.reset(m)
 
