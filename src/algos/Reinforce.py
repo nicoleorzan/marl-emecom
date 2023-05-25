@@ -53,6 +53,7 @@ class Reinforce(Agent):
         #print("\n=====>Update agent", self.idx)
         # I do not normalize rewards here because I already give normalized rewards to the agent
         rew_norm = self.buffer.rewards # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
+        #print("rew norm=", rew_norm)
         act_logprobs = self.buffer.act_logprobs
         comm_logprobs = self.buffer.comm_logprobs
 
@@ -87,11 +88,13 @@ class Reinforce(Agent):
             self.scheduler_comm.step()
         
         #print("update act loss")
+        #print("loss_act=", loss_act)
         self.opt_act.zero_grad()
         tmp1 = [torch.ones(a.data.shape) for a in loss_act]
         autograd.backward(loss_act, tmp1, retain_graph=True)
         self.opt_act.step()
         self.scheduler_act.step()
+        #print("optimized")
         
         #self.optimizer.step()
 

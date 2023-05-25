@@ -137,6 +137,9 @@ class parallel_env(ParallelEnv):
             assert(obs_multiplier >= 0.)
             #self.observations[agent] = torch.Tensor((self.normalized_coins[agent], obs_multiplier)).to(device) 
             self.observations[agent] = torch.Tensor([obs_multiplier]).to(device) 
+
+    def get_multiplier(self):
+        return round(torch.Tensor([self.current_multiplier]).item(),2)
            
     def reset(self, mult_in=None):
         """

@@ -23,9 +23,9 @@ class Actor(nn.Module):
         # inputs: 
         # multiplication factor (scalar) already considered
         # possible message (already considered)
-        # opponent index (embedded) new
+        # opponent index (embedded) new -> NO!!
         # opponent reputation (scalar) new
-        self.input_size = input_size + self.n_agents + 1
+        self.input_size = input_size + 1
 
         if (self.n_hidden == 2):
             self.actor = nn.Sequential(
