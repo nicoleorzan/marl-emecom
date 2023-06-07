@@ -14,7 +14,7 @@ import torch
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
-from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm2, SocialNorm
+from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, best_strategy_reward,  apply_norm2, SocialNorm
 
 torch.autograd.set_detect_anomaly(True)
 
@@ -122,6 +122,9 @@ def objective(trial, args, repo_name):
     wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=args.wandb_mode)#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
+
+    print("HERE")
+    best_strategy_reward(config)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
     max_values = find_max_min(config, 4)
@@ -244,7 +247,7 @@ def objective(trial, args, repo_name):
         optimization_measure = []
 
         for m in config.mult_fact:    
-            print("m=", m, "reputation=", active_agents["agent_0"].reputation)
+            #print("m=", m, "reputation=", active_agents["agent_0"].reputation)
             rewards_eval_dummy = {}; rewards_eval_norm_dummy = {}; actions_eval_dummy = {}
             for dummy_idx in range(1, config.n_agents):
                 active_agents_idxs = [0, dummy_idx]
@@ -252,14 +255,14 @@ def objective(trial, args, repo_name):
                 parallel_env.set_active_agents(active_agents_idxs)
                 
                 act_eval, _, act_distrib, rewards_eval = eval(config, parallel_env, active_agents, active_agents_idxs, m, device, False)
-                print("act_eval=",act_eval)
-                print("act_distrib=", act_distrib)
+                #print("mult=", parallel_env.current_multiplier,"act_eval=",act_eval['agent_0'])
+                #print("act_distrib=", act_distrib)
 
                 rewards_eval_dummy[dummy_idx] = rewards_eval['agent_0']
                 rewards_eval_norm_dummy[dummy_idx] = {key: value/max_values[m] for key, value in rewards_eval.items()}['agent_0']
                 optimization_measure.append(rewards_eval_norm_dummy[dummy_idx])
                 actions_eval_dummy[dummy_idx] = act_eval['agent_0']
-                print("rewards_eval_norm_dummy=",rewards_eval_norm_dummy)
+                #print("rewards_eval_norm_dummy=",rewards_eval_norm_dummy)
             
             rewards_eval_m[m] = rewards_eval_dummy
             rewards_eval_norm_m[m] = rewards_eval_norm_dummy
@@ -329,7 +332,9 @@ def objective(trial, args, repo_name):
 
         if (epoch%10 == 0):
             print("Epoch : {} \t Mult factor: {} \t Measure: {} \t Reputation: {}".format(epoch, mf, measure, agents["agent_0"].reputation))
-    
+            for i in range(len(config.mult_fact)):
+                print("mult=", config.mult_fact[i], ", act_eval=", actions_eval_m[config.mult_fact[i]][1])
+
     wandb.finish()
     return measure
 

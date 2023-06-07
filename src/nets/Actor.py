@@ -26,6 +26,7 @@ class Actor(nn.Module):
         # opponent index (embedded) new -> NO!!
         # opponent reputation (scalar) new
         self.input_size = input_size + 1
+        print("actual input size=", self.input_size)
 
         if (self.n_hidden == 2):
             self.actor = nn.Sequential(

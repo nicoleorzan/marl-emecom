@@ -24,7 +24,7 @@ class Agent():
 
         self.buffer = RolloutBufferComm()
 
-        self.reputation = 0.5
+        self.reputation = 0.8
         self.is_dummy = False
 
         self.idx = idx
@@ -47,6 +47,7 @@ class Agent():
         self.input_act = self.obs_size
         if (self.gmm_):
             self.input_act = self.n_gmm_components  #gmm components for the m factor, 1 for the coins I get
+        print("input size act=", self.input_act)
         if (self.is_listening and self.n_communicating_agents != 0):
             self.input_act += self.mex_size #*self.n_communicating_agents
     
@@ -55,6 +56,7 @@ class Agent():
             self.input_comm = self.obs_size
             if (self.gmm_):
                 self.input_comm = self.n_gmm_components #gmm components for the m factor, 1 for the coins I get
+            print("input size comm=", self.input_comm)
 
         self.max_memory_capacity = 5000
 
@@ -122,7 +124,7 @@ class Agent():
         if (self.is_communicating):
             #digested_opponent_idx_comm = self.embed_opponent_idx_comm(opponent_idx)
             #self.state_comm = torch.cat((digested_m_factor, digested_opponent_idx_comm, opponent_reputation), 0)
-            self.state_comm = torch.cat((digested_m_factor, opponent_reputation), 0)
+            self.state_comm = torch.cat((digested_m_factor, opponent_reputation, my_reputation), 0)
             #print("self.state_comm=", self.state_comm)
 
     # ===============
@@ -202,7 +204,7 @@ class Agent():
         self.message_in = message_in
 
     def select_action(self, m_val=None, _eval=False):
-
+        
         state_to_act = self.state_act
         #print("agent=", self.idx)
         if (self.is_listening and self.n_communicating_agents != 0):
