@@ -109,7 +109,24 @@ def eval_old(config, parallel_env, agents, m, device, _print=False):
 
     return actions, mex_distrib, acts_distrib, rewards_eval 
 
-def find_max_min(config, coins):
+def best_strategy_reward(config):
+    my_strategy = [0, 1, 1, 1]
+    opponent_strategy = [0, 1, 1, 1]
+    all_returns_one_agent, returns, max_values = find_max_min(config, coins=4, strategy=True)
+    #print("all_returns_one_agent=",all_returns_one_agent)
+    ret = []
+    for idx in range(len(config.mult_fact)):
+        print("\nmult=",config.mult_fact[idx])
+        print("ret=",all_returns_one_agent[idx])
+        #print("returns=", returns[idx])
+        norm_returns = all_returns_one_agent[idx]/max_values[config.mult_fact[idx]]
+        print("norm returns=",norm_returns)
+        print("ret given strategy=",norm_returns[my_strategy[idx], opponent_strategy[idx]])
+        ret.append(norm_returns[my_strategy[idx], opponent_strategy[idx]])
+    avg_return = np.mean(ret)
+    print("avg_return=",avg_return)
+
+def find_max_min(config, coins, strategy=False):
     n_agents = config.n_agents
     multipliers = config.mult_fact
     max_values = {}
@@ -118,29 +135,50 @@ def find_max_min(config, coins):
 
     possible_actions = ["C", "D"]
     possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
+    all_returns = []
+    all_returns_one_agent = np.zeros((len(multipliers), 2, 2))
 
+    i = 0
     for multiplier in multipliers:
         #print("\nMultiplier=", multiplier)
         possible_actions = ["C", "D"]
         possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
         returns = np.zeros((len(possible_scenarios), n_agents)) # TUTTI I POSSIBILI RITORNI CHE UN AGENTE PUO OTTENERE, PER OGNI AGENTE
-
+        #print("possible_scen=", possible_scenarios)
+        
         #scenarios_returns = {}
         for idx_scenario, scenario in enumerate(possible_scenarios):
+            #print("scenario=", scenario, "scenario[0]=",scenario[0])
+            y = 0
+            if scenario[1] == 'C':
+                y = 1
             common_pot = np.sum([coins_per_agent[i] for i in range(n_agents) if scenario[i] == "C"])
 
             for ag_idx in range(n_agents):
                 if (scenario[ag_idx] == 'C'):
                     returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier
+                    if (ag_idx == 0):
+                        #print("x=", 1, "y=", y)
+                        all_returns_one_agent[i, 1, y] = returns[idx_scenario, ag_idx]
                 else: 
                     returns[idx_scenario, ag_idx] = common_pot/n_agents*multiplier + coins_per_agent[ag_idx]
+                    if (ag_idx == 0):
+                        #print("x=", 0, "y=", y)
+                        all_returns_one_agent[i, 0, y] = returns[idx_scenario, ag_idx]
             #print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
 
         max_values[multiplier] = np.amax(returns)
         min_values[multiplier] = np.amin(returns)
         #print(" max_values[", multiplier, "]=",  max_values[multiplier])
         #print(" min_values[", multiplier, "]=",  min_values[multiplier])
+        normalized = returns/max_values[multiplier]
+        
         #print("normalized=", returns/max_values[multiplier]) #(returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
+        all_returns.append(returns)
+        i += 1
+
+    if (strategy == True):
+        return all_returns_one_agent, all_returns, max_values
     return max_values
 
 def apply_norm(active_agents, active_agents_idxs, actions, f):
