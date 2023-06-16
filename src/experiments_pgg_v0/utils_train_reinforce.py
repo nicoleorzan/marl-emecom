@@ -11,7 +11,7 @@ class SocialNorm():
         self.reset_saved_actions()
 
     def reset_saved_actions(self):
-        self.saved_actions = {}
+        self.saved_actions = {key: [] for key in [i for i in range(self.n_agents)]} #{}
 
     def save_actions(self, act, active_agents_idxs):
         for ag_idx in active_agents_idxs:
@@ -21,17 +21,21 @@ class SocialNorm():
                 self.saved_actions[ag_idx].append(act["agent_"+str(ag_idx)])
 
     def update_reputation(self, active_agents_idxs):
+        #print("saved act=", self.saved_actions)
         for ag_idx in active_agents_idxs:
+            #print("ag_idx=", ag_idx)
             #print("saved act=", self.saved_actions[ag_idx])
             #print("agent_"+str(ag_idx))
             #print(self.agents["agent_"+str(ag_idx)])
             #print("rep=",self.agents["agent_"+str(ag_idx)].reputation)
-            self.agents["agent_"+str(ag_idx)].reputation = np.mean(self.saved_actions[ag_idx])
+            if self.saved_actions[ag_idx] != []:
+                self.agents["agent_"+str(ag_idx)].reputation = np.mean(self.saved_actions[ag_idx])
             #print("rep dopo",self.agents["agent_"+str(ag_idx)].reputation)
         self.reset_saved_actions()
         
 
 def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _print=False):
+    #print("\nEVAL<<<=====================")
     observations = parallel_env.reset(m)
 
     if (_print == True):
@@ -47,16 +51,24 @@ def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _pr
         actions = {}
         mex_distrib = {}
         act_distrib = {}
-        active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
-        active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
+
+        if (config.get_index == True ):
+            active_agents["agent_"+str(active_agents_idxs[0])].digest_input_with_idx((observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
+            active_agents["agent_"+str(active_agents_idxs[1])].digest_input_with_idx((observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
+        else:
+            active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
+            active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
 
         # speaking
+        #print("\nspeaking")
         for agent in parallel_env.active_agents:
             if (active_agents[agent].is_communicating):
                 messages[agent] = active_agents[agent].select_message(_eval=True)
+                #print("messages["+str(agent)+"]=", messages[agent])
                 mex_distrib[agent] = active_agents[agent].get_message_distribution()
 
         # listening
+        #print("\nlistening")
         for agent in parallel_env.active_agents:
             other = list(set(active_agents_idxs) - set([active_agents[agent].idx]))[0]
             if (active_agents[agent].is_listening and len(messages) != 0):
@@ -66,6 +78,7 @@ def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _pr
                 active_agents[agent].get_message(message)
 
         # acting
+        #print("\nacting")
         for agent in parallel_env.active_agents:
             actions[agent] = active_agents[agent].select_action(_eval=True)
             act_distrib[agent] = active_agents[agent].get_action_distribution()

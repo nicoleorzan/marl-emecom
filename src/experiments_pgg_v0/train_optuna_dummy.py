@@ -5,8 +5,6 @@ from src.algos.PPO import PPO
 import numpy as np
 import optuna
 import random
-from src.algos.dummyagent import DummyAgent
-from src.algos.normativeagent import NormativeAgent
 import functools, collections, operator
 from optuna.trial import TrialState
 import torch
@@ -15,11 +13,13 @@ from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
 from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, best_strategy_reward,  apply_norm2, SocialNorm
+from src.algos.dummyagent import DummyAgent
+from src.algos.normativeagent import NormativeAgent
 
 torch.autograd.set_detect_anomaly(True)
 
 EPOCHS = 300 # learning epochs for 2 sampled agents playing with each other
-OBS_SIZE = 2 # input: multiplication factor (with noise), opponent index, opponent reputation
+OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation, my reputation
 ACTION_SIZE = 2
 #WANDB_MODE = "offline"
 RANDOM_BASELINE = False
@@ -59,7 +59,8 @@ def setup_training_hyperparams(trial, args):
         n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         #hidden_size_act = trial.suggest_categorical("hidden_size_act", [8]),
-        embedding_dim = 1
+        embedding_dim = 1,
+        get_index = False
     )
 
     if (args.algorithm == "reinforce"):
@@ -101,7 +102,7 @@ def setup_training_hyperparams(trial, args):
 
     return all_params    
 
-def define_agents(config, probs_coop_dummy=None):
+def define_agents(config):
     agents = {}
     for idx in range(config.n_agents):
         if (idx == 0):
@@ -113,7 +114,6 @@ def define_agents(config, probs_coop_dummy=None):
                 agents['agent_'+str(idx)] = DQN(config, idx)
         else: 
             agents['agent_'+str(idx)] = NormativeAgent(idx=idx)
-            #agents['agent_'+str(idx)] = DummyAgent(prob_coop = probs_coop_dummy[idx-1], idx=idx)
     return agents
 
 def objective(trial, args, repo_name):
@@ -123,17 +123,12 @@ def objective(trial, args, repo_name):
     config = wandb.config
     print("config=", config)
 
-    print("HERE")
-    best_strategy_reward(config)
-
     parallel_env = pgg_parallel_v0.parallel_env(config)
     max_values = find_max_min(config, 4)
-    print("max values=", max_values)
 
     n_communicating_agents = config.communicating_agents.count(1)
 
-    probs_coop_dummy = np.linspace(0,1,config.n_agents-1)
-    agents = define_agents(config, probs_coop_dummy)
+    agents = define_agents(config)
     print("\nAGENTS=",agents)
     
     #### TRAINING LOOP
@@ -141,18 +136,22 @@ def objective(trial, args, repo_name):
 
     social_norm = SocialNorm(agents)
 
+    best_strategy_reward(config)
+
     for epoch in range(config.n_epochs):
         #print("\n=========================")
         #print("\n==========>Epoch=", epoch)
 
         #pick a pair of agents
         active_agents_idxs = [0] + random.sample(range(1, config.n_agents), 1)
+        #print("active_agents_idxs=",active_agents_idxs)
         active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
+        print("\nACTIVE AGENTS=", active_agents)
 
         parallel_env.set_active_agents(active_agents_idxs)
 
         [agent.reset_batch() for _, agent in active_agents.items()]
-        pgg_actions = []
+
         for batch_idx in range(config.batch_size):
 
             observations = parallel_env.reset()
@@ -197,7 +196,8 @@ def objective(trial, args, repo_name):
                 if (mf > 1. and mf < 2.):
                     social_norm.save_actions(actions, active_agents_idxs)
                 
-                rewards_norm = {key: value/max_values[parallel_env.get_multiplier()] for key, value in rewards.items()}
+                #rewards_norm = {key: value/max_values[parallel_env.get_multiplier()] for key, value in rewards.items()}
+                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
 
                 for ag_idx, agent in active_agents.items():
                     
@@ -207,17 +207,13 @@ def objective(trial, args, repo_name):
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     agent.return_episode =+ rewards[ag_idx]
 
-                #print("applying norm")
-                #print("mf=", mf)
-
                 # break; if the episode is over
                 if done:
                     break
             
-        #apply_norm(active_agents, active_agents_idxs, actions, mf)
-        #apply_norm2(active_agents, active_agents_idxs, pgg_actions, mf)
-        #print("apply norm")
-        social_norm.update_reputation(active_agents_idxs)
+            #print("update reputation")
+            #print("active_agents_idxs=",active_agents_idxs)
+            social_norm.update_reputation(active_agents_idxs)
 
         for ag_idx, agent in active_agents.items():
             if (agent.is_communicating):
@@ -293,9 +289,8 @@ def objective(trial, args, repo_name):
                 df_agent = {}
                 if (agent.is_dummy == False):
                     for dummy_idx in range(1, config.n_agents):
-                        df_actions = {ag_idx+"actions_eval_m_"+str(mi)+"_dummy_"+str(probs_coop_dummy[dummy_idx-1]): actions_eval_m[mi][dummy_idx] for mi in config.mult_fact}
-                        #df_rew = {ag_idx+"rewards_eval_m_"+str(mi)+"_dummy_"+str(probs_coop_dummy[dummy_idx-1]): rewards_eval_m[mi][dummy_idx] for mi in config.mult_fact}
-                        df_rew_norm = {ag_idx+"rewards_eval_norm_m"+str(mi)+"_dummy_"+str(probs_coop_dummy[dummy_idx-1]): rewards_eval_norm_m[mi][dummy_idx] for mi in config.mult_fact}
+                        df_actions = {ag_idx+"actions_eval_m_"+str(mi)+"_dummy_": actions_eval_m[mi][dummy_idx] for mi in config.mult_fact}
+                        df_rew_norm = {ag_idx+"rewards_eval_norm_m"+str(mi)+"_dummy_": rewards_eval_norm_m[mi][dummy_idx] for mi in config.mult_fact}
                         df_agent = {**df_agent, **{
                             ag_idx+"_return_train_norm": agent.return_episode_old_norm,
                             ag_idx+"_reputation": agent.reputation,

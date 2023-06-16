@@ -25,7 +25,7 @@ class Actor(nn.Module):
         # possible message (already considered)
         # opponent index (embedded) new -> NO!!
         # opponent reputation (scalar) new
-        self.input_size = input_size + 1
+        self.input_size = input_size
         print("actual input size=", self.input_size)
 
         if (self.n_hidden == 2):

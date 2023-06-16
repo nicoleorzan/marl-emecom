@@ -47,15 +47,22 @@ class Agent():
         self.input_act = self.obs_size
         if (self.gmm_):
             self.input_act = self.n_gmm_components  #gmm components for the m factor, 1 for the coins I get
+        if (self.get_index == True):
+            self.input_act += self.n_agents
         print("input size act=", self.input_act)
         if (self.is_listening and self.n_communicating_agents != 0):
-            self.input_act += self.mex_size #*self.n_communicating_agents
+            self.input_act += self.mex_size #*self.n_communicating_agents IN THIS CASE ONLY 2 AGENT INTERACT WITH EACH OTHER!
     
         # Communication Policy
         if (self.is_communicating):
             self.input_comm = self.obs_size
+            print("0 self.input_comm ",  self.input_comm)
+            if (self.get_index == True):
+                self.input_comm += self.n_agents
+                print("1 self.input_comm ",  self.input_comm)
             if (self.gmm_):
                 self.input_comm = self.n_gmm_components #gmm components for the m factor, 1 for the coins I get
+                print("2 self.input_comm ",  self.input_comm)
             print("input size comm=", self.input_comm)
 
         self.max_memory_capacity = 5000
@@ -101,6 +108,7 @@ class Agent():
         self.return_episode_norm = 0
 
     def digest_input(self, input):
+        #print("input=", input)
         obs_m_fact, opponent_reputation = input
         #obs_m_fact, opponent_idx, opponent_reputation = input
 
@@ -126,6 +134,34 @@ class Agent():
             #self.state_comm = torch.cat((digested_m_factor, digested_opponent_idx_comm, opponent_reputation), 0)
             self.state_comm = torch.cat((digested_m_factor, opponent_reputation, my_reputation), 0)
             #print("self.state_comm=", self.state_comm)
+
+    def digest_input_with_idx(self, input):
+        #print("input=", input)
+        obs_m_fact, opponent_idx, opponent_reputation = input
+
+        ##### set multiplier factor observation (if uncertainty is modeled, gmm is used)
+        digested_m_factor = self.set_mult_fact_obs(obs_m_fact)
+        #print("digested_m_factor=",digested_m_factor)
+        ##### embed adversary index
+        #digested_opponent_idx = self.embed_opponent_idx(opponent_idx)
+        #print("digested_opponent_idx=",digested_opponent_idx)
+        ##### make reputation a tensor
+        opponent_reputation = torch.Tensor([opponent_reputation])
+        my_reputation = torch.Tensor([self.reputation])
+        ##### concatenate all stuff in a single vector
+        #self.state = torch.cat((digested_m_factor, digested_opponent_idx, opponent_reputation), 0)
+        #print("digested state=", self.state)
+
+        digested_opponent_idx_act = self.embed_opponent_idx_act(opponent_idx)
+        self.state_act = torch.cat((digested_m_factor, digested_opponent_idx_act, my_reputation), 0)
+
+        if (self.is_communicating):
+            digested_opponent_idx_comm = self.embed_opponent_idx_comm(opponent_idx)
+            self.state_comm = torch.cat((digested_m_factor, digested_opponent_idx_comm, opponent_reputation), 0)
+            #self.state_comm = torch.cat((digested_m_factor, opponent_reputation, my_reputation), 0)
+            #print("self.state_comm=", self.state_comm)
+
+        #print("self.state_act=", self.state_act)
 
     # ===============
     # Abstract functions implemented in the specific algorithmic models
