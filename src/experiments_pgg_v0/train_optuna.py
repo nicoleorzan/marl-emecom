@@ -21,7 +21,7 @@ torch.autograd.set_detect_anomaly(True)
 EPOCHS = 300 # learning epochs for 2 sampled agents playing with each other
 OBS_SIZE = 2 # input: multiplication factor (with noise), opponent reputation, opponent index
 ACTION_SIZE = 2
-#WANDB_MODE = "offline"
+WANDB_MODE = "online"
 RANDOM_BASELINE = False
 
 # set device to cpu or cuda
