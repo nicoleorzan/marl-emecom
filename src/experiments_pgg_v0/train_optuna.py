@@ -18,7 +18,7 @@ from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, app
 
 torch.autograd.set_detect_anomaly(True)
 
-EPOCHS = 300 # learning epochs for 2 sampled agents playing with each other
+EPOCHS = 500 # learning epochs for 2 sampled agents playing with each other
 OBS_SIZE = 2 # input: multiplication factor (with noise), opponent reputation, opponent index
 ACTION_SIZE = 2
 WANDB_MODE = "online"
@@ -63,7 +63,7 @@ def setup_training_hyperparams(trial, args):
 
     if (args.algorithm == "reinforce"):
         algo_params = dict()
-    elif (args.algorithm == "ppo"):
+    elif (args.algorithm == "PPO"):
         algo_params = dict(
             K_epochs = 40, #trial.suggest_int("K_epochs", 30, 80),
             eps_clip = 0.2, #trial.suggest_float("eps_clip", 0.1, 0.4),

@@ -37,6 +37,16 @@ class PPO(Agent):
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
         self.MseLoss = torch.nn.MSELoss()
 
+    def embed_opponent_idx_act(self, idx):
+        #print("embed_opponent_idx, inside reinforce")
+        out = self.policy_act.embed_opponent_index(idx).t()[0]
+        return out
+    
+    def embed_opponent_idx_comm(self, idx):
+        #print("embed_opponent_idx, inside reinforce")
+        out = self.policy_comm.embed_opponent_index(idx).t()[0]
+        return out
+
     def eval_mex(self, state_c):
     
         messages_logprobs = []

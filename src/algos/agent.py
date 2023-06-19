@@ -138,6 +138,7 @@ class Agent():
     def digest_input_with_idx(self, input):
         #print("input=", input)
         obs_m_fact, opponent_idx, opponent_reputation = input
+        #print("obs_m_fact, opponent_idx, opponent_reputation =", obs_m_fact, opponent_idx, opponent_reputation )
 
         ##### set multiplier factor observation (if uncertainty is modeled, gmm is used)
         digested_m_factor = self.set_mult_fact_obs(obs_m_fact)
@@ -153,6 +154,7 @@ class Agent():
         #print("digested state=", self.state)
 
         digested_opponent_idx_act = self.embed_opponent_idx_act(opponent_idx)
+        #print("\ndigested_opponent_idx_act=",digested_opponent_idx_act)
         self.state_act = torch.cat((digested_m_factor, digested_opponent_idx_act, my_reputation), 0)
 
         if (self.is_communicating):

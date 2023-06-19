@@ -17,6 +17,8 @@ class ActorCritic(nn.Module):
         self.n_hidden = n_hidden
         self.hidden_size = hidden_size
 
+        self.embedding = nn.Embedding(num_embeddings=2, embedding_dim=self.embedding_dim)
+
         if (self.n_hidden == 2):
             self.actor = nn.Sequential(
                 nn.Linear(self.input_size, self.hidden_size),
@@ -46,11 +48,18 @@ class ActorCritic(nn.Module):
                 nn.Linear(self.hidden_size, 1),
             )
 
+    def embed_opponent_index(self, idx):
+        #print("embed_opponent_idx, inside actor")
+        # turn index into one-hot encoding and then embed it
+        idx_one_hot = torch.nn.functional.one_hot(torch.Tensor([idx]).long(), num_classes=self.n_agents)[0]
+        #print("idx_one_hot=", idx_one_hot)
+        self.emb = self.embedding(idx_one_hot)
+        return self.emb
 
     def reset_state(self):
         pass
 
-    def act(self, state, greedy=False):
+    def act(self, state, greedy=False, get_distrib=False):
 
         out = self.actor(state)
         dist = Categorical(out)
@@ -64,6 +73,9 @@ class ActorCritic(nn.Module):
                 act = dist.sample()
 
         logprob = dist.log_prob(act) # negativi
+
+        if (get_distrib == True):
+            return act.detach(), logprob, dist.entropy().detach(), out
 
         return act.detach(), logprob, dist.entropy().detach()
 
