@@ -66,6 +66,8 @@ class Agent():
             if (self.get_index == True):
                 self.input_comm += self.n_agents
                 print("1 self.input_comm ",  self.input_comm)
+            if (self.get_opponent_is_uncertain == True):
+                self.input_comm += 1 # we just need a 0/1 variable
             if (self.gmm_):
                 self.input_comm = self.n_gmm_components #gmm components for the m factor, 1 for the coins I get
                 print("2 self.input_comm ",  self.input_comm)
