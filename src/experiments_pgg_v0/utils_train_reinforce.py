@@ -32,7 +32,60 @@ class SocialNorm():
                 self.agents["agent_"+str(ag_idx)].reputation = np.mean(self.saved_actions[ag_idx])
             #print("rep dopo",self.agents["agent_"+str(ag_idx)].reputation)
         self.reset_saved_actions()
-        
+
+def eval_no_reputation(config, parallel_env, active_agents, active_agents_idxs, m, device, _print=False):
+    #print("\nEVAL<<<=====================")
+    observations = parallel_env.reset(m)
+
+    if (_print == True):
+        print("\n Eval ===> Mult factor=", m)
+        print("obs=", observations)
+
+    n_communicating_agents = config.communicating_agents.count(1)
+    message = None
+    done = False
+    while not done:
+
+        messages = {}
+        actions = {}
+        mex_distrib = {}
+        act_distrib = {}
+
+        active_agents["agent_"+str(active_agents_idxs[0])].digest_input_no_reputation((observations["agent_"+str(active_agents_idxs[0])], active_agents["agent_"+str(active_agents_idxs[1])].is_uncertain))
+        active_agents["agent_"+str(active_agents_idxs[1])].digest_input_no_reputation((observations["agent_"+str(active_agents_idxs[1])], active_agents["agent_"+str(active_agents_idxs[0])].is_uncertain))
+
+        # speaking
+        #print("\nspeaking")
+        for agent in parallel_env.active_agents:
+            if (active_agents[agent].is_communicating):
+                messages[agent] = active_agents[agent].select_message(_eval=True)
+                #print("messages["+str(agent)+"]=", messages[agent])
+                mex_distrib[agent] = active_agents[agent].get_message_distribution()
+
+        # listening
+        #print("\nlistening")
+        for agent in parallel_env.active_agents:
+            other = list(set(active_agents_idxs) - set([active_agents[agent].idx]))[0]
+            if (active_agents[agent].is_listening and len(messages) != 0):
+                active_agents[agent].get_message(messages["agent_"+str(other)])
+            if (active_agents[agent].is_listening and n_communicating_agents != 0 and len(messages) == 0):
+                message = torch.zeros(config.mex_size)
+                active_agents[agent].get_message(message)
+
+        # acting
+        #print("\nacting")
+        for agent in parallel_env.active_agents:
+            actions[agent] = active_agents[agent].select_action(_eval=True)
+            act_distrib[agent] = active_agents[agent].get_action_distribution()
+        _, rewards_eval, _, _ = parallel_env.step(actions)
+
+        if (_print == True):
+            print("message=", message)
+            print("actions=", actions)
+            print("distrib=", act_distrib)
+        observations, _, done, _ = parallel_env.step(actions)
+
+    return actions, mex_distrib, act_distrib, rewards_eval      
 
 def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _print=False):
     #print("\nEVAL<<<=====================")

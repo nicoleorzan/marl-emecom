@@ -12,7 +12,7 @@ import torch
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
-from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm, SocialNorm
+from src.experiments_pgg_v0.utils_train_reinforce import eval_no_reputation, find_max_min
 
 
 
@@ -20,8 +20,8 @@ torch.autograd.set_detect_anomaly(True)
 
 EPOCHS = 400 # total episodes
 # batch size are th enumber of episodes in which 2 agents interact with each other alone
-OBS_SIZE = 2 # input: multiplication factor (with noise), opponent reputation.
-# the opponent index is embedded in the agent class
+OBS_SIZE = 1 # input: multiplication factor (with noise)
+# the "opponent is_unceratain" value is given in the agent class
 ACTION_SIZE = 2
 #WANDB_MODE = "online"
 RANDOM_BASELINE = False
@@ -131,8 +131,6 @@ def objective(trial, args, repo_name):
     #### TRAINING LOOP
     avg_norm_returns_train_list = []; avg_rew_time = []
 
-    social_norm = SocialNorm(agents)
-
     for epoch in range(config.n_epochs):
         #print("\n=========================")
         #print("\n==========>Epoch=", epoch)
@@ -163,8 +161,8 @@ def objective(trial, args, repo_name):
                 #print("obs agent",active_agents_idxs[0],"=",(observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
                 #print("obs agent",active_agents_idxs[1],"=",(observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
                 
-                active_agents["agent_"+str(active_agents_idxs[0])].digest_input_with_idx((observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
-                active_agents["agent_"+str(active_agents_idxs[1])].digest_input_with_idx((observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
+                active_agents["agent_"+str(active_agents_idxs[0])].digest_input_no_reputation((observations["agent_"+str(active_agents_idxs[0])], active_agents["agent_"+str(active_agents_idxs[1])].is_uncertain))
+                active_agents["agent_"+str(active_agents_idxs[1])].digest_input_no_reputation((observations["agent_"+str(active_agents_idxs[1])], active_agents["agent_"+str(active_agents_idxs[0])].is_uncertain))
 
                 # speaking
                 #print("\nspeaking")
@@ -190,10 +188,6 @@ def objective(trial, args, repo_name):
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
 
-                if (mf > 1. and mf < 2.):
-                    social_norm.save_actions(actions, active_agents_idxs)
-
-
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
                 
                 for ag_idx, agent in active_agents.items():
@@ -210,7 +204,6 @@ def objective(trial, args, repo_name):
 
             #print("update reputation")
             #print("active_agents_idxs=",active_agents_idxs)
-            social_norm.update_reputation(active_agents_idxs)
 
         for ag_idx, agent in active_agents.items():
             if (agent.is_communicating):
@@ -240,7 +233,7 @@ def objective(trial, args, repo_name):
         optimization_measure = []
 
         for m in config.mult_fact:
-            act_eval, mex_distrib, _, rewards_eval = eval(config, parallel_env, active_agents, active_agents_idxs, m, device, False)
+            act_eval, mex_distrib, _, rewards_eval = eval_no_reputation(config, parallel_env, active_agents, active_agents_idxs, m, device, False)
             mex_distrib_given_m[m] = mex_distrib # distrib dei messaggi per ogni agente, calcolata con dato input
             rewards_eval_m[m] = rewards_eval
             rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
@@ -315,7 +308,7 @@ def training_function(args):
 
     repo_name = str(args.n_agents) + "agents_" + "comm" + str(args.communicating_agents) + \
         "_list" + str(args.listening_agents) + name_gmm + "_unc" + str(args.uncertainties) + \
-        "_mfact" + str(args.mult_fact) + args.algorithm
+        "_mfact" + str(args.mult_fact) + args.algorithm + "_no_reputation"
     print("repo_name=", repo_name)
 
     func = lambda trial: objective(trial, args, repo_name)
