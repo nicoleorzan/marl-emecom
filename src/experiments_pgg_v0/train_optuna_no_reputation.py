@@ -313,7 +313,7 @@ def training_function(args):
     if (args.uncertainties.count(0.) != args.n_agents):
         unc_string = "_unc_"
 
-    repo_name = str(args.n_agents) + "agents_" + comm_string + \
+    repo_name = str(args.n_agents) + "agents" + comm_string + \
         unc_string + args.algorithm + "_no_reputation"
     print("repo_name=", repo_name)
 
