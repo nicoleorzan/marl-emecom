@@ -5,7 +5,6 @@ from src.algos.PPO import PPO
 import numpy as np
 import optuna
 import random
-import functools, collections, operator
 from optuna.trial import TrialState
 import torch
 #from optuna.integration.wandb import WeightsAndBiasesCallback
@@ -19,8 +18,8 @@ from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, app
 torch.autograd.set_detect_anomaly(True)
 
 EPOCHS = 400 # total episodes
-# batch size are th enumber of episodes in which 2 agents interact with each other alone
-OBS_SIZE = 2 # input: multiplication factor (with noise), opponent reputation.
+# batch size are the number of episodes in which 2 agents interact with each other alone
+OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation.
 # the opponent index is embedded in the agent class
 ACTION_SIZE = 2
 #WANDB_MODE = "online"
@@ -61,7 +60,7 @@ def setup_training_hyperparams(trial, args):
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         embedding_dim = 1,
         get_index = False,
-        get_opponent_is_uncertain = True
+        get_opponent_is_uncertain = False
     )
 
     if (args.algorithm == "reinforce"):
@@ -163,8 +162,11 @@ def objective(trial, args, repo_name):
                 #print("obs agent",active_agents_idxs[0],"=",(observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
                 #print("obs agent",active_agents_idxs[1],"=",(observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
                 
-                active_agents["agent_"+str(active_agents_idxs[0])].digest_input_with_idx((observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
-                active_agents["agent_"+str(active_agents_idxs[1])].digest_input_with_idx((observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
+                active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
+                active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
+
+                #active_agents["agent_"+str(active_agents_idxs[0])].digest_input_with_idx((observations["agent_"+str(active_agents_idxs[0])], active_agents_idxs[1], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
+                #active_agents["agent_"+str(active_agents_idxs[1])].digest_input_with_idx((observations["agent_"+str(active_agents_idxs[1])], active_agents_idxs[0], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
 
                 # speaking
                 #print("\nspeaking")

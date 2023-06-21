@@ -5,20 +5,20 @@ from src.algos.PPO import PPO
 import numpy as np
 import optuna
 import random
-import functools, collections, operator
 from optuna.trial import TrialState
 import torch
 #from optuna.integration.wandb import WeightsAndBiasesCallback
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
-from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, best_strategy_reward,  apply_norm2, SocialNorm
+from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, best_strategy_reward, apply_norm2, SocialNorm
 from src.algos.dummyagent import DummyAgent
 from src.algos.normativeagent import NormativeAgent
 
 torch.autograd.set_detect_anomaly(True)
 
-EPOCHS = 300 # learning epochs for 2 sampled agents playing with each other
+EPOCHS = 300 # total episodes
+# batch size are the number of episodes in which 2 agents interact with each other alone
 OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation, my reputation
 ACTION_SIZE = 2
 #WANDB_MODE = "offline"
@@ -44,7 +44,7 @@ def setup_training_hyperparams(trial, args):
         n_epochs = EPOCHS,
         obs_size = OBS_SIZE,
         action_size = ACTION_SIZE,
-        n_gmm_components = trial.suggest_categorical("n_gmm_components", [3, len(args.mult_fact)]),
+        n_gmm_components = args.mult_fact, #trial.suggest_categorical("n_gmm_components", [3, len(args.mult_fact)]),
         decayRate = trial.suggest_categorical("decay_rate", [0.99, 0.999]),
         mult_fact = args.mult_fact,
         uncertainties = args.uncertainties,
@@ -60,15 +60,16 @@ def setup_training_hyperparams(trial, args):
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         #hidden_size_act = trial.suggest_categorical("hidden_size_act", [8]),
         embedding_dim = 1,
-        get_index = False
+        get_index = False,
+        get_opponent_is_uncertain = False
     )
 
     if (args.algorithm == "reinforce"):
         algo_params = dict()
-    elif (args.algorithm == "ppo"):
+    elif (args.algorithm == "PPO"):
         algo_params = dict(
-            K_epochs = trial.suggest_int("K_epochs", 30, 80),
-            eps_clip = trial.suggest_float("eps_clip", 0.1, 0.4),
+            K_epochs = 40, #trial.suggest_int("K_epochs", 30, 80),
+            eps_clip = 0.2, #trial.suggest_float("eps_clip", 0.1, 0.4),
             gamma = trial.suggest_float("gamma", 0.99, 0.999, log=True),
             c1 = trial.suggest_float("c1", 0.01, 0.5, log=True),
             c2 = trial.suggest_float("c2", 0.0001, 0.1, log=True),

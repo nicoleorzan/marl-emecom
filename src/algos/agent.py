@@ -117,6 +117,7 @@ class Agent():
         self.return_episode_norm = 0
 
     def digest_input(self, input):
+        print("digest_input")
         #print("input=", input)
         obs_m_fact, opponent_reputation = input
         #obs_m_fact, opponent_idx, opponent_reputation = input
@@ -136,7 +137,7 @@ class Agent():
 
         #digested_opponent_idx_act = self.embed_opponent_idx_act(opponent_idx)
         self.state_act = torch.cat((digested_m_factor, opponent_reputation, my_reputation), 0)
-        #print("self.state_act=", self.state_act)
+        print("self.state_act=", self.state_act)
 
         if (self.is_communicating):
             #digested_opponent_idx_comm = self.embed_opponent_idx_comm(opponent_idx)
@@ -145,6 +146,7 @@ class Agent():
             #print("self.state_comm=", self.state_comm)
 
     def digest_input_with_idx(self, input):
+        print("digest_input_with_idx")
         #print("input=", input)
         obs_m_fact, opponent_idx, opponent_reputation = input
         #print("obs_m_fact, opponent_idx, opponent_reputation =", obs_m_fact, opponent_idx, opponent_reputation )
@@ -165,6 +167,7 @@ class Agent():
         digested_opponent_idx_act = self.embed_opponent_idx_act(opponent_idx)
         #print("\ndigested_opponent_idx_act=",digested_opponent_idx_act)
         self.state_act = torch.cat((digested_m_factor, digested_opponent_idx_act, my_reputation), 0)
+        print("self.state_act=", self.state_act)
 
         if (self.is_communicating):
             digested_opponent_idx_comm = self.embed_opponent_idx_comm(opponent_idx)
@@ -175,7 +178,7 @@ class Agent():
         #print("self.state_act=", self.state_act)
 
     def digest_input_no_reputation(self, input):
-        #print("input=", input)
+        print("digest_input_no_reputation=")
         obs_m_fact, opponent_is_uncertain = input
         #obs_m_fact, opponent_idx, opponent_reputation = input
 
