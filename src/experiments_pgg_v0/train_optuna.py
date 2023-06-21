@@ -315,9 +315,15 @@ def training_function(args):
     if (1 in args.gmm_):
         name_gmm = "_yesGmm"
 
-    repo_name = str(args.n_agents) + "agents_" + "comm" + str(args.communicating_agents) + \
-        "_list" + str(args.listening_agents) + name_gmm + "_unc" + str(args.uncertainties) + \
-        "_mfact" + str(args.mult_fact) + args.algorithm
+    comm_string = "no_comm_"
+    if (args.communicating_agents.count(1.) != 0):
+        comm_string = "comm_"
+    unc_string = "no_unc_"
+    if (args.uncertainties.count(0.) != args.n_agents):
+        unc_string = "unc_"
+
+    repo_name = str(args.n_agents) + "agents_" + comm_string + \
+        unc_string + args.algorithm + "_reputation"
     print("repo_name=", repo_name)
 
     func = lambda trial: objective(trial, args, repo_name)

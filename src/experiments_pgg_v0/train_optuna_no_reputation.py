@@ -306,14 +306,14 @@ def training_function(args):
     if (1 in args.gmm_):
         name_gmm = "_yesGmm"
 
-    comm_string = "_"
+    comm_string = "no_comm_"
     if (args.communicating_agents.count(1.) != 0):
-        comm_string = "_comm_"
-    unc_string = "_"
+        comm_string = "comm_"
+    unc_string = "no_unc_"
     if (args.uncertainties.count(0.) != args.n_agents):
-        unc_string = "_unc_"
+        unc_string = "unc_"
 
-    repo_name = str(args.n_agents) + "agents" + comm_string + \
+    repo_name = str(args.n_agents) + "agents_" + comm_string + \
         unc_string + args.algorithm + "_no_reputation"
     print("repo_name=", repo_name)
 
