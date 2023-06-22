@@ -126,8 +126,16 @@ def objective(trial, args, repo_name):
     max_values = find_max_min(config, 4)
 
     n_communicating_agents = config.communicating_agents.count(1)
+    n_uncertain = config.n_agents - config.uncertainties.count(0.)
+    print("n_uncertain=", n_uncertain)
 
-    is_dummy = np.random.binomial(1, p=args.proportion_dummy_agents, size=config.n_agents)
+    #is_dummy = np.random.binomial(1, p=config.proportion_dummy_agents, size=config.n_agents)
+    n_dummy = int(args.proportion_dummy_agents*config.n_agents)
+    print("n_dummy=", n_dummy)
+    is_dummy = list(reversed([1 if i<n_dummy else 0 for i in range(config.n_agents) ]))
+    print("config.uncertainties=", config.uncertainties)
+    print("is_dummy=", is_dummy)
+
     agents = define_agents(config, is_dummy)
     print("\nAGENTS=",agents)
     
