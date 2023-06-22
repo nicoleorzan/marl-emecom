@@ -54,7 +54,7 @@ def setup_training_hyperparams(trial, args):
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        batch_size = 128, #trial.suggest_categorical("batch_size", [128]),
+        batch_size = 128,
         lr_actor = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
         lr_critic = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
         n_hidden_act = 2,
@@ -89,7 +89,7 @@ def setup_training_hyperparams(trial, args):
             hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
             lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-4, 1e-1, log=True),
             lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-4, 1e-1, log=True),
-            mex_size = 5, #trial.suggest_int("mex_size", 5),
+            mex_size = 5,
             sign_lambda = trial.suggest_float("sign_lambda", -5.0, 5.0),
             list_lambda = trial.suggest_float("list_lambda", -5.0, 5.0)
         )
@@ -151,7 +151,7 @@ def objective(trial, args, repo_name):
         #pick a pair of agents
         active_agents_idxs = random.sample(range(config.n_agents), 2)
         #print("active_agents_idxs=",active_agents_idxs)
-        active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)} #{agents[i] for i in active_agents_idxs}
+        active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
         print("\nACTIVE AGENTS=", active_agents)
 
         parallel_env.set_active_agents(active_agents_idxs)

@@ -11,17 +11,19 @@ import torch
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
-from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, best_strategy_reward, apply_norm2, SocialNorm
+from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, best_strategy_reward, apply_norm2
 from src.algos.dummyagent import DummyAgent
 from src.algos.normativeagent import NormativeAgent
+from social_norm import SocialNorm
 
 torch.autograd.set_detect_anomaly(True)
 
-EPOCHS = 300 # total episodes
+EPOCHS = 400 # total episodes
 # batch size are the number of episodes in which 2 agents interact with each other alone
 OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation, my reputation
+# the opponent index is embedded in the agent class
 ACTION_SIZE = 2
-#WANDB_MODE = "offline"
+#WANDB_MODE = "online"
 RANDOM_BASELINE = False
 
 # set device to cpu or cuda
@@ -52,11 +54,10 @@ def setup_training_hyperparams(trial, args):
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        batch_size = trial.suggest_categorical("batch_size", [64, 128]),
-        #batch_size = trial.suggest_categorical("batch_size", [5]),
-        lr_actor = trial.suggest_float("lr_actor", 1e-3, 1e-1, log=True),
-        lr_critic = trial.suggest_float("lr_critic", 1e-3, 1e-1, log=True),
-        n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
+        batch_size = 128,
+        lr_actor = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
+        lr_critic = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
+        n_hidden_act = 2,
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         #hidden_size_act = trial.suggest_categorical("hidden_size_act", [8]),
         embedding_dim = 1,
@@ -85,15 +86,14 @@ def setup_training_hyperparams(trial, args):
     print("args.communicating_agents.count(1.)=",args.communicating_agents.count(1.))
     if (args.communicating_agents.count(1.) != 0):
         comm_params = dict(
-            n_hidden_comm = trial.suggest_int("n_hidden_comm", 1, 2),
+            n_hidden_comm = 2,
             hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
             #hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8]),
-            lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-3, 1e-1, log=True),
-            lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-3, 1e-1, log=True),
-            mex_size = trial.suggest_int("mex_size", 2, 10),
-            #mex_size = trial.suggest_categorical("mex_size", [2]),
-            sign_lambda = trial.suggest_float("sign_lambda", 0.0, 0.0),
-            list_lambda = trial.suggest_float("list_lambda", 0.0, 0.0)
+            lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-4, 1e-1, log=True),
+            lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-4, 1e-1, log=True),
+            mex_size = 5,
+            sign_lambda = trial.suggest_float("sign_lambda", -5.0, 5.0),
+            list_lambda = trial.suggest_float("list_lambda", -5.0, 5.0)
         )
     else: 
         comm_params = dict()
@@ -197,7 +197,6 @@ def objective(trial, args, repo_name):
                 if (mf > 1. and mf < 2.):
                     social_norm.save_actions(actions, active_agents_idxs)
                 
-                #rewards_norm = {key: value/max_values[parallel_env.get_multiplier()] for key, value in rewards.items()}
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
 
                 for ag_idx, agent in active_agents.items():
@@ -212,12 +211,12 @@ def objective(trial, args, repo_name):
                 if done:
                     break
             
-            #print("update reputation")
-            #print("active_agents_idxs=",active_agents_idxs)
-            social_norm.update_reputation(active_agents_idxs)
+        #print("update reputation")
+        #print("active_agents_idxs=",active_agents_idxs)
+        social_norm.rule09(active_agents_idxs)
 
         for ag_idx, agent in active_agents.items():
-            if (agent.is_communicating):
+            if (agent.is_dummy == False and agent.is_communicating):
                 #print("is communicating")
                 for m_val in config.mult_fact:
                     if (m_val in agent.buffer.actions_given_m):
@@ -226,7 +225,7 @@ def objective(trial, args, repo_name):
                         else:
                             agent.sc_m[m_val] = [U.calc_mutinfo(agent.buffer.actions_given_m[m_val], agent.buffer.messages_given_m[m_val], config.action_size, config.mex_size)]
                 agent.sc.append(U.calc_mutinfo(agent.buffer.actions, agent.buffer.messages, config.action_size, config.mex_size))
-            if (agent.is_listening):
+            if (agent.is_dummy == False and agent.is_listening):
                 #print("is listening")
                 other = list(set(active_agents_idxs) - set([agent.idx]))[0] #active_agents_idxs.pop("agent_"+str(ag_idx))
                 if (active_agents["agent_"+str(other)].is_communicating):
@@ -234,8 +233,7 @@ def objective(trial, args, repo_name):
            
         # update agents     
         for ag_idx, agent in active_agents.items():
-            if (agent.is_dummy == False):
-                agent.update()
+            agent.update()
 
         # =================== EVALUATION ===================
         # computing evaluation against the behavior of all the dummy agents
@@ -264,16 +262,6 @@ def objective(trial, args, repo_name):
             rewards_eval_m[m] = rewards_eval_dummy
             rewards_eval_norm_m[m] = rewards_eval_norm_dummy
             actions_eval_m[m] = actions_eval_dummy
-
-        #print("rewards_eval_norm_m=",rewards_eval_norm_m)
-
-        #avg_norm_return = np.mean(optimization_measure)
-        #print("avg_norm_return=", avg_norm_return)
-        #avg_norm_returns_train_list.append(avg_norm_return)
-        
-        #print("actions_eval_m=", actions_eval_m)
-        #print("rewards_eval_norm_m=", rewards_eval_norm_m)
-        #print("optimization_measure",optimization_measure)
 
         avg_rew_time.append(np.mean(optimization_measure))
         #print("avg_rew_time=", avg_rew_time)
@@ -321,7 +309,6 @@ def objective(trial, args, repo_name):
                 #"avg_return_train": avg_norm_return,
                 #"avg_return_train_time": np.mean(avg_norm_returns_train_list[-10:]),
                 "avg_rew_time": measure,
-                #"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in active_agents.items()]),
                 #"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents.items()]),
                 },
                 step=epoch, commit=True)
@@ -341,11 +328,18 @@ def training_function(args):
     if (1 in args.gmm_):
         name_gmm = "_yesGmm"
 
-    repo_name = "dummy_" + str(args.n_agents) + "agents_" + "comm" + str(args.communicating_agents) + \
-        "_list" + str(args.listening_agents) + name_gmm + "_unc" + str(args.uncertainties) + \
-        "_mfact" + str(args.mult_fact) + args.algorithm
+    comm_string = "no_comm_"
+    if (args.communicating_agents.count(1.) != 0):
+        comm_string = "comm_"
+    unc_string = "no_unc_"
+    if (args.uncertainties.count(0.) != args.n_agents):
+        unc_string = "unc_"
+
+    repo_name = str(args.n_agents) + "agents_" + comm_string + \
+        unc_string + args.algorithm + "_dummy_2_agents"
     print("repo_name=", repo_name)
 
+    
     func = lambda trial: objective(trial, args, repo_name)
 
     # sql not optimized for paralel sync
