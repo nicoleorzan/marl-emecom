@@ -118,7 +118,8 @@ def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _pr
             if (active_agents[agent].is_communicating):
                 messages[agent] = active_agents[agent].select_message(_eval=True)
                 #print("messages["+str(agent)+"]=", messages[agent])
-                mex_distrib[agent] = active_agents[agent].get_message_distribution()
+                if (active_agents[agent].is_dummy == False):
+                    mex_distrib[agent] = active_agents[agent].get_message_distribution()
 
         # listening
         #print("\nlistening")
@@ -134,7 +135,8 @@ def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _pr
         #print("\nacting")
         for agent in parallel_env.active_agents:
             actions[agent] = active_agents[agent].select_action(_eval=True)
-            act_distrib[agent] = active_agents[agent].get_action_distribution()
+            if (active_agents[agent].is_dummy == False):
+                act_distrib[agent] = active_agents[agent].get_action_distribution()
         _, rewards_eval, _, _ = parallel_env.step(actions)
 
         if (_print == True):
