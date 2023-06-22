@@ -11,17 +11,18 @@ import torch
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
-from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, best_strategy_reward, apply_norm2, SocialNorm
-from src.algos.dummyagent import DummyAgent
+from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm, SocialNorm
 from src.algos.normativeagent import NormativeAgent
+
 
 torch.autograd.set_detect_anomaly(True)
 
-EPOCHS = 300 # total episodes
+EPOCHS = 400 # total episodes
 # batch size are the number of episodes in which 2 agents interact with each other alone
-OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation, my reputation
+OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation.
+# the opponent index is embedded in the agent class
 ACTION_SIZE = 2
-#WANDB_MODE = "offline"
+#WANDB_MODE = "online"
 RANDOM_BASELINE = False
 
 # set device to cpu or cuda
@@ -52,13 +53,11 @@ def setup_training_hyperparams(trial, args):
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        batch_size = trial.suggest_categorical("batch_size", [64, 128]),
-        #batch_size = trial.suggest_categorical("batch_size", [5]),
-        lr_actor = trial.suggest_float("lr_actor", 1e-3, 1e-1, log=True),
-        lr_critic = trial.suggest_float("lr_critic", 1e-3, 1e-1, log=True),
-        n_hidden_act = trial.suggest_int("n_hidden_act", 1, 2),
+        batch_size = 128, #trial.suggest_categorical("batch_size", [128]),
+        lr_actor = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
+        lr_critic = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
+        n_hidden_act = 2,
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
-        #hidden_size_act = trial.suggest_categorical("hidden_size_act", [8]),
         embedding_dim = 1,
         get_index = False,
         get_opponent_is_uncertain = False
@@ -85,15 +84,13 @@ def setup_training_hyperparams(trial, args):
     print("args.communicating_agents.count(1.)=",args.communicating_agents.count(1.))
     if (args.communicating_agents.count(1.) != 0):
         comm_params = dict(
-            n_hidden_comm = trial.suggest_int("n_hidden_comm", 1, 2),
+            n_hidden_comm = 2,
             hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
-            #hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8]),
-            lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-3, 1e-1, log=True),
-            lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-3, 1e-1, log=True),
-            mex_size = trial.suggest_int("mex_size", 2, 10),
-            #mex_size = trial.suggest_categorical("mex_size", [2]),
-            sign_lambda = trial.suggest_float("sign_lambda", 0.0, 0.0),
-            list_lambda = trial.suggest_float("list_lambda", 0.0, 0.0)
+            lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-4, 1e-1, log=True),
+            lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-4, 1e-1, log=True),
+            mex_size = 5, #trial.suggest_int("mex_size", 5),
+            sign_lambda = trial.suggest_float("sign_lambda", -5.0, 5.0),
+            list_lambda = trial.suggest_float("list_lambda", -5.0, 5.0)
         )
     else: 
         comm_params = dict()
@@ -101,12 +98,12 @@ def setup_training_hyperparams(trial, args):
     all_params = {**game_params, **algo_params, **comm_params}
     print("all_params=", all_params)
 
-    return all_params    
+    return all_params
 
-def define_agents(config):
+def define_agents(config, is_dummy):
     agents = {}
     for idx in range(config.n_agents):
-        if (idx == 0):
+        if (is_dummy[idx] == 0):
             if (config.algorithm == "reinforce"):
                 agents['agent_'+str(idx)] = Reinforce(config, idx)
             elif (config.algorithm == "PPO"):
@@ -129,7 +126,8 @@ def objective(trial, args, repo_name):
 
     n_communicating_agents = config.communicating_agents.count(1)
 
-    agents = define_agents(config)
+    is_dummy = np.random.binomial(1, p=0.3, size=config.n_agents)
+    agents = define_agents(config, is_dummy)
     print("\nAGENTS=",agents)
     
     #### TRAINING LOOP
@@ -137,22 +135,20 @@ def objective(trial, args, repo_name):
 
     social_norm = SocialNorm(agents)
 
-    best_strategy_reward(config)
-
     for epoch in range(config.n_epochs):
         #print("\n=========================")
         #print("\n==========>Epoch=", epoch)
 
         #pick a pair of agents
-        active_agents_idxs = [0] + random.sample(range(1, config.n_agents), 1)
+        active_agents_idxs = random.sample(range(config.n_agents), 2)
         #print("active_agents_idxs=",active_agents_idxs)
-        active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
+        active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)} #{agents[i] for i in active_agents_idxs}
         print("\nACTIVE AGENTS=", active_agents)
 
         parallel_env.set_active_agents(active_agents_idxs)
 
         [agent.reset_batch() for _, agent in active_agents.items()]
-
+        
         for batch_idx in range(config.batch_size):
 
             observations = parallel_env.reset()
@@ -160,7 +156,7 @@ def objective(trial, args, repo_name):
             [agent.reset_episode() for _, agent in active_agents.items()]
 
             done = False
-            
+
             while not done:
                 mf = parallel_env.current_multiplier
                 #print("\n\nmf=", mf.numpy()[0])
@@ -196,10 +192,10 @@ def objective(trial, args, repo_name):
 
                 if (mf > 1. and mf < 2.):
                     social_norm.save_actions(actions, active_agents_idxs)
-                
-                #rewards_norm = {key: value/max_values[parallel_env.get_multiplier()] for key, value in rewards.items()}
-                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
 
+
+                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
+                
                 for ag_idx, agent in active_agents.items():
                     
                     agent.buffer.rewards.append(rewards[ag_idx])
@@ -211,13 +207,13 @@ def objective(trial, args, repo_name):
                 # break; if the episode is over
                 if done:
                     break
-            
+
             #print("update reputation")
             #print("active_agents_idxs=",active_agents_idxs)
             social_norm.update_reputation(active_agents_idxs)
 
         for ag_idx, agent in active_agents.items():
-            if (agent.is_communicating):
+            if (agent.is_dummy == False and agent.is_communicating):
                 #print("is communicating")
                 for m_val in config.mult_fact:
                     if (m_val in agent.buffer.actions_given_m):
@@ -226,7 +222,7 @@ def objective(trial, args, repo_name):
                         else:
                             agent.sc_m[m_val] = [U.calc_mutinfo(agent.buffer.actions_given_m[m_val], agent.buffer.messages_given_m[m_val], config.action_size, config.mex_size)]
                 agent.sc.append(U.calc_mutinfo(agent.buffer.actions, agent.buffer.messages, config.action_size, config.mex_size))
-            if (agent.is_listening):
+            if (agent.is_dummy == False and agent.is_listening):
                 #print("is listening")
                 other = list(set(active_agents_idxs) - set([agent.idx]))[0] #active_agents_idxs.pop("agent_"+str(ag_idx))
                 if (active_agents["agent_"+str(other)].is_communicating):
@@ -234,50 +230,30 @@ def objective(trial, args, repo_name):
            
         # update agents     
         for ag_idx, agent in active_agents.items():
-            if (agent.is_dummy == False):
-                agent.update()
+            #print("update", ag_idx)
+            agent.update()
 
         # =================== EVALUATION ===================
         # computing evaluation against the behavior of all the dummy agents
         #print("EVALUATION")
-        rewards_eval_m = {}; rewards_eval_norm_m = {}; actions_eval_m = {}
+        rewards_eval_m = {}; rewards_eval_norm_m = {}; actions_eval_m = {}; mex_distrib_given_m = {}
         optimization_measure = []
 
-        for m in config.mult_fact:    
-            #print("m=", m, "reputation=", active_agents["agent_0"].reputation)
-            rewards_eval_dummy = {}; rewards_eval_norm_dummy = {}; actions_eval_dummy = {}
-            for dummy_idx in range(1, config.n_agents):
-                active_agents_idxs = [0, dummy_idx]
-                active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
-                parallel_env.set_active_agents(active_agents_idxs)
-                
-                act_eval, _, act_distrib, rewards_eval = eval(config, parallel_env, active_agents, active_agents_idxs, m, device, False)
-                #print("mult=", parallel_env.current_multiplier,"act_eval=",act_eval['agent_0'])
-                #print("act_distrib=", act_distrib)
+        for m in config.mult_fact:
+            act_eval, mex_distrib, _, rewards_eval = eval(config, parallel_env, active_agents, active_agents_idxs, m, device, False)
+            mex_distrib_given_m[m] = mex_distrib # distrib dei messaggi per ogni agente, calcolata con dato input
+            rewards_eval_m[m] = rewards_eval
+            rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
+            actions_eval_m[m] = act_eval
 
-                rewards_eval_dummy[dummy_idx] = rewards_eval['agent_0']
-                rewards_eval_norm_dummy[dummy_idx] = {key: value/max_values[m] for key, value in rewards_eval.items()}['agent_0']
-                optimization_measure.append(rewards_eval_norm_dummy[dummy_idx])
-                actions_eval_dummy[dummy_idx] = act_eval['agent_0']
-                #print("rewards_eval_norm_dummy=",rewards_eval_norm_dummy)
-            
-            rewards_eval_m[m] = rewards_eval_dummy
-            rewards_eval_norm_m[m] = rewards_eval_norm_dummy
-            actions_eval_m[m] = actions_eval_dummy
+        avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
+        avg_norm_returns_train_list.append(avg_norm_return)
 
-        #print("rewards_eval_norm_m=",rewards_eval_norm_m)
-
-        #avg_norm_return = np.mean(optimization_measure)
-        #print("avg_norm_return=", avg_norm_return)
-        #avg_norm_returns_train_list.append(avg_norm_return)
-        
-        #print("actions_eval_m=", actions_eval_m)
-        #print("rewards_eval_norm_m=", rewards_eval_norm_m)
-        #print("optimization_measure",optimization_measure)
-
-        avg_rew_time.append(np.mean(optimization_measure))
-        #print("avg_rew_time=", avg_rew_time)
+        rew_values = [(np.sum([rewards_eval_m[m_val][ag_idx] for m_val in config.mult_fact])) for ag_idx, _ in active_agents.items()]
+        avg_rew_time.append(np.mean(rew_values))
+        #print(avg_rew_time)
         measure = np.mean(avg_rew_time[-10:])
+        #print("measure=", measure)
         trial.report(measure, epoch)
         
         if trial.should_prune():
@@ -287,27 +263,26 @@ def objective(trial, args, repo_name):
 
         if (config.wandb_mode == "online"):
             for ag_idx, agent in active_agents.items():
-                df_agent = {}
                 if (agent.is_dummy == False):
-                    for dummy_idx in range(1, config.n_agents):
-                        df_actions = {ag_idx+"actions_eval_m_"+str(mi)+"_dummy_": actions_eval_m[mi][dummy_idx] for mi in config.mult_fact}
-                        df_rew_norm = {ag_idx+"rewards_eval_norm_m"+str(mi)+"_dummy_": rewards_eval_norm_m[mi][dummy_idx] for mi in config.mult_fact}
-                        df_agent = {**df_agent, **{
-                            ag_idx+"_return_train_norm": agent.return_episode_old_norm,
-                            ag_idx+"_reputation": agent.reputation,
-                            ag_idx+"_return_train_"+str(mf[0]): agent.return_episode_old,
-                            ag_idx+"gmm_means": agent.means,
-                            ag_idx+"gmm_probabilities": agent.probs,
-                            'epoch': epoch}, 
-                            **df_actions, **df_rew_norm}#, **df_rew_norm}
+                    df_actions = {ag_idx+"actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
+                    df_rew = {ag_idx+"rewards_eval_m"+str(i): rewards_eval_m[i][ag_idx] for i in config.mult_fact}
+                    df_rew_norm = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
+                    df_agent = {**{
+                        ag_idx+"_return_train_norm": agent.return_episode_old_norm,
+                        ag_idx+"_reputation": agent.reputation,
+                        ag_idx+"_return_train_"+str(mf[0]): agent.return_episode_old,
+                        ag_idx+"gmm_means": agent.means,
+                        ag_idx+"gmm_probabilities": agent.probs,
+                        'epoch': epoch}, 
+                        **df_actions, **df_rew, **df_rew_norm}
                 
-                if (config.communicating_agents[agent.idx] == 1.):
-                    #df_mex = {ag_idx+"messages_prob_distrib_m_"+str(i): mex_distrib_given_m[i][ag_idx] for i in config.mult_fact}
-                    #df_sc = {ag_idx+"sc": agent.sc_old[-1]}
-                    #df_sc_m = {ag_idx+"sc_given_m"+str(i): agent.sc_m[i][0] for i in config.mult_fact}
+                if (config.communicating_agents[agent.idx] == 1. and agent.is_dummy == False):
+                    df_mex = {ag_idx+"messages_prob_distrib_m_"+str(i): mex_distrib_given_m[i][ag_idx] for i in config.mult_fact}
+                    df_sc = {ag_idx+"sc": agent.sc_old[-1]}
+                    df_sc_m = {ag_idx+"sc_given_m"+str(i): agent.sc_m[i][0] for i in config.mult_fact}
                     df_ent = {ag_idx+"_avg_mex_entropy": np.mean(agent.buffer.comm_entropy)}
-                    df_agent = {**df_agent}#, **df_mex}#, **df_sc, **df_ent, **df_sc_m}
-                if (config.listening_agents[agent.idx] == 1.):
+                    df_agent = {**df_agent, **df_mex, **df_sc, **df_ent, **df_sc_m}
+                if (config.listening_agents[agent.idx] == 1. and agent.is_dummy == False):
                     other = list(set(active_agents_idxs) - set([agent.idx]))[0]
                     if (active_agents["agent_"+str(other)].is_communicating):
                         #df_listen = {ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1]}
@@ -318,19 +293,17 @@ def objective(trial, args, repo_name):
             wandb.log({
                 "epoch": epoch,
                 "current_multiplier": mf,
-                #"avg_return_train": avg_norm_return,
-                #"avg_return_train_time": np.mean(avg_norm_returns_train_list[-10:]),
+                "avg_return_train": avg_norm_return,
+                "avg_return_train_time": np.mean(avg_norm_returns_train_list[-10:]),
                 "avg_rew_time": measure,
-                #"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in active_agents.items()]),
+                ###"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in active_agents.items()]),
                 #"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents.items()]),
                 },
                 step=epoch, commit=True)
 
         if (epoch%10 == 0):
-            print("Epoch : {} \t Mult factor: {} \t Measure: {} \t Reputation: {}".format(epoch, mf, measure, agents["agent_0"].reputation))
-            for i in range(len(config.mult_fact)):
-                print("mult=", config.mult_fact[i], ", act_eval=", actions_eval_m[config.mult_fact[i]][1])
-
+            print("Epoch : {} \t Mult factor: {}  \t Measure: {} ".format(epoch, mf, measure))
+    
     wandb.finish()
     return measure
 
@@ -340,11 +313,18 @@ def training_function(args):
     name_gmm = "_noGmm"
     if (1 in args.gmm_):
         name_gmm = "_yesGmm"
+    
+    comm_string = "no_comm_"
+    if (args.communicating_agents.count(1.) != 0):
+        comm_string = "comm_"
+    unc_string = "no_unc_"
+    if (args.uncertainties.count(0.) != args.n_agents):
+        unc_string = "unc_"
 
-    repo_name = "dummy_" + str(args.n_agents) + "agents_" + "comm" + str(args.communicating_agents) + \
-        "_list" + str(args.listening_agents) + name_gmm + "_unc" + str(args.uncertainties) + \
-        "_mfact" + str(args.mult_fact) + args.algorithm
+    repo_name = str(args.n_agents) + "agents_" + comm_string + \
+        unc_string + args.algorithm + "_dummy_population"
     print("repo_name=", repo_name)
+
 
     func = lambda trial: objective(trial, args, repo_name)
 

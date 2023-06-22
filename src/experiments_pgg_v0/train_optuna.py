@@ -95,7 +95,7 @@ def setup_training_hyperparams(trial, args):
     else: 
         comm_params = dict()
 
-    all_params = {**game_params,**algo_params, **comm_params}
+    all_params = {**game_params, **algo_params, **comm_params}
     print("all_params=", all_params)
 
     return all_params
