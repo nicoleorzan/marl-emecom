@@ -11,8 +11,9 @@ import torch
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
-from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm, SocialNorm
+from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm
 from src.algos.normativeagent import NormativeAgent
+from social_norm import SocialNorm
 
 
 torch.autograd.set_detect_anomaly(True)
@@ -208,9 +209,9 @@ def objective(trial, args, repo_name):
                 if done:
                     break
 
-            #print("update reputation")
-            #print("active_agents_idxs=",active_agents_idxs)
-            social_norm.update_reputation(active_agents_idxs)
+        #print("update reputation")
+        #print("active_agents_idxs=",active_agents_idxs)
+        social_norm.rule09(active_agents_idxs)
 
         for ag_idx, agent in active_agents.items():
             if (agent.is_dummy == False and agent.is_communicating):

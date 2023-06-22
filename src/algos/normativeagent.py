@@ -79,11 +79,11 @@ class NormativeAgent():
 
     def select_action(self, m_val=None, _eval=False):
         action = torch.Tensor([0.])
-        if (self.obs_m_fact > 2):
+        if (self.obs_m_fact > 2): # coopreative env
             action = torch.Tensor([1.])
             return action[0]
-        if (self.obs_m_fact > 1): # if we are playing in a cooperative environment
-            if (self.opponent_reputation >= 0.5): # and the reputation of my opponent is big enough
+        elif (self.obs_m_fact > 1 and self.obs_m_fact < 2): # if we are playing in a mixed-motive environment
+            if (self.opponent_reputation >= 0.8): # and the reputation of my opponent is big enough
                 action = torch.Tensor([1.]) # I will play cooperatively
 
         self.buffer.actions.append(action[0])
