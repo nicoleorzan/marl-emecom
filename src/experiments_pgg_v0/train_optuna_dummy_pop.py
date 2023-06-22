@@ -127,7 +127,7 @@ def objective(trial, args, repo_name):
 
     n_communicating_agents = config.communicating_agents.count(1)
 
-    is_dummy = np.random.binomial(1, p=0.3, size=config.n_agents)
+    is_dummy = np.random.binomial(1, p=args.proportion_dummy_agents, size=config.n_agents)
     agents = define_agents(config, is_dummy)
     print("\nAGENTS=",agents)
     
@@ -323,7 +323,7 @@ def training_function(args):
         unc_string = "unc_"
 
     repo_name = str(args.n_agents) + "agents_" + comm_string + \
-        unc_string + args.algorithm + "_dummy_population"
+        unc_string + args.algorithm + "_dummy_population_" + str(args.proportion_dummy_agents)
     print("repo_name=", repo_name)
 
 

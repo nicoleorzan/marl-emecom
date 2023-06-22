@@ -31,6 +31,7 @@ if __name__ == '__main__':
         type=int,
         default=[])        
         
+    parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
     parser.add_argument('--wandb_mode', type=str, choices = ["online", "offline"], default="online")
     parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
@@ -40,6 +41,9 @@ if __name__ == '__main__':
     args.random_baseline = ast.literal_eval(args.random_baseline)
     n_certain_agents = args.uncertainties.count(0.)
     n_uncertain = args.n_agents - n_certain_agents
+    
+    assert(args.proportion_dummy_agents >= 0.)    
+    assert(args.proportion_dummy_agents <= 1.)
 
     assert(args.n_agents > 1)
     assert(len(args.gmm_) == args.n_agents)
