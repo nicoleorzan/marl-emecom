@@ -287,8 +287,8 @@ def objective(trial, args, repo_name):
                     if (active_agents["agent_"+str(other)].is_communicating):
                         #df_listen = {ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1]}
                         df_agent = {**df_agent}#, **df_listen}
-                
-                wandb.log(df_agent, step=epoch, commit=False)
+                if ('df_agent' in locals() ):
+                    wandb.log(df_agent, step=epoch, commit=False)
 
             wandb.log({
                 "epoch": epoch,
