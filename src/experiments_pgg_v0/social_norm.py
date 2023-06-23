@@ -55,3 +55,10 @@ class SocialNorm():
                         agent.reputation = max(agent.reputation - 0.2, 0.)
                     else: 
                         agent.reputation = min(agent.reputation + 0.1, 1.)
+
+    def rule00(self, active_agents_idxs):
+        #print("active agents=", active_agents_idxs)
+        # agent that cooperates with good agents, and does not cooperate with bad ones is good
+        for ag_idx in active_agents_idxs:
+            agent = self.agents["agent_"+str(ag_idx)]
+            agent.reputation = 0

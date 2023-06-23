@@ -18,7 +18,7 @@ from social_norm import SocialNorm
 
 torch.autograd.set_detect_anomaly(True)
 
-EPOCHS = 400 # total episodes
+EPOCHS = 300 # total episodes
 # batch size are the number of episodes in which 2 agents interact with each other alone
 OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation, my reputation
 # the opponent index is embedded in the agent class
@@ -144,7 +144,7 @@ def objective(trial, args, repo_name):
         #print("\n==========>Epoch=", epoch)
 
         #pick a pair of agents
-        active_agents_idxs = [0] + random.sample(range(1, config.n_agents), 1)
+        active_agents_idxs = [0, 1]# + random.sample(range(1, config.n_agents), 1)
         #print("active_agents_idxs=",active_agents_idxs)
         active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
         print("\nACTIVE AGENTS=", active_agents)
