@@ -332,6 +332,9 @@ def training_function(args):
 
     repo_name = str(args.n_agents) + "agents_" + comm_string + \
         unc_string + args.algorithm + "_dummy_population_" + str(args.proportion_dummy_agents)
+    
+    if (args.addition != ""):
+        repo_name += "_"+ str(args.addition)
     print("repo_name=", repo_name)
 
 

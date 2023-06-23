@@ -24,7 +24,7 @@ class Agent():
 
         self.buffer = RolloutBufferComm()
 
-        self.reputation = 0.8
+        self.reputation = 0.5 # change this based on initial probs
         self.is_dummy = False
 
         self.idx = idx

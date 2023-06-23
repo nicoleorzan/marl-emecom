@@ -167,6 +167,7 @@ def objective(trial, args, repo_name):
 
                 messages = {}; actions = {}
                 
+                # ADD OBSERVATION ON MY OWN REPUTATION
                 active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
                 active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
 
@@ -337,8 +338,9 @@ def training_function(args):
 
     repo_name = str(args.n_agents) + "agents_" + comm_string + \
         unc_string + args.algorithm + "_dummy_2_agents"
+    if (args.addition != ""):
+        repo_name += "_"+ str(args.addition)
     print("repo_name=", repo_name)
-
     
     func = lambda trial: objective(trial, args, repo_name)
 

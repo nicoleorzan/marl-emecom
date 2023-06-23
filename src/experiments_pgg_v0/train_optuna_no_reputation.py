@@ -315,6 +315,8 @@ def training_function(args):
 
     repo_name = str(args.n_agents) + "agents_" + comm_string + \
         unc_string + args.algorithm + "_no_reputation"
+    if (args.addition != ""):
+        repo_name += "_"+ str(args.addition)
     print("repo_name=", repo_name)
 
     func = lambda trial: objective(trial, args, repo_name)
