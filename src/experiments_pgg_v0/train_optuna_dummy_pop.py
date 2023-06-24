@@ -122,6 +122,7 @@ def objective(trial, args, repo_name):
     wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=args.wandb_mode)#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
+    print("binary_reputaiton=", config.binary_reputation)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
     max_values = find_max_min(config, 4)
@@ -172,6 +173,9 @@ def objective(trial, args, repo_name):
                 #print("\n\nmf=", mf.numpy()[0])
 
                 messages = {}; actions = {}
+                
+                #for idx in active_agents_idxs:
+                #    print("agent=",idx, "rep=", active_agents["agent_"+str(idx)].reputation)
                 
                 active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
                 active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents["agent_"+str(active_agents_idxs[0])].reputation))

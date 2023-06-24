@@ -32,7 +32,7 @@ if __name__ == '__main__':
         default=[])        
         
     parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
-    parser.add_argument('--binary_reputation', type=str, choices = ["False", "True"], default="False")
+    parser.add_argument('--binary_reputation', type=int) # 1 yes 0 no
     parser.add_argument('--wandb_mode', type=str, choices = ["online", "offline"], default="online")
     parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")

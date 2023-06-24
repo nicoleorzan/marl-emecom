@@ -70,13 +70,13 @@ class SocialNorm():
                 #print("saved actions=", self.saved_actions[ag_idx])
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
 
-                if (avg_cooperation_level > 0.55):
-                    if (other.reputation >= 0.8):
+                if (avg_cooperation_level > 0.8):
+                    if (other.reputation == 1.):
                         agent.reputation = 1.
                     else: 
                         agent.reputation = 0.
                 else: 
-                    if (other.reputation >= 0.8):
+                    if (other.reputation == 1.):
                         agent.reputation = 0.
                     else: 
                         agent.reputation = 1.

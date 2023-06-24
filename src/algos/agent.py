@@ -21,13 +21,16 @@ class Agent():
     def __init__(self, params, idx=0):
 
         for key, val in params.items(): setattr(self, key, val)
+        print("params=", params)
 
         self.buffer = RolloutBufferComm()
-
+        print("params.binary_reputation=", params.binary_reputation)
         self.reputation = 0.5 # change this based on initial probs
         if (params.binary_reputation == True):
-            self.reputation = np.random.binomial(1,0.5)
-            
+            print("rep is binary")
+            self.reputation = float(np.random.binomial(1,0.5))
+        #print("rep=", self.reputation)
+
         self.is_dummy = False
 
         self.idx = idx
