@@ -286,7 +286,6 @@ class Agent():
 
         elif (_eval == False):
             action, action_logprob, entropy, distrib = self.policy_act.act(state=state_to_act, greedy=False, get_distrib=True)
-            
             if (self.is_listening == True and self.n_communicating_agents != 0.):
                 #print("self.state_act=", self.state_act)
                 state_empty_mex = torch.cat((self.state_act.detach(), torch.zeros_like(self.message_in))).to(device)
