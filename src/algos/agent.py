@@ -25,6 +25,9 @@ class Agent():
         self.buffer = RolloutBufferComm()
 
         self.reputation = 0.5 # change this based on initial probs
+        if (params.binary_reputation == True):
+            self.reputation = np.random.binomial(1,0.5)
+            
         self.is_dummy = False
 
         self.idx = idx

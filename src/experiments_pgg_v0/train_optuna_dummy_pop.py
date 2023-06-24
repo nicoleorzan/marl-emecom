@@ -60,6 +60,7 @@ def setup_training_hyperparams(trial, args):
         n_hidden_act = 2,
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         embedding_dim = 1,
+        binary_reputation = args.binary_reputation,
         get_index = False,
         get_opponent_is_uncertain = False
     )
@@ -219,7 +220,10 @@ def objective(trial, args, repo_name):
 
         #print("update reputation")
         #print("active_agents_idxs=",active_agents_idxs)
-        social_norm.rule09(active_agents_idxs)
+        if (config.binary_reputation == True):
+            social_norm.rule09_binary(active_agents_idxs)
+        else:    
+            social_norm.rule09(active_agents_idxs)
 
         for ag_idx, agent in active_agents.items():
             if (agent.is_dummy == False and agent.is_communicating):

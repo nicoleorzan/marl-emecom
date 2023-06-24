@@ -61,6 +61,7 @@ def setup_training_hyperparams(trial, args):
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         #hidden_size_act = trial.suggest_categorical("hidden_size_act", [8]),
         embedding_dim = 1,
+        binary_reputation = args.binary_reputation,
         get_index = False,
         get_opponent_is_uncertain = False
     )
