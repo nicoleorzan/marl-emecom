@@ -283,6 +283,7 @@ def objective(trial, args, repo_name):
             rewards_eval_m[m] = rewards_eval
             rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
             actions_eval_m[m] = act_eval
+        print("act eval=", act_eval)
 
         avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
         avg_norm_returns_train_list.append(avg_norm_return)
@@ -309,8 +310,20 @@ def objective(trial, args, repo_name):
                         ag_idx+"_return_train_norm": agent.return_episode_old_norm,
                         ag_idx+"_reputation": agent.reputation,
                         ag_idx+"_return_train_"+str(mf[0]): agent.return_episode_old,
-                        ag_idx+"gmm_means": agent.means,
-                        ag_idx+"gmm_probabilities": agent.probs,
+                        #ag_idx+"gmm_means": agent.means,
+                        #ag_idx+"gmm_probabilities": agent.probs,
+                        'epoch': epoch}, 
+                        **df_actions, **df_rew, **df_rew_norm}
+                else:
+                    df_actions = {ag_idx+"N_actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
+                    df_rew = {ag_idx+"N_rewards_eval_m"+str(i): rewards_eval_m[i][ag_idx] for i in config.mult_fact}
+                    df_rew_norm = {ag_idx+"N_rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
+                    df_agent = {**{
+                        ag_idx+"N_return_train_norm": agent.return_episode_old_norm,
+                        ag_idx+"N_reputation": agent.reputation,
+                        ag_idx+"N_return_train_"+str(mf[0]): agent.return_episode_old,
+                        #ag_idx+"gmm_means": agent.means,
+                        #ag_idx+"gmm_probabilities": agent.probs,
                         'epoch': epoch}, 
                         **df_actions, **df_rew, **df_rew_norm}
                 

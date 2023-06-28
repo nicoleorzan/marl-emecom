@@ -83,7 +83,7 @@ class NormativeAgent():
 
     def select_action(self, m_val=None, _eval=False):
         action = torch.Tensor([0.])
-        if (self.obs_m_fact > 2): # coopreative env
+        if (self.obs_m_fact > 2): # cooperative env
             action = torch.Tensor([1.])
             return action[0]
         elif (self.obs_m_fact > 1 and self.obs_m_fact < 2): # if we are playing in a mixed-motive environment
