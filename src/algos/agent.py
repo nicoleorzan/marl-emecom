@@ -21,20 +21,18 @@ class Agent():
     def __init__(self, params, idx=0):
 
         for key, val in params.items(): setattr(self, key, val)
-        print("params=", params)
 
         self.buffer = RolloutBufferComm()
-        print("params.binary_reputation=", params.binary_reputation)
         self.reputation = 0.5 # change this based on initial probs
         if (params.binary_reputation == True):
-            print("rep is binary")
+            #print("rep is binary")
             self.reputation = float(np.random.binomial(1,0.5))
         #print("rep=", self.reputation)
 
         self.is_dummy = False
 
         self.idx = idx
-        self.gmm_ = self.gmm_[idx]
+        self.gmm_ = self.gmm_
         self.is_communicating = self.communicating_agents[self.idx]
         self.is_listening = self.listening_agents[self.idx]
 
@@ -43,12 +41,13 @@ class Agent():
         print("is listening?:", self.is_listening)
         print("uncertainty:", self.uncertainties[idx])
         print("gmm=", self.gmm_)
+        #print("binary_reputation=", params.binary_reputation)
 
         self.is_uncertain = torch.Tensor([0.])
         if (self.uncertainties[idx] != 0.):
             self.is_uncertain = torch.Tensor([1.])
         self.n_communicating_agents = self.communicating_agents.count(1)
-        print("self.n_communicating_agents=",self.n_communicating_agents)
+        #print("self.n_communicating_agents=",self.n_communicating_agents)
 
         self.max_f = max(self.mult_fact)
         self.min_f = min(self.mult_fact)
@@ -123,7 +122,7 @@ class Agent():
         self.return_episode_norm = 0
 
     def digest_input(self, input):
-        #print("digest_input")
+        #print("digest_input agent", self.idx)
         #print("input=", input)
         obs_m_fact, opponent_reputation = input
         #obs_m_fact, opponent_idx, opponent_reputation = input
@@ -248,6 +247,22 @@ class Agent():
                 gmm_state[value] = self.gmm_probs[i] 
 
         return gmm_state
+    
+    def select_opponent(self, reputations, _eval=False):
+
+        if (_eval == True):
+            with torch.no_grad():
+                opponent_out, opponent_logprob, entropy = self.policy_opponent_selection.act(reputations)
+
+        elif(_eval == False):
+            opponent_out, opponent_logprob, entropy = self.policy_opponent_selection.act(reputations)
+            #("opponent_logprob=",opponent_logprob)
+
+            self.buffer.reputations.append(reputations)
+            self.buffer.opponent_choices.append(opponent_out)
+            self.buffer.opponent_logprobs.append(opponent_logprob)
+
+        return opponent_out
 
     def select_message(self, m_val=None, _eval=False):
         #print("state for mex=", self.state_comm)
@@ -281,7 +296,7 @@ class Agent():
     def select_action(self, m_val=None, _eval=False):
         
         state_to_act = self.state_act
-        #print("agent=", self.idx)
+        #print("agent=", self.idx, "is selecting action")
         if (self.is_listening and self.n_communicating_agents != 0):
             state_to_act = torch.cat((self.state_act, self.message_in)).to(device)
         #print("state_act=", state_to_act)

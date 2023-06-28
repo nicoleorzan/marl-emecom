@@ -47,22 +47,24 @@ def setup_training_hyperparams(trial, args):
         obs_size = OBS_SIZE,
         action_size = ACTION_SIZE,
         n_gmm_components = args.mult_fact, #trial.suggest_categorical("n_gmm_components", [3, len(args.mult_fact)]),
-        decayRate = trial.suggest_categorical("decay_rate", [0.99, 0.999]),
+        decayRate = 0.999,
         mult_fact = args.mult_fact,
         uncertainties = args.uncertainties,
         gmm_ = args.gmm_,
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        batch_size = 128,
+        batch_size = 64,
         lr_actor = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
         lr_critic = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
+        lr_opponent = trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
         n_hidden_act = 2,
         hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         embedding_dim = 1,
         binary_reputation = args.binary_reputation,
         get_index = False,
-        get_opponent_is_uncertain = False
+        get_opponent_is_uncertain = False,
+        opponent_selection = args.opponent_selection
     )
 
     if (args.algorithm == "reinforce"):
@@ -122,7 +124,7 @@ def objective(trial, args, repo_name):
     wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=args.wandb_mode)#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
-    print("binary_reputaiton=", config.binary_reputation)
+    print("binary_reputation=", config.binary_reputation)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
     max_values = find_max_min(config, 4)
@@ -137,6 +139,7 @@ def objective(trial, args, repo_name):
     is_dummy = list(reversed([1 if i<n_dummy else 0 for i in range(config.n_agents) ]))
     print("config.uncertainties=", config.uncertainties)
     print("is_dummy=", is_dummy)
+    non_dummy_idxs = [i for i,val in enumerate(is_dummy) if val==0]
 
     agents = define_agents(config, is_dummy)
     print("\nAGENTS=",agents)
@@ -151,10 +154,25 @@ def objective(trial, args, repo_name):
         #print("\n==========>Epoch=", epoch)
 
         #pick a pair of agents
-        active_agents_idxs = random.sample(range(config.n_agents), 2)
-        #print("active_agents_idxs=",active_agents_idxs)
-        active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
-        print("\nACTIVE AGENTS=", active_agents)
+        #print("\n")
+        #print("OPPONENT SELECTION")
+        active_agents_idxs = []
+        while ((any(active_agents_idxs) == True) == False):
+            if (config.opponent_selection == True):
+                first_agent_idx = random.sample(range(config.n_agents), 1)[0]
+                #print("first_agent_idx=", first_agent_idx)
+                reputations = torch.Tensor([agent.reputation for ag_idx, agent in agents.items()])
+                #print("reputations=", reputations)
+                second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
+                while (second_agent_idx == first_agent_idx):
+                    second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
+                #print("second_agent_idx=", second_agent_idx)
+                active_agents_idxs = [first_agent_idx, second_agent_idx]
+            else:
+                active_agents_idxs = random.sample(range(config.n_agents), 2)
+            #print("active_agents_idxs=",active_agents_idxs)
+            active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
+            print("ACTIVE AGENTS=", active_agents)
 
         parallel_env.set_active_agents(active_agents_idxs)
 
@@ -170,7 +188,7 @@ def objective(trial, args, repo_name):
 
             while not done:
                 mf = parallel_env.current_multiplier
-                #print("\n\nmf=", mf.numpy()[0])
+                #print("\nmf=", mf.numpy()[0])
 
                 messages = {}; actions = {}
                 
@@ -199,10 +217,12 @@ def objective(trial, args, repo_name):
 
                 # acting
                 #print("\nacting")
+                #print("ACTING")
                 for agent in parallel_env.active_agents:
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
+                #print("rewards=", rewards)
 
                 if (mf > 1. and mf < 2.):
                     social_norm.save_actions(actions, active_agents_idxs)
@@ -213,6 +233,7 @@ def objective(trial, args, repo_name):
                 for ag_idx, agent in active_agents.items():
                     
                     agent.buffer.rewards.append(rewards[ag_idx])
+                    agent.buffer.rewards_norm.append(rewards_norm[ag_idx].item())
                     agent.buffer.next_states_a.append(observations[ag_idx])
                     agent.buffer.is_terminals.append(done)
                     agent.return_episode_norm += rewards_norm[ag_idx]
@@ -328,7 +349,7 @@ def objective(trial, args, repo_name):
 def training_function(args):
 
     name_gmm = "_noGmm"
-    if (1 in args.gmm_):
+    if (args.gmm_ == 1):
         name_gmm = "_yesGmm"
     
     comm_string = "no_comm_"

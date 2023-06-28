@@ -26,7 +26,7 @@ class Actor(nn.Module):
         # opponent index (embedded) new -> NO!!
         # opponent reputation (scalar) new
         self.input_size = input_size
-        print("actual input size=", self.input_size)
+        #print("actor input size=", self.input_size)
 
         if (self.n_hidden == 2):
             self.actor = nn.Sequential(
@@ -54,9 +54,11 @@ class Actor(nn.Module):
         return self.emb
 
     def act(self, state, greedy=False, get_distrib=False):
+        #print("act (in actor)")
         out = self.actor(state)
         out = self.softmax(out)
         dist = Categorical(out)
+        #print("out=", out, out.shape)
 
         if (self.random_baseline == True): 
             act = torch.randint(0, self.action_size, (1,))[0]

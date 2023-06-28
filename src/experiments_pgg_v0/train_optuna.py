@@ -201,6 +201,7 @@ def objective(trial, args, repo_name):
                 for ag_idx, agent in active_agents.items():
                     
                     agent.buffer.rewards.append(rewards[ag_idx])
+                    agent.buffer.rewards_norm.append(rewards_norm[ag_idx])
                     agent.buffer.next_states_a.append(observations[ag_idx])
                     agent.buffer.is_terminals.append(done)
                     agent.return_episode_norm += rewards_norm[ag_idx]
@@ -312,7 +313,7 @@ def objective(trial, args, repo_name):
 def training_function(args):
 
     name_gmm = "_noGmm"
-    if (1 in args.gmm_):
+    if (args.gmm_ == 1):
         name_gmm = "_yesGmm"
 
     comm_string = "no_comm_"

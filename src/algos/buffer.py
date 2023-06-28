@@ -16,8 +16,12 @@ class RolloutBufferComm:
         self.act_entropy = []
         self.comm_entropy = []
         self.rewards = []
+        self.rewards_norm = []
         self.is_terminals = []
         self.mut_info = []
+        self.reputations = []
+        self.opponent_choices = []
+        self.opponent_logprobs = []
 
     def clear_batch(self):
         self.messages_given_m = {}
@@ -39,8 +43,12 @@ class RolloutBufferComm:
         del self.act_entropy[:]
         del self.comm_entropy[:]
         del self.rewards[:]
+        del self.rewards_norm[:]
         del self.is_terminals[:]
         del self.mut_info[:]
+        del self.reputations[:]
+        del self.opponent_choices[:]
+        del self.opponent_logprobs[:]
     
 
 class DQNBuffer(RolloutBufferComm):
@@ -55,7 +63,7 @@ class DQNBuffer(RolloutBufferComm):
         ind = np.random.randint(0, len(self.states_a), size=batch_size)
         print("ind=",  ind)
         print("states=", self.states_a)
-        s_c = [self.states_a[i] for i in ind]
+        s_c = [self.states_c[i] for i in ind]
         s_a = [self.states_a[i] for i in ind]
         m = [self.messages[i] for i in ind]
         a = [self.actions[i] for i in ind]

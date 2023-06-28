@@ -32,6 +32,11 @@ class Reinforce(Agent):
             #opt_params.append(opt_params_comm)
             self.opt_comm = torch.optim.Adam(self.policy_comm.parameters(), lr=self.lr_actor_comm)
             self.scheduler_comm = torch.optim.lr_scheduler.ExponentialLR(self.opt_comm, gamma=self.decayRate)
+        
+        if (self.opponent_selection):
+            self.policy_opponent_selection = Actor(params=params, input_size=self.n_agents, output_size=self.n_agents, \
+                n_hidden=2, hidden_size=self.n_agents, gmm=False).to(device)
+            self.opt_opponent = torch.optim.Adam(self.policy_opponent_selection.parameters(), lr=self.lr_opponent)
 
         #self.optimizer = torch.optim.Adam(opt_params)
 
@@ -50,19 +55,32 @@ class Reinforce(Agent):
         return out
 
     def update(self):
+        #print("agent=", self.idx)
         #print("\n=====>Update agent", self.idx)
         # I do not normalize rewards here because I already give normalized rewards to the agent
-        rew_norm = self.buffer.rewards # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
+        rew_norm = self.buffer.rewards_norm # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
         #print("rew norm=", rew_norm)
         act_logprobs = self.buffer.act_logprobs
         comm_logprobs = self.buffer.comm_logprobs
+        opponent_logprobs = self.buffer.opponent_logprobs 
+        #print("act_logprobs=",act_logprobs)
+        #print("opponent_logprobs=", opponent_logprobs)
 
         loss_act = [] #torch.zeros_like(act_logprobs)
         loss_comm = [] #torch.zeros_like(comm_logprobs)
+        loss_opponent_choice = []
 
         entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
         self.entropy = entropy
         hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
+        
+        if (self.opponent_selection):
+            #print("create loss opponent selections")
+            #print("np.mean(rew_norm)=", np.mean(rew_norm))
+            for i in range(len(opponent_logprobs)):
+                #print("-opponent_logprobs[i] * (np.mean(rew_norm) - self.baseline)=",-opponent_logprobs[i] * (np.mean(rew_norm) - self.baseline))
+                loss_opponent_choice.append(-opponent_logprobs[i] * (np.mean(rew_norm) - self.baseline))
+                #print("loss opp=", loss_opponent_choice)
         for i in range(len(act_logprobs)):
             if (self.is_communicating):
                 loss_comm.append(-comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i])
@@ -73,6 +91,7 @@ class Reinforce(Agent):
                 #print("self.list_lambda*self.List_loss_list[i]=", self.list_lambda*self.List_loss_list[i])
                 loss_act.append(-act_logprobs[i] * (rew_norm[i] - self.baseline))# + self.list_lambda*self.List_loss_list[i])
             else:
+                #print("create loss act")
                 loss_act.append(-act_logprobs[i] * (rew_norm[i] - self.baseline))
        
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in loss_act])))
@@ -86,6 +105,12 @@ class Reinforce(Agent):
             autograd.backward(loss_comm, tmp, retain_graph=True)
             self.opt_comm.step()
             self.scheduler_comm.step()
+
+        if (self.opponent_selection):
+            self.opt_opponent.zero_grad()
+            tmp = [torch.ones(a.data.shape) for a in loss_opponent_choice]
+            autograd.backward(loss_comm, tmp, retain_graph=True)
+            self.opt_opponent.step()
         
         #print("update act loss")
         #print("loss_act=", loss_act)
@@ -103,6 +128,6 @@ class Reinforce(Agent):
         #print(self.scheduler.get_lr())
 
         self.n_update += 1.
-        self.baseline += (np.mean([i[0] for i in rew_norm]) - self.baseline) / (self.n_update)
+        self.baseline += (np.mean([i for i in rew_norm]) - self.baseline) / (self.n_update)
 
         self.reset()

@@ -25,18 +25,15 @@ if __name__ == '__main__':
         nargs="*",
         type=int,
         default=[]) # to fill with 0 if agent does not list, 1 is agent does list
-    parser.add_argument(
-        "--gmm_",
-        nargs="*",
-        type=int,
-        default=[])        
         
+    parser.add_argument('--gmm_', type=int, default=0)
     parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
     parser.add_argument('--binary_reputation', type=int) # 1 yes 0 no
     parser.add_argument('--wandb_mode', type=str, choices = ["online", "offline"], default="online")
     parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--optimize', type=int) # 1 for true 0 for false
+    parser.add_argument('--opponent_selection', type=int, default=0.)
     parser.add_argument('--addition', type=str, default="")
 
     args = parser.parse_args()
@@ -48,7 +45,6 @@ if __name__ == '__main__':
     assert(args.proportion_dummy_agents <= 1.)
 
     assert(args.n_agents > 1)
-    assert(len(args.gmm_) == args.n_agents)
     assert(len(args.uncertainties) == args.n_agents)
     assert(len(args.communicating_agents) == args.n_agents)
     assert(len(args.listening_agents) == args.n_agents)

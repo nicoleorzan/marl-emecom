@@ -1,5 +1,6 @@
 
 import torch
+import random
 from src.algos.buffer import RolloutBufferComm
 
 # set device to cpu or cuda
@@ -73,6 +74,9 @@ class NormativeAgent():
         else: 
             self.buffer.messages_given_m[m_val] = [self.mex]
         return self.mex
+    
+    def select_opponent(self, reputations):
+        return random.randint(0, self.n_agents-1)
 
     def get_message(self, message_in):
         self.message_in = message_in
