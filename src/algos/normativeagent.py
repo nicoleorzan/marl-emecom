@@ -24,6 +24,10 @@ class NormativeAgent():
         self.idx = idx
         self.is_communicating = self.communicating_agents[self.idx]
         self.is_listening = self.listening_agents[self.idx]
+        if (self.binary_reputation == True):
+            self.threshold = 1.
+        else: 
+            self.threshold = self.cooperation_threshold
 
         self.is_dummy = True
 
@@ -85,9 +89,8 @@ class NormativeAgent():
         action = torch.Tensor([0.])
         if (self.obs_m_fact > 2): # cooperative env
             action = torch.Tensor([1.])
-            return action[0]
         elif (self.obs_m_fact > 1 and self.obs_m_fact < 2): # if we are playing in a mixed-motive environment
-            if (self.opponent_reputation >= 0.8): # and the reputation of my opponent is big enough
+            if (self.opponent_reputation >= self.threshold): # and the reputation of my opponent is big enough
                 action = torch.Tensor([1.]) # I will play cooperatively
 
         self.buffer.actions.append(action[0])

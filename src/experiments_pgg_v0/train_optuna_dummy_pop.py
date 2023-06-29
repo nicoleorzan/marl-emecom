@@ -54,7 +54,7 @@ def setup_training_hyperparams(trial, args):
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        batch_size = 64,
+        batch_size = 128,
         lr_actor = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
         lr_critic = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
         lr_opponent = trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
@@ -64,7 +64,9 @@ def setup_training_hyperparams(trial, args):
         binary_reputation = args.binary_reputation,
         get_index = False,
         get_opponent_is_uncertain = False,
-        opponent_selection = args.opponent_selection
+        opponent_selection = args.opponent_selection,
+        other_reputation_threshold = trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
+        cooperation_threshold = trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     )
 
     if (args.algorithm == "reinforce"):
@@ -147,7 +149,7 @@ def objective(trial, args, repo_name):
     #### TRAINING LOOP
     avg_norm_returns_train_list = []; avg_rew_time = []
 
-    social_norm = SocialNorm(agents)
+    social_norm = SocialNorm(config, agents)
 
     for epoch in range(config.n_epochs):
         #print("\n=========================")
