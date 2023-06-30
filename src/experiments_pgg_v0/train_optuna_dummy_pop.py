@@ -38,6 +38,13 @@ else:
 
 def setup_training_hyperparams(trial, args):
 
+    if (args.binary_reputation == True):
+        o_r_t = 1.
+        c_t = 1.
+    else: 
+        o_r_t = trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        c_t = trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+
     game_params = dict(
         n_agents = args.n_agents,
         algorithm = args.algorithm,
@@ -65,8 +72,8 @@ def setup_training_hyperparams(trial, args):
         get_index = False,
         get_opponent_is_uncertain = False,
         opponent_selection = args.opponent_selection,
-        other_reputation_threshold = trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
-        cooperation_threshold = trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        other_reputation_threshold = o_r_t, #trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
+        cooperation_threshold = c_t #trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     )
 
     if (args.algorithm == "reinforce"):
