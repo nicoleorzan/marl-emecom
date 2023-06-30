@@ -287,12 +287,13 @@ def objective(trial, args, repo_name):
         optimization_measure = []
 
         for m in config.mult_fact:
-            act_eval, mex_distrib, _, rewards_eval = eval(config, parallel_env, active_agents, active_agents_idxs, m, device, False)
+            act_eval, mex_distrib, act_distrib, rewards_eval = eval(config, parallel_env, active_agents, active_agents_idxs, m, device, False)
             mex_distrib_given_m[m] = mex_distrib # distrib dei messaggi per ogni agente, calcolata con dato input
             rewards_eval_m[m] = rewards_eval
             rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
             actions_eval_m[m] = act_eval
-        print("act eval=", act_eval)
+            #print("act_distrib=", act_distrib)
+        #print("act eval=", act_eval)
 
         avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
         avg_norm_returns_train_list.append(avg_norm_return)
@@ -301,6 +302,12 @@ def objective(trial, args, repo_name):
         avg_rew_time.append(np.mean(rew_values))
         #print(avg_rew_time)
         measure = np.mean(avg_rew_time[-10:])
+        #for ag_idx, agent in agents.items():
+        #    if (agent.is_dummy == False):
+        #        print("rep agent=", ag_idx, agent.reputation)
+        avg_rep = np.mean([agent.reputation for ag_idx, agent in agents.items() if (agent.is_dummy == False)])
+        #print("avg_rep=", avg_rep)
+        measure = avg_rep
         #print("measure=", measure)
         trial.report(measure, epoch)
         
