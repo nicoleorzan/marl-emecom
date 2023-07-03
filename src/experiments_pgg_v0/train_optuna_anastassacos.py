@@ -61,7 +61,7 @@ def setup_training_hyperparams(trial, args):
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        batch_size = 10,
+        batch_size = 128,
         lr_actor = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
         lr_critic = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
         lr_opponent = trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
@@ -240,7 +240,7 @@ def objective(trial, args, repo_name):
                     social_norm.save_actions(actions, active_agents_idxs)
 
                 rewards_norm = {key: value/parallel_env.mv for key, value in rewards.items()}
-                print("rewards_norm=", rewards_norm)
+                #print("rewards_norm=", rewards_norm)
                 
                 for ag_idx, agent in active_agents.items():
                     
@@ -319,10 +319,10 @@ def objective(trial, args, repo_name):
         #print("act eval=", act_eval)
         #print("distrib actions learning agent:", act_distrib)
 
-        print("[agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()]=",[agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
-        print("np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])=", np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()]))
+        #print("[agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()]=",[agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
+        #print("np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])=", np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()]))
         avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
-        print("avg_norm_return=",avg_norm_return)
+        #print("avg_norm_return=",avg_norm_return)
         avg_norm_returns_train_list.append(avg_norm_return)
 
         rew_values = [(np.sum([rewards_eval_m[m_val][ag_idx] for m_val in config.mult_fact])) for ag_idx, _ in active_agents.items()]
