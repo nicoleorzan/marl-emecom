@@ -231,14 +231,14 @@ def objective(trial, args, repo_name):
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
-                #print("rewards=", rewards)
+                print("rewards=", rewards)
 
                 if (mf > 1. and mf < 2.):
                     social_norm.save_actions(actions, active_agents_idxs)
 
-
-                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
-                
+                rewards_norm = {key: value/parallel_env.b for key, value in rewards.items()}
+                #rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
+                print("rewards_norm=", rewards_norm)
                 for ag_idx, agent in active_agents.items():
                     
                     agent.buffer.rewards.append(rewards[ag_idx])

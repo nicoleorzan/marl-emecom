@@ -86,7 +86,9 @@ class parallel_env(ParallelEnv):
 
         self.current_multiplier = torch.Tensor([0.]).to(device)
 
-        self.b = torch.Tensor([5.]); self.c = torch.Tensor([1.]) # c is fixed, b can change
+        # c is fixed, b can change
+        self.c = torch.Tensor([1.])
+        self.b = torch.Tensor([self.b_value])
 
     def set_active_agents(self, idxs):
         self.active_agents = ["agent_" + str(r) for r in idxs]

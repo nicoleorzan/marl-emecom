@@ -73,7 +73,8 @@ def setup_training_hyperparams(trial, args):
         get_opponent_is_uncertain = False,
         opponent_selection = args.opponent_selection,
         other_reputation_threshold = o_r_t, #trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
-        cooperation_threshold = c_t #trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        cooperation_threshold = c_t, #trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        b_value = 10
     )
 
     if (args.algorithm == "reinforce"):
