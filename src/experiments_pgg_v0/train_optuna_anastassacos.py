@@ -62,11 +62,11 @@ def setup_training_hyperparams(trial, args):
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
         batch_size = 128,
-        lr_actor = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
-        lr_critic = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
-        lr_opponent = trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
+        lr_actor = 0.002, #trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
+        lr_critic = 0.025, #trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
+        lr_opponent =  0.007, #trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
         n_hidden_act = 2,
-        hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
+        hidden_size_act = 16, #trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         embedding_dim = 1,
         binary_reputation = args.binary_reputation,
         get_index = False,
@@ -335,7 +335,7 @@ def objective(trial, args, repo_name):
         avg_rep = np.mean([agent.reputation for ag_idx, agent in agents.items() if (agent.is_dummy == False)])
         #print("avg_rep=", avg_rep)
         measure = avg_rep
-        #print("measure=", measure)
+        print("measure=", measure)
         trial.report(measure, epoch)
         
         if trial.should_prune():
