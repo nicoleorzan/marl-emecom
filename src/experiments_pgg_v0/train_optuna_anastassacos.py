@@ -74,7 +74,7 @@ def setup_training_hyperparams(trial, args):
         opponent_selection = args.opponent_selection,
         other_reputation_threshold = o_r_t, #trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
         cooperation_threshold = c_t, #trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-        b_value = 10
+        b_value = args.b_value
     )
 
     if (args.algorithm == "reinforce"):
@@ -147,7 +147,7 @@ def objective(trial, args, repo_name):
     n_dummy = int(args.proportion_dummy_agents*config.n_agents)
     print("n_dummy=", n_dummy)
     is_dummy = list(reversed([1 if i<n_dummy else 0 for i in range(config.n_agents) ]))
-    print("config.uncertainties=", config.uncertainties)
+    # print("config.uncertainties=", config.uncertainties)
     print("is_dummy=", is_dummy)
     non_dummy_idxs = [i for i,val in enumerate(is_dummy) if val==0]
 
@@ -161,7 +161,9 @@ def objective(trial, args, repo_name):
 
     for epoch in range(config.n_epochs):
         #print("\n=========================")
-        #print("\n==========>Epoch=", epoch)
+        print("\n==========>Epoch=", epoch)
+        for ag_idx, agent in agents.items():
+            print("Reputation agent ", ag_idx, agent.reputation)
 
         #pick a pair of agents
         #print("\n")
@@ -182,11 +184,13 @@ def objective(trial, args, repo_name):
                 active_agents_idxs = random.sample(range(config.n_agents), 2)
             #print("active_agents_idxs=",active_agents_idxs)
             active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
-            print("ACTIVE AGENTS=", active_agents)
+            #print("ACTIVE AGENTS=", active_agents)
 
         parallel_env.set_active_agents(active_agents_idxs)
 
         [agent.reset_batch() for _, agent in active_agents.items()]
+        act_batch = {}; rew_batch = {}; 
+        rew_norm_batch = {}
         
         for batch_idx in range(config.batch_size):
 
@@ -229,7 +233,7 @@ def objective(trial, args, repo_name):
                 #print("\nacting")
                 for agent in parallel_env.active_agents:
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
-                
+                #print("\nactions=", actions)
                 observations, rewards, done, _ = parallel_env.step1(actions)
                 #print("rewards=", rewards)
 
@@ -249,9 +253,22 @@ def objective(trial, args, repo_name):
                     agent.return_episode_norm += rewards_norm[ag_idx]
                     agent.return_episode =+ rewards[ag_idx]
 
+                for k in actions:
+                    if (k not in act_batch):
+                        act_batch[k] = [actions[k].item()]
+                    else:
+                        act_batch[k].append(actions[k].item())
+                #rew_norm_batch.append(rewards)
+                #print("act_batch=", act_batch  )
+
                 # break; if the episode is over
                 if done:
                     break
+            
+        #print("act_batch=", act_batch)
+        print("Avg act agent0=", np.mean(act_batch["agent_0"]))
+        print("Avg act agent1=", np.mean(act_batch["agent_1"]))
+        print("last rewards=",rewards)
 
         #print("update reputation")
         #print("active_agents_idxs=",active_agents_idxs)
@@ -259,6 +276,8 @@ def objective(trial, args, repo_name):
             social_norm.rule09_binary(active_agents_idxs)
         else:    
             social_norm.rule09(active_agents_idxs)
+
+        print("new reputation=", agents["agent_0"].reputation)
 
         for ag_idx, agent in active_agents.items():
             if (agent.is_dummy == False and agent.is_communicating):
@@ -295,6 +314,7 @@ def objective(trial, args, repo_name):
             actions_eval_m[m] = act_eval
             #print("act_distrib=", act_distrib)
         #print("act eval=", act_eval)
+        print("distrib actions learning agent:", act_distrib)
 
         avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
         avg_norm_returns_train_list.append(avg_norm_return)
@@ -360,6 +380,7 @@ def objective(trial, args, repo_name):
 
             wandb.log({
                 "epoch": epoch,
+                "avg_rep": avg_rep,
                 "current_multiplier": mf,
                 "avg_return_train": avg_norm_return,
                 "avg_return_train_time": np.mean(avg_norm_returns_train_list[-10:]),
@@ -370,7 +391,7 @@ def objective(trial, args, repo_name):
                 step=epoch, commit=True)
 
         if (epoch%10 == 0):
-            print("Epoch : {} \t Mult factor: {}  \t Measure: {} ".format(epoch, mf, measure))
+            print("Epoch : {} \t Measure: {} ".format(epoch, measure))
     
     wandb.finish()
     return measure
@@ -390,7 +411,7 @@ def training_function(args):
         unc_string = "unc_"
 
     repo_name = "ANAST_"+ str(args.n_agents) + "agents_" + comm_string + \
-        unc_string + args.algorithm + "_dummy_population_" + str(args.proportion_dummy_agents)
+        unc_string + args.algorithm + "_dummy_population_" + str(args.proportion_dummy_agents) + "_b" + str(args.b_value)
     
     if (args.addition != ""):
         repo_name += "_"+ str(args.addition)

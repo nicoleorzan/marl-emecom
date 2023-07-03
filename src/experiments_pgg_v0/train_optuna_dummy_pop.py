@@ -359,6 +359,7 @@ def objective(trial, args, repo_name):
 
             wandb.log({
                 "epoch": epoch,
+                "avg_rep": avg_rep,
                 "current_multiplier": mf,
                 "avg_return_train": avg_norm_return,
                 "avg_return_train_time": np.mean(avg_norm_returns_train_list[-10:]),

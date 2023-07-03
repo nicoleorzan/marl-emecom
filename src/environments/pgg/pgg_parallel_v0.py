@@ -89,6 +89,8 @@ class parallel_env(ParallelEnv):
         # c is fixed, b can change
         self.c = torch.Tensor([1.])
         self.b = torch.Tensor([self.b_value])
+        self.mat = torch.Tensor([[self.c, self.b+self.c],[0., self.b]])
+        self.mv = torch.max(self.mat)
 
     def set_active_agents(self, idxs):
         self.active_agents = ["agent_" + str(r) for r in idxs]
@@ -103,7 +105,7 @@ class parallel_env(ParallelEnv):
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
         if (self.fraction == True):
-            return Box(low=torch.Tensor([-0.001]), high=torch.Tensor([1.001]))            
+            return Box(low=torch.Tensor([-0.001]), high=torch.Tensor([1.001]))
         else:
             return Discrete(self.n_actions)
 
@@ -186,17 +188,17 @@ class parallel_env(ParallelEnv):
         ag1 = self.active_agents[1]
 
         if (actions[ag0] == 0 and actions[ag1] == 0):
-            rewards[ag0] = self.c
-            rewards[ag1] = self.c
+            rewards[ag0] = self.mat[0,0]
+            rewards[ag1] = self.mat[0,0]
         elif (actions[ag0] == 0 and actions[ag1] == 1):
-            rewards[ag0] = self.b + self.c
-            rewards[ag1] = torch.Tensor([0.]) 
+            rewards[ag0] = self.mat[0,1]
+            rewards[ag1] = self.mat[1,0] 
         elif (actions[ag0] == 1 and actions[ag1] == 0):
             rewards[ag0] = torch.Tensor([0.]) 
-            rewards[ag1] = self.b + self.c
+            rewards[ag1] = self.mat[1,0]
         elif (actions[ag0] == 1 and actions[ag1] == 1):
-            rewards[ag0] = self.b
-            rewards[ag1] = self.b
+            rewards[ag0] = self.mat[1,1]
+            rewards[ag1] = self.mat[1,1]
 
         self.num_moves += 1
         env_done = self.num_moves >= self.num_game_iterations

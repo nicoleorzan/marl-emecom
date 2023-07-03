@@ -11,7 +11,7 @@ class SocialNorm():
         self.n_agents = len(self.agents)
 
         if (self.binary_reputation == True):
-            self.threshold = 1.
+            self.threshold = 0.5
         else: 
             self.threshold = self.cooperation_threshold
 
