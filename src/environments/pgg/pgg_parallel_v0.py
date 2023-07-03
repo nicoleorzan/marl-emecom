@@ -86,6 +86,8 @@ class parallel_env(ParallelEnv):
 
         self.current_multiplier = torch.Tensor([0.]).to(device)
 
+        self.b = torch.Tensor([5.]); self.c = torch.Tensor([1.]) # c is fixed, b can change
+
     def set_active_agents(self, idxs):
         self.active_agents = ["agent_" + str(r) for r in idxs]
         self.n_active_agents = len(idxs)
@@ -170,6 +172,47 @@ class parallel_env(ParallelEnv):
 
     def get_coins(self):
         return self.coins
+    
+    def step1(self, actions):
+        if not actions:
+            self.agents = []
+            return {}, {}, {}, {}
+
+        rewards = {}
+    
+        ag0 = self.active_agents[0]
+        ag1 = self.active_agents[1]
+
+        if (actions[ag0] == 0 and actions[ag1] == 0):
+            rewards[ag0] = self.c
+            rewards[ag1] = self.c
+        elif (actions[ag0] == 0 and actions[ag1] == 1):
+            rewards[ag0] = self.b + self.c
+            rewards[ag1] = torch.Tensor([0.]) 
+        elif (actions[ag0] == 1 and actions[ag1] == 0):
+            rewards[ag0] = torch.Tensor([0.]) 
+            rewards[ag1] = self.b + self.c
+        elif (actions[ag0] == 1 and actions[ag1] == 1):
+            rewards[ag0] = self.b
+            rewards[ag1] = self.b
+
+        self.num_moves += 1
+        env_done = self.num_moves >= self.num_game_iterations
+
+        if (env_done):
+            observations = {agent: torch.Tensor([0.]) for agent in self.active_agents}
+
+        if (self.num_game_iterations > 1):
+
+            # assign new amount of coins for next round
+            self.assign_coins_fixed()
+
+            self.observe()
+
+        if env_done:
+            self.agents = []
+
+        return observations, rewards, env_done, self.infos
          
     def step(self, actions):
         '''
