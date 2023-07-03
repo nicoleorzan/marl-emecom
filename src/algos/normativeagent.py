@@ -21,6 +21,7 @@ class NormativeAgent():
         for key, val in params.items(): setattr(self, key, val)
 
         self.reputation = 1.0
+        self.old_reputation = self.reputation
         self.idx = idx
         self.is_communicating = self.communicating_agents[self.idx]
         self.is_listening = self.listening_agents[self.idx]

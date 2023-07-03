@@ -18,7 +18,7 @@ class SocialNorm():
         self.reset_saved_actions()
 
     def reset_saved_actions(self):
-        self.saved_actions = {key: [] for key in [i for i in range(self.n_agents)]} #{}
+        self.saved_actions = {key: [] for key in [i for i in range(self.n_agents)]}
 
     def save_actions(self, act, active_agents_idxs):
         for ag_idx in active_agents_idxs:
@@ -31,41 +31,54 @@ class SocialNorm():
         # agent that cooperates with good agents, and does not cooperate with bad ones is good
         for ag_idx in active_agents_idxs:
             agent = self.agents["agent_"+str(ag_idx)]
-            if (agent.is_dummy == False and self.saved_actions[ag_idx] != []):
+            agent.old_reputation = agent.reputation
+            #if (agent.is_dummy == False and self.saved_actions[ag_idx] != []):
+            if (self.saved_actions[ag_idx] != []):
                 other_idx = list(set(active_agents_idxs) - set([agent.idx]))[0]
                 other = self.agents["agent_"+str(other_idx)]
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
 
                 if (avg_cooperation_level >= self.threshold):
-                    if (other.reputation >= self.other_reputation_threshold):
+                    if (other.old_reputation >= self.other_reputation_threshold):
                         agent.reputation = min(agent.reputation + 0.2, 1.)
                     else: 
                         agent.reputation = max(agent.reputation - 0.2, 0.)
                 else: 
-                    if (other.reputation >= self.other_reputation_threshold):
+                    if (other.old_reputation >= self.other_reputation_threshold):
                         agent.reputation = max(agent.reputation - 0.2, 0.)
                     else: 
                         agent.reputation = min(agent.reputation + 0.2, 1.)
+
+        self.reset_saved_actions()
 
     def rule09_binary(self, active_agents_idxs):
         # agent that cooperates with good agents, and does not cooperate with bad ones is good
         for ag_idx in active_agents_idxs:
+            #print("ag_idx=", ag_idx)
             agent = self.agents["agent_"+str(ag_idx)]
-            if (agent.is_dummy == False and self.saved_actions[ag_idx] != []):
+            #print("reputation before=", agent.reputation)
+            agent.old_reputation = agent.reputation
+            #if (agent.is_dummy == False and self.saved_actions[ag_idx] != []):
+            if (self.saved_actions[ag_idx] != []):
                 other_idx = list(set(active_agents_idxs) - set([agent.idx]))[0]
                 other = self.agents["agent_"+str(other_idx)]
+                #print("other.old_reputation=", other.old_reputation)
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
 
                 if (avg_cooperation_level >= self.threshold):
-                    if (other.reputation == 1.):
+                    if (other.old_reputation == 1.):
                         agent.reputation = 1.
                     else: 
                         agent.reputation = 0.
                 else: 
-                    if (other.reputation == 1.):
+                    if (other.old_reputation == 1.):
                         agent.reputation = 0.
                     else: 
                         agent.reputation = 1.
+
+            #print("reputation after=", agent.reputation)
+
+        self.reset_saved_actions()
 
     def rule00(self, active_agents_idxs):
         # agent that never cooperates (baseline)

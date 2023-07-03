@@ -28,6 +28,7 @@ class Agent():
             #print("rep is binary")
             #self.reputation = float(np.random.binomial(1,0.5))
             self.reputation = 1.0
+        self.old_reputation = self.reputation
         #print("rep=", self.reputation)
 
         self.is_dummy = False

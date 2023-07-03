@@ -61,7 +61,7 @@ def setup_training_hyperparams(trial, args):
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        batch_size = 128,
+        batch_size = 10,
         lr_actor = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
         lr_critic = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
         lr_opponent = trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
@@ -189,8 +189,7 @@ def objective(trial, args, repo_name):
         parallel_env.set_active_agents(active_agents_idxs)
 
         [agent.reset_batch() for _, agent in active_agents.items()]
-        act_batch = {}; rew_batch = {}; 
-        rew_norm_batch = {}
+        act_batch = {}; rew_batch = {}; rew_norm_batch = {}
         
         for batch_idx in range(config.batch_size):
 
@@ -240,9 +239,8 @@ def objective(trial, args, repo_name):
                 if (mf > 1. and mf < 2.):
                     social_norm.save_actions(actions, active_agents_idxs)
 
-                rewards_norm = {key: value/(parallel_env.b + parallel_env.c) for key, value in rewards.items()}
+                rewards_norm = {key: value/parallel_env.mv for key, value in rewards.items()}
                 #print("rewards_norm=", rewards_norm)
-                #rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
                 
                 for ag_idx, agent in active_agents.items():
                     
@@ -258,8 +256,6 @@ def objective(trial, args, repo_name):
                         act_batch[k] = [actions[k].item()]
                     else:
                         act_batch[k].append(actions[k].item())
-                #rew_norm_batch.append(rewards)
-                #print("act_batch=", act_batch  )
 
                 # break; if the episode is over
                 if done:
@@ -268,16 +264,23 @@ def objective(trial, args, repo_name):
         #print("act_batch=", act_batch)
         print("Avg act agent0=", np.mean(act_batch["agent_0"]))
         print("Avg act agent1=", np.mean(act_batch["agent_1"]))
-        print("last rewards=",rewards)
+        #print("last rewards=",rewards)
 
         #print("update reputation")
         #print("active_agents_idxs=",active_agents_idxs)
+        #print("avg saved_actions=",[np.mean(social_norm.saved_actions[ag_idx]) for ag_idx in active_agents_idxs])
         if (config.binary_reputation == True):
             social_norm.rule09_binary(active_agents_idxs)
         else:    
             social_norm.rule09(active_agents_idxs)
 
-        print("new reputation=", agents["agent_0"].reputation)
+        for ag_idx in active_agents_idxs:       
+            agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
+
+        #if agents["agent_1"].reputation == 0.0:
+        #    print("\n\n\n\n\n\n\n\n\n\n\nERROR!!!!!!!!!!!!!!!")
+
+        #print("NEW REPUTATIONS=", "agent_0 = ", agents["agent_0"].reputation, ", agent_1 = ", agents["agent_1"].reputation)
 
         for ag_idx, agent in active_agents.items():
             if (agent.is_dummy == False and agent.is_communicating):
@@ -314,7 +317,7 @@ def objective(trial, args, repo_name):
             actions_eval_m[m] = act_eval
             #print("act_distrib=", act_distrib)
         #print("act eval=", act_eval)
-        print("distrib actions learning agent:", act_distrib)
+        #print("distrib actions learning agent:", act_distrib)
 
         avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
         avg_norm_returns_train_list.append(avg_norm_return)
