@@ -320,7 +320,7 @@ def objective(trial, args, repo_name):
         #print("distrib actions learning agent:", act_distrib)
 
         print("[agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()]=",[agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
-        avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
+        print("np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])=", np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()]))avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
         print("avg_norm_return=",avg_norm_return)
         avg_norm_returns_train_list.append(avg_norm_return)
 
