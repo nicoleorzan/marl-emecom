@@ -240,7 +240,7 @@ def objective(trial, args, repo_name):
                     social_norm.save_actions(actions, active_agents_idxs)
 
                 rewards_norm = {key: value/parallel_env.mv for key, value in rewards.items()}
-                #print("rewards_norm=", rewards_norm)
+                print("rewards_norm=", rewards_norm)
                 
                 for ag_idx, agent in active_agents.items():
                     
