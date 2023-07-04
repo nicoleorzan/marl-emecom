@@ -83,12 +83,12 @@ def setup_training_hyperparams(trial, args):
         algo_params = dict(
             K_epochs = 40, #trial.suggest_int("K_epochs", 30, 80),
             eps_clip = 0.2, #trial.suggest_float("eps_clip", 0.1, 0.4),
-            gamma = trial.suggest_float("gamma", 0.99, 0.999, log=True),
-            c1 = trial.suggest_float("c1", 0.01, 0.5, log=True),
-            c2 = trial.suggest_float("c2", 0.0001, 0.1, log=True),
-            c3 = trial.suggest_float("c3", 0.01, 0.5, log=True),
-            c4 = trial.suggest_float("c4", 0.0001, 0.1, log=True),
-            tau = trial.suggest_float("tau", 0.001, 0.5)
+            gamma = 0.99, #trial.suggest_float("gamma", 0.99, 0.999, log=True),
+            c1 = 1, #trial.suggest_float("c1", 0.01, 0.5, log=True),
+            c2 = 0.01, #trial.suggest_float("c2", 0.0001, 0.1, log=True),
+            c3 = 0, #trial.suggest_float("c3", 0.01, 0.5, log=True),
+            c4 = 0#, #trial.suggest_float("c4", 0.0001, 0.1, log=True),
+            #tau = 0.5 #trial.suggest_float("tau", 0.001, 0.5)
         )
     elif (args.algorithm == "dqn"):
         algo_params = dict(
