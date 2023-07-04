@@ -87,10 +87,11 @@ class parallel_env(ParallelEnv):
         self.current_multiplier = torch.Tensor([0.]).to(device)
 
         # c is fixed, b can change
-        self.c = torch.Tensor([1.])
-        self.b = torch.Tensor([self.b_value])
-        self.mat = torch.Tensor([[self.c, self.b+self.c],[0., self.b]])
-        self.mv = torch.max(self.mat)
+        if hasattr(self, 'b_value'):
+            self.c = torch.Tensor([1.])
+            self.b = torch.Tensor([self.b_value])
+            self.mat = torch.Tensor([[self.c, self.b+self.c],[0., self.b]])
+            self.mv = torch.max(self.mat)
 
     def set_active_agents(self, idxs):
         self.active_agents = ["agent_" + str(r) for r in idxs]

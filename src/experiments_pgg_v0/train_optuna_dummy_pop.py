@@ -62,11 +62,11 @@ def setup_training_hyperparams(trial, args):
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
         batch_size = 128,
-        lr_actor = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
-        lr_critic = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
-        lr_opponent = trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
+        lr_actor = 0.002, #trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
+        lr_critic = 0.017, #trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
+        lr_opponent = 0.007, #trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
         n_hidden_act = 2,
-        hidden_size_act = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
+        hidden_size_act = 16, #trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         embedding_dim = 1,
         binary_reputation = args.binary_reputation,
         get_index = False,
@@ -231,16 +231,16 @@ def objective(trial, args, repo_name):
                 #print("\nacting")
                 for agent in parallel_env.active_agents:
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
-                print("\nactions=", actions)
+                #print("\nactions=", actions)
                 observations, rewards, done, _ = parallel_env.step(actions)
-                print("rewards=", rewards)
+                #print("rewards=", rewards)
 
-                if (mf > 1. and mf < 2.):
+                if (mf > 1.):# and mf < 2.):
                     social_norm.save_actions(actions, active_agents_idxs)
 
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
-                print("rewards_norm=", rewards_norm)
-                
+                #print("rewards_norm=", rewards_norm)
+
                 for ag_idx, agent in active_agents.items():
                     
                     agent.buffer.rewards.append(rewards[ag_idx])
@@ -263,7 +263,7 @@ def objective(trial, args, repo_name):
         #print("act_batch=", act_batch)
         print("Avg act agent0=", np.mean(act_batch["agent_0"]))
         print("Avg act agent1=", np.mean(act_batch["agent_1"]))
-        print("last rewards=",rewards)
+        #print("last rewards=",rewards)
 
         #print("update reputation")
         #print("active_agents_idxs=",active_agents_idxs)
@@ -272,7 +272,13 @@ def objective(trial, args, repo_name):
         else:    
             social_norm.rule09(active_agents_idxs)
 
-        print("new reputation=", agents["agent_0"].reputation)
+        for ag_idx in active_agents_idxs:       
+            agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
+
+        if agents["agent_1"].reputation == 0.0:
+            print("\n\n\n\n\n\n\n\n\n\n\nERROR!!!!!!!!!!!!!!!")
+
+        print("NEW REPUTATIONS=", "agent_0 = ", agents["agent_0"].reputation, ", agent_1 = ", agents["agent_1"].reputation)
 
         for ag_idx, agent in active_agents.items():
             if (agent.is_dummy == False and agent.is_communicating):
@@ -298,7 +304,7 @@ def objective(trial, args, repo_name):
         # =================== EVALUATION ===================
         # computing evaluation against the behavior of all the dummy agents
         #print("EVALUATION")
-        rewards_eval_m = {}; rewards_eval_norm_m = {}; actions_eval_m = {}; mex_distrib_given_m = {}
+        rewards_eval_m = {}; rewards_eval_norm_m = {}; actions_eval_m = {}; mex_distrib_given_m = {}; act_distrib_m = {}
         optimization_measure = []
 
         for m in config.mult_fact:
@@ -307,9 +313,13 @@ def objective(trial, args, repo_name):
             rewards_eval_m[m] = rewards_eval
             rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
             actions_eval_m[m] = act_eval
+            act_distrib_m[m] = act_distrib
             #print("act_distrib=", act_distrib)
         #print("act eval=", act_eval)
-        print("distrib actions learning agent:", act_distrib)
+        print("act_distrib_m:", act_distrib_m)
+        print("actions=", actions_eval_m)
+        print("rewards=", rewards_eval_m)
+        print("rewards_norm=", rewards_eval_norm_m)
 
         avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
         avg_norm_returns_train_list.append(avg_norm_return)
@@ -324,7 +334,7 @@ def objective(trial, args, repo_name):
         avg_rep = np.mean([agent.reputation for ag_idx, agent in agents.items() if (agent.is_dummy == False)])
         #print("avg_rep=", avg_rep)
         measure = avg_rep
-        #print("measure=", measure)
+        print("measure=", measure)
         trial.report(measure, epoch)
         
         if trial.should_prune():

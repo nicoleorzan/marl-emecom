@@ -63,8 +63,8 @@ def setup_training_hyperparams(trial, args):
         listening_agents = args.listening_agents,
         batch_size = 128,
         lr_actor = 0.002, #trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
-        lr_critic = 0.025, #trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
-        lr_opponent =  0.007, #trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
+        lr_critic = 0.017, #0.025, #trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
+        lr_opponent = 0.007, #trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
         n_hidden_act = 2,
         hidden_size_act = 16, #trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         embedding_dim = 1,
@@ -260,7 +260,7 @@ def objective(trial, args, repo_name):
                 # break; if the episode is over
                 if done:
                     break
-            
+
         #print("act_batch=", act_batch)
         print("Avg act agent0=", np.mean(act_batch["agent_0"]))
         print("Avg act agent1=", np.mean(act_batch["agent_1"]))
@@ -268,7 +268,6 @@ def objective(trial, args, repo_name):
 
         #print("update reputation")
         #print("active_agents_idxs=",active_agents_idxs)
-        #print("avg saved_actions=",[np.mean(social_norm.saved_actions[ag_idx]) for ag_idx in active_agents_idxs])
         if (config.binary_reputation == True):
             social_norm.rule09_binary(active_agents_idxs)
         else:    
@@ -317,10 +316,10 @@ def objective(trial, args, repo_name):
             actions_eval_m[m] = act_eval
             #print("act_distrib=", act_distrib)
         #print("act eval=", act_eval)
-        #print("distrib actions learning agent:", act_distrib)
+        print("distrib actions learning agent:", act_distrib)
+        print("actions=", actions_eval_m[m])
+        print("rewards_norm=", rewards_eval_norm_m[m])
 
-        #print("[agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()]=",[agent.return_episode_old_norm.numpy().item() for _, agent in active_agents.items()])
-        #print("np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])=", np.mean([agent.return_episode_old_norm.numpy().item() for _, agent in active_agents.items()]))
         avg_norm_return = np.mean([agent.return_episode_old_norm.numpy().item() for _, agent in active_agents.items()])
         #print("avg_norm_return=",avg_norm_return)
         avg_norm_returns_train_list.append(avg_norm_return)

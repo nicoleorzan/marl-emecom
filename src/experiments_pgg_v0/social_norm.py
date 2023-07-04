@@ -54,16 +54,17 @@ class SocialNorm():
     def rule09_binary(self, active_agents_idxs):
         # agent that cooperates with good agents, and does not cooperate with bad ones is good
         for ag_idx in active_agents_idxs:
-            #print("ag_idx=", ag_idx)
+            print("ag_idx=", ag_idx)
             agent = self.agents["agent_"+str(ag_idx)]
-            #print("reputation before=", agent.reputation)
+            print("reputation before=", agent.reputation)
             agent.old_reputation = agent.reputation
             #if (agent.is_dummy == False and self.saved_actions[ag_idx] != []):
             if (self.saved_actions[ag_idx] != []):
                 other_idx = list(set(active_agents_idxs) - set([agent.idx]))[0]
                 other = self.agents["agent_"+str(other_idx)]
-                #print("other.old_reputation=", other.old_reputation)
+                print("other.old_reputation=", other.old_reputation)
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
+                print("avg_cooperation_level=",avg_cooperation_level)
 
                 if (avg_cooperation_level >= self.threshold):
                     if (other.old_reputation == 1.):
@@ -76,7 +77,7 @@ class SocialNorm():
                     else: 
                         agent.reputation = 1.
 
-            #print("reputation after=", agent.reputation)
+            print("reputation after=", agent.reputation)
 
         self.reset_saved_actions()
 
