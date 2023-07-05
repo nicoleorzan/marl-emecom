@@ -64,9 +64,9 @@ def setup_training_hyperparams(trial, args):
         batch_size = 128,
         lr_actor = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True), #0.002 reinforce, 0.0002 PPO mixed motive
         lr_critic = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True), #0.017 reinforce , #0.001 mixed motive PPO
-        lr_opponent = trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True), # 0.007 reinforce, 0 midex motive PPo
-        n_hidden_act = 2,
-        hidden_size_act = 16, #trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
+        lr_opponent = 0, #trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True), # 0.007 reinforce, 0 midex motive PPo
+        n_hidden_act = 1,
+        hidden_size_act = 8, #trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         embedding_dim = 1,
         binary_reputation = args.binary_reputation,
         get_index = False,
@@ -83,10 +83,10 @@ def setup_training_hyperparams(trial, args):
             K_epochs = 40, #trial.suggest_int("K_epochs", 30, 80),
             eps_clip = 0.2, #trial.suggest_float("eps_clip", 0.1, 0.4),
             gamma = 0.99, #trial.suggest_float("gamma", 0.99, 0.999, log=True),
-            c1 = trial.suggest_float("c1", 0.01, 0.5, log=True),
-            c2 = trial.suggest_float("c2", 0.0001, 0.1, log=True),
+            c1 = trial.suggest_float("c1", 0.001, 0.9, log=True),
+            c2 = trial.suggest_float("c2", 0.001, 0.9, log=True),
             c3 = 0, #trial.suggest_float("c3", 0.01, 0.5, log=True),
-            c4 = 0#, #trial.suggest_float("c4", 0.0001, 0.1, log=True),
+            c4 = 0 #, #trial.suggest_float("c4", 0.0001, 0.1, log=True),
             #tau = 0.5 #trial.suggest_float("tau", 0.001, 0.5)
         )
     elif (args.algorithm == "dqn"):
