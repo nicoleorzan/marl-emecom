@@ -261,8 +261,8 @@ def objective(trial, args, repo_name):
                     break
 
         #print("act_batch=", act_batch)
-        print("Avg act agent0=", np.mean(act_batch["agent_0"]))
-        print("Avg act agent1=", np.mean(act_batch["agent_1"]))
+        #print("Avg act agent0=", np.mean(act_batch["agent_0"]))
+        #print("Avg act agent1=", np.mean(act_batch["agent_1"]))
         #print("last rewards=",rewards)
 
         #print("update reputation")
@@ -275,8 +275,8 @@ def objective(trial, args, repo_name):
         for ag_idx in active_agents_idxs:       
             agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
 
-        if agents["agent_1"].reputation == 0.0:
-            print("\n\n\n\n\n\n\n\n\n\n\nERROR!!!!!!!!!!!!!!!")
+        #if agents["agent_9"].reputation == 0.0:
+        #    print("\n\n\n\n\n\n\n\n\n\n\nERROR!!!!!!!!!!!!!!!")
 
         print("NEW REPUTATIONS=", "agent_0 = ", agents["agent_0"].reputation, ", agent_1 = ", agents["agent_1"].reputation)
 
