@@ -369,4 +369,4 @@ def training_function(args):
                 print("    {}: {}".format(key, value))
             
             print("Running with best params:")
-            objective(study.best_trial, args, repo_name+"_BEST")
+            objective(args, repo_name+"_BEST", study.best_trial)
