@@ -119,7 +119,6 @@ class PPO(Agent):
                     self.c3*self.MseLoss(state_values_comm, rewards) - \
                     self.c4*dist_entropy_comm)
 
-            #print(old_states_a[0], old_actions[0])
             logprobs_act, dist_entropy_act, state_values_act = self.policy_act.evaluate(old_states_a, old_actions)
             state_values_act = torch.squeeze(state_values_act)
             ratios_act = torch.exp(logprobs_act - old_logprobs_act.detach())
@@ -130,7 +129,6 @@ class PPO(Agent):
             loss_a = (-torch.min(surr1a, surr2a) + \
                 self.c1*self.MseLoss(state_values_act, rewards) - \
                 self.c2*dist_entropy_act)
-            #print("loss_a=", loss_a)
 
             if (self.is_communicating):
                 loss_a += loss_c

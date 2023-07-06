@@ -55,8 +55,8 @@ def setup_training_hyperparams(args, trial):
         lr_actor = lr_a,
         lr_critic = lr_c, 
         lr_opponent = lr_opp, 
-        n_hidden_act = 1,
-        hidden_size_act = 8, #trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
+        n_hidden_act = 2,
+        hidden_size_act = 16, #trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         embedding_dim = 1,
         binary_reputation = args.binary_reputation,
         get_index = False,
@@ -81,7 +81,7 @@ def setup_training_hyperparams(args, trial):
         )
     elif (args.algorithm == "dqn"):
         algo_params = dict(
-            memory_size = trial.suggest_int("memory_size", 100, 1000)
+            memory_size = 500, #trial.suggest_int("memory_size", 100, 1000)
         )
 
     if (args.communicating_agents.count(1.) != 0):
