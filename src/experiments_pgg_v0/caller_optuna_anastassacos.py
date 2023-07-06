@@ -9,7 +9,7 @@ if __name__ == '__main__':
         "--mult_fact",
         nargs="*",
         type=float,
-        default=[])
+        default=[1.5])
     parser.add_argument( # to fill with values of uncertainties for every agent (can be 0.)
         "--uncertainties",
         nargs="*",
