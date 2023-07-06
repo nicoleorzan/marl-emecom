@@ -12,8 +12,6 @@ def setup_training_hyperparams(args, trial):
     if (args.optuna_ == 1): 
         lr_a = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True) #0.002 reinforce, 0.0002 PPO mixed motive
         lr_c = trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True) #0.017 reinforce , #0.001 mixed motive PPO
-        c_1 = trial.suggest_float("c1", 0.001, 0.9, log=True)
-        c_2 = trial.suggest_float("c1", 0.001, 0.9, log=True)
         if (args.opponent_selection == 1):
             lr_opp = trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True) # 0.007 reinforce, 0 midex motive PPO
         else: 
@@ -21,8 +19,6 @@ def setup_training_hyperparams(args, trial):
     else: 
         lr_a = 0.002 # 0.002 reinforce 0.0002
         lr_c = 0     # 0.001 
-        c_1 = 0.5
-        c_2 = 0.01
         if (args.opponent_selection == 1):
             lr_opp = 0.001
         else: 
@@ -75,6 +71,13 @@ def setup_training_hyperparams(args, trial):
             decayRate = 0.999
         )
     elif (args.algorithm == "PPO"):
+        if (args.optuna_ == 1): 
+            c_1 = trial.suggest_float("c1", 0.001, 0.9, log=True)
+            c_2 = trial.suggest_float("c1", 0.001, 0.9, log=True)
+        else: 
+            c_1 = 0.5
+            c_2 = 0.01
+            
         algo_params = dict(
             lr_actor = lr_a,
             lr_critic = lr_c, 
