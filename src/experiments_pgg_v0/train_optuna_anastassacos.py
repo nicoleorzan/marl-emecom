@@ -14,17 +14,10 @@ import src.analysis.utils as U
 from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm
 from src.algos.normativeagent import NormativeAgent
 from social_norm import SocialNorm
+from params import setup_training_hyperparams
 
 
 torch.autograd.set_detect_anomaly(True)
-
-EPOCHS = 400 # total episodes
-# batch size are the number of episodes in which 2 agents interact with each other alone
-OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation.
-# the opponent index is embedded in the agent class
-ACTION_SIZE = 2
-#WANDB_MODE = "online"
-RANDOM_BASELINE = False
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -35,84 +28,6 @@ if(torch.cuda.is_available()):
 else:
     print("Device set to : cpu")
 
-
-def setup_training_hyperparams(trial, args):
-
-    if (args.binary_reputation == True):
-        o_r_t = 1.
-        c_t = 1.
-    else: 
-        o_r_t = trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-        c_t = trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-
-    game_params = dict(
-        n_agents = args.n_agents,
-        algorithm = args.algorithm,
-        wandb_mode = args.wandb_mode,
-        num_game_iterations = 1,
-        n_epochs = EPOCHS,
-        obs_size = OBS_SIZE,
-        action_size = ACTION_SIZE,
-        n_gmm_components = args.mult_fact, #trial.suggest_categorical("n_gmm_components", [3, len(args.mult_fact)]),
-        decayRate = 0.999,
-        mult_fact = args.mult_fact,
-        uncertainties = args.uncertainties,
-        gmm_ = args.gmm_,
-        random_baseline = RANDOM_BASELINE,
-        communicating_agents = args.communicating_agents,
-        listening_agents = args.listening_agents,
-        batch_size = 128,
-        lr_actor = 0.002, #trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True),
-        lr_critic = 0.017, #0.025, #trial.suggest_float("lr_critic", 1e-4, 1e-1, log=True),
-        lr_opponent = 0.007, #trial.suggest_float("lr_opponent", 1e-3, 1e-1, log=True),
-        n_hidden_act = 2,
-        hidden_size_act = 16, #trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
-        embedding_dim = 1,
-        binary_reputation = args.binary_reputation,
-        get_index = False,
-        get_opponent_is_uncertain = False,
-        opponent_selection = args.opponent_selection,
-        other_reputation_threshold = o_r_t, #trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
-        cooperation_threshold = c_t, #trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-        b_value = args.b_value
-    )
-
-    if (args.algorithm == "reinforce"):
-        algo_params = dict()
-    elif (args.algorithm == "PPO"):
-        algo_params = dict(
-            K_epochs = 40, #trial.suggest_int("K_epochs", 30, 80),
-            eps_clip = 0.2, #trial.suggest_float("eps_clip", 0.1, 0.4),
-            gamma = 0.99, #trial.suggest_float("gamma", 0.99, 0.999, log=True),
-            c1 = 1, #trial.suggest_float("c1", 0.01, 0.5, log=True),
-            c2 = 0.01, #trial.suggest_float("c2", 0.0001, 0.1, log=True),
-            c3 = 0, #trial.suggest_float("c3", 0.01, 0.5, log=True),
-            c4 = 0#, #trial.suggest_float("c4", 0.0001, 0.1, log=True),
-            #tau = 0.5 #trial.suggest_float("tau", 0.001, 0.5)
-        )
-    elif (args.algorithm == "dqn"):
-        algo_params = dict(
-            memory_size = trial.suggest_int("memory_size", 100, 1000)
-        )
-
-    print("args.communicating_agents.count(1.)=",args.communicating_agents.count(1.))
-    if (args.communicating_agents.count(1.) != 0):
-        comm_params = dict(
-            n_hidden_comm = 2,
-            hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
-            lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-4, 1e-1, log=True),
-            lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-4, 1e-1, log=True),
-            mex_size = 5,
-            sign_lambda = trial.suggest_float("sign_lambda", -5.0, 5.0),
-            list_lambda = trial.suggest_float("list_lambda", -5.0, 5.0)
-        )
-    else: 
-        comm_params = dict()
-
-    all_params = {**game_params, **algo_params, **comm_params}
-    print("all_params=", all_params)
-
-    return all_params
 
 def define_agents(config, is_dummy):
     agents = {}
@@ -128,9 +43,10 @@ def define_agents(config, is_dummy):
             agents['agent_'+str(idx)] = NormativeAgent(config, idx)
     return agents
 
-def objective(trial, args, repo_name):
+def objective(args, repo_name, trial=None):
 
-    all_params = setup_training_hyperparams(trial, args)
+    all_params = setup_training_hyperparams(args, trial)
+    all_params = {**all_params, **dict(b_value = args.b_value)}
     wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=args.wandb_mode)#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
@@ -166,7 +82,6 @@ def objective(trial, args, repo_name):
             print("Reputation agent ", ag_idx, agent.reputation)
 
         #pick a pair of agents
-        #print("\n")
         #print("OPPONENT SELECTION")
         active_agents_idxs = []
         while ((any(active_agents_idxs) == True) == False):
@@ -236,8 +151,7 @@ def objective(trial, args, repo_name):
                 observations, rewards, done, _ = parallel_env.step1(actions)
                 #print("rewards=", rewards)
 
-                if (mf > 1. and mf < 2.):
-                    social_norm.save_actions(actions, active_agents_idxs)
+                social_norm.save_actions(actions, active_agents_idxs)
 
                 rewards_norm = {key: value/parallel_env.mv for key, value in rewards.items()}
                 #print("rewards_norm=", rewards_norm)
@@ -262,12 +176,11 @@ def objective(trial, args, repo_name):
                     break
 
         #print("act_batch=", act_batch)
-        print("Avg act agent0=", np.mean(act_batch["agent_0"]))
-        print("Avg act agent1=", np.mean(act_batch["agent_1"]))
+        #print("Avg act agent0=", np.mean(act_batch["agent_0"]))
+        #print("Avg act agent1=", np.mean(act_batch["agent_1"]))
         #print("last rewards=",rewards)
 
         #print("update reputation")
-        #print("active_agents_idxs=",active_agents_idxs)
         if (config.binary_reputation == True):
             social_norm.rule09_binary(active_agents_idxs)
         else:    
@@ -305,7 +218,7 @@ def objective(trial, args, repo_name):
         # =================== EVALUATION ===================
         # computing evaluation against the behavior of all the dummy agents
         #print("EVALUATION")
-        rewards_eval_m = {}; rewards_eval_norm_m = {}; actions_eval_m = {}; mex_distrib_given_m = {}
+        rewards_eval_m = {}; rewards_eval_norm_m = {}; actions_eval_m = {}; mex_distrib_given_m = {}; act_distrib_m = {}
         optimization_measure = []
 
         for m in config.mult_fact:
@@ -314,33 +227,31 @@ def objective(trial, args, repo_name):
             rewards_eval_m[m] = rewards_eval
             rewards_eval_norm_m[m] = {key: value/max_values[m] for key, value in rewards_eval.items()}
             actions_eval_m[m] = act_eval
-            #print("act_distrib=", act_distrib)
-        #print("act eval=", act_eval)
-        print("distrib actions learning agent:", act_distrib)
-        print("actions=", actions_eval_m[m])
-        print("rewards_norm=", rewards_eval_norm_m[m])
+            act_distrib_m[m] = act_distrib
+        print("act_distrib_m:", act_distrib_m)
+        print("actions=", actions_eval_m)
+        print("rewards=", rewards_eval_m)
+        print("rewards_norm=", rewards_eval_norm_m)
 
         avg_norm_return = np.mean([agent.return_episode_old_norm.numpy().item() for _, agent in active_agents.items()])
-        #print("avg_norm_return=",avg_norm_return)
         avg_norm_returns_train_list.append(avg_norm_return)
 
         rew_values = [(np.sum([rewards_eval_m[m_val][ag_idx] for m_val in config.mult_fact])) for ag_idx, _ in active_agents.items()]
         avg_rew_time.append(np.mean(rew_values))
         #print(avg_rew_time)
         measure = np.mean(avg_rew_time[-10:])
-        #for ag_idx, agent in agents.items():
-        #    if (agent.is_dummy == False):
-        #        print("rep agent=", ag_idx, agent.reputation)
+
         avg_rep = np.mean([agent.reputation for ag_idx, agent in agents.items() if (agent.is_dummy == False)])
         #print("avg_rep=", avg_rep)
-        measure = avg_rep
-        print("measure=", measure)
-        trial.report(measure, epoch)
-        
-        if trial.should_prune():
-            print("is time to pruneee")
-            wandb.finish()
-            raise optuna.exceptions.TrialPruned()
+        if (config.optuna_):
+            measure = avg_rep
+            print("measure=", measure)
+            trial.report(measure, epoch)
+            
+            if trial.should_prune():
+                print("is time to pruneee")
+                wandb.finish()
+                raise optuna.exceptions.TrialPruned()
 
         if (config.wandb_mode == "online"):
             for ag_idx, agent in active_agents.items():
@@ -390,8 +301,6 @@ def objective(trial, args, repo_name):
                 "avg_return_train": avg_norm_return,
                 "avg_return_train_time": np.mean(avg_norm_returns_train_list[-10:]),
                 "avg_rew_time": measure,
-                ###"avg_loss": np.mean([agent.saved_losses[-1] for _, agent in active_agents.items()]),
-                #"avg_loss_comm": np.mean([agent.saved_losses_comm[-1] for _, agent in agents.items()]),
                 },
                 step=epoch, commit=True)
 
@@ -422,43 +331,46 @@ def training_function(args):
         repo_name += "_"+ str(args.addition)
     print("repo_name=", repo_name)
 
-
-    func = lambda trial: objective(trial, args, repo_name)
-
-    # sql not optimized for paralel sync
-    #storage = optuna.storages.RDBStorage(url="sqlite:///"+repo_name+"-db") 
-
-    storage = JournalStorage(JournalFileStorage("optuna-journal"+repo_name+".log"))
-
-    study = optuna.create_study(
-        study_name=repo_name,
-        storage=storage,
-        load_if_exists=True,
-        direction="maximize", 
-        pruner=optuna.pruners.MedianPruner(
-        n_startup_trials=0, n_warmup_steps=40, interval_steps=3
-        )
-    )
-
-    if (args.optimize):
-        study.optimize(func, n_trials=100, timeout=1000)
-
+    # If optuna, then optimize or get best params. Else use given params
+    if (args.optuna_ == 0):
+        objective(args, repo_name)
     else:
-        pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
-        complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
-        
-        print("Study statistics: ")
-        print("  Number of finished trials: ", len(study.trials))
-        print("  Number of pruned trials: ", len(pruned_trials))
-        print("  Number of complete trials: ", len(complete_trials))
+        func = lambda trial: objective(args, repo_name, trial)
 
-        print("Best trial:")
-        trial = study.best_trial
-        print("  Value: ", trial.value)
-        print("  Params: ")
+        # sql not optimized for paralel sync
+        #storage = optuna.storages.RDBStorage(url="sqlite:///"+repo_name+"-db") 
 
-        for key, value in trial.params.items():
-            print("    {}: {}".format(key, value))
-        
-        print("Running with best params:")
-        objective(study.best_trial, args, repo_name+"_BEST")
+        storage = JournalStorage(JournalFileStorage("optuna-journal"+repo_name+".log"))
+
+        study = optuna.create_study(
+            study_name=repo_name,
+            storage=storage,
+            load_if_exists=True,
+            direction="maximize", 
+            pruner=optuna.pruners.MedianPruner(
+            n_startup_trials=0, n_warmup_steps=40, interval_steps=3
+            )
+        )
+
+        if (args.optimize):
+            study.optimize(func, n_trials=100, timeout=1000)
+
+        else:
+            pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+            complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+            
+            print("Study statistics: ")
+            print("  Number of finished trials: ", len(study.trials))
+            print("  Number of pruned trials: ", len(pruned_trials))
+            print("  Number of complete trials: ", len(complete_trials))
+
+            print("Best trial:")
+            trial = study.best_trial
+            print("  Value: ", trial.value)
+            print("  Params: ")
+
+            for key, value in trial.params.items():
+                print("    {}: {}".format(key, value))
+            
+            print("Running with best params:")
+            objective(study.best_trial, args, repo_name+"_BEST")

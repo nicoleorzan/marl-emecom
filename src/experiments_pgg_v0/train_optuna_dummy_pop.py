@@ -150,7 +150,7 @@ def objective(args, repo_name, trial=None):
                 observations, rewards, done, _ = parallel_env.step(actions)
                 #print("rewards=", rewards)
 
-                if (mf > 1.):# and mf < 2.):
+                if (mf > 1.):
                     social_norm.save_actions(actions, active_agents_idxs)
 
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
@@ -192,7 +192,7 @@ def objective(args, repo_name, trial=None):
         #if agents["agent_9"].reputation == 0.0:
         #    print("\n\n\n\n\n\n\n\n\n\n\nERROR!!!!!!!!!!!!!!!")
 
-        print("NEW REPUTATIONS=", "agent_0 = ", agents["agent_0"].reputation, ", agent_1 = ", agents["agent_1"].reputation)
+        #print("NEW REPUTATIONS=", "agent_0 = ", agents["agent_0"].reputation, ", agent_1 = ", agents["agent_1"].reputation)
 
         for ag_idx, agent in active_agents.items():
             if (agent.is_dummy == False and agent.is_communicating):
@@ -233,7 +233,7 @@ def objective(args, repo_name, trial=None):
         print("rewards=", rewards_eval_m)
         print("rewards_norm=", rewards_eval_norm_m)
 
-        avg_norm_return = np.mean([agent.return_episode_old_norm.numpy() for _, agent in active_agents.items()])
+        avg_norm_return = np.mean([agent.return_episode_old_norm.numpy().item() for _, agent in active_agents.items()])
         avg_norm_returns_train_list.append(avg_norm_return)
 
         rew_values = [(np.sum([rewards_eval_m[m_val][ag_idx] for m_val in config.mult_fact])) for ag_idx, _ in active_agents.items()]

@@ -5,9 +5,6 @@ OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation.
 ACTION_SIZE = 2
 RANDOM_BASELINE = False
 
-params = {
-
-}
 
 def setup_training_hyperparams(args, trial):
 
@@ -21,11 +18,14 @@ def setup_training_hyperparams(args, trial):
         else: 
             lr_opp = 0 
     else: 
-        lr_a = 0.0002
-        lr_c = 0.001 
+        lr_a = 0.002 # 0.002 reinforce 0.0002
+        lr_c = 0     # 0.001 
         c_1 = 0.5
         c_2 = 0.01
-        lr_opp = 0
+        if (args.opponent_selection == 1):
+            lr_opp = 0.001
+        else: 
+            lr_opp = 0 
     
 
     if (args.binary_reputation == True):
@@ -44,19 +44,13 @@ def setup_training_hyperparams(args, trial):
         obs_size = OBS_SIZE,
         action_size = ACTION_SIZE,
         n_gmm_components = args.mult_fact,
-        decayRate = 0.999,
         mult_fact = args.mult_fact,
         uncertainties = args.uncertainties,
         gmm_ = args.gmm_,
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        batch_size = 128,
-        lr_actor = lr_a,
-        lr_critic = lr_c, 
         lr_opponent = lr_opp, 
-        n_hidden_act = 2,
-        hidden_size_act = 16, #trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64]),
         embedding_dim = 1,
         binary_reputation = args.binary_reputation,
         get_index = False,
@@ -68,16 +62,28 @@ def setup_training_hyperparams(args, trial):
     )
 
     if (args.algorithm == "reinforce"):
-        algo_params = dict()
+        algo_params = dict(
+            lr_actor = lr_a,
+            n_hidden_act = 2,
+            hidden_size_act = 16,
+            batch_size = 128,
+            decayRate = 0.999
+        )
     elif (args.algorithm == "PPO"):
         algo_params = dict(
+            lr_actor = lr_a,
+            lr_critic = lr_c, 
+            n_hidden_act = 2,
+            hidden_size_act = 16,
+            batch_size = 128,
+            decayRate = 0.999,
             K_epochs = 40,
             eps_clip = 0.2,
             gamma = 0.99,
             c1 = c_1,
             c2 = c_2,
             c3 = 0, #trial.suggest_float("c3", 0.01, 0.5, log=True),
-            c4 = 0 #, #trial.suggest_float("c4", 0.0001, 0.1, log=True),
+            c4 = 0  #trial.suggest_float("c4", 0.0001, 0.1, log=True),
         )
     elif (args.algorithm == "dqn"):
         algo_params = dict(
