@@ -10,10 +10,10 @@ class SocialNorm():
         self.agents = agents
         self.n_agents = len(self.agents)
 
-        if (self.binary_reputation == True):
-            self.threshold = 0.5
-        else: 
-            self.threshold = self.cooperation_threshold
+        #if (self.binary_reputation == True):
+        #    self.threshold = 0.5
+        #else: 
+        self.threshold = self.cooperation_threshold
 
         self.reset_saved_actions()
 
