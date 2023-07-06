@@ -31,10 +31,10 @@ if __name__ == '__main__':
     parser.add_argument('--b_value', type=float, default=5.)
     parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
     parser.add_argument('--binary_reputation', type=int) # 1 yes 0 no
-    parser.add_argument('--wandb_mode', type=str, choices = ["online", "offline"], default="online")
+    parser.add_argument('--wandb_mode', type=str, choices = ["online", "offline"], default="offline")
     parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
-    parser.add_argument('--optimize', type=int) # 1 for true 0 for false
+    parser.add_argument('--optimize', type=int, default=0) # 1 for true 0 for false
     parser.add_argument('--opponent_selection', type=int, default=0.)
     parser.add_argument('--addition', type=str, default="")
 
