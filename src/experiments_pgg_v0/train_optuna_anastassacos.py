@@ -339,8 +339,9 @@ def training_function(args):
 
         # sql not optimized for paralel sync
         #storage = optuna.storages.RDBStorage(url="sqlite:///"+repo_name+"-db") 
+        journal_name = repo_name + "_binary_"+str(args.binary_reputation)
 
-        storage = JournalStorage(JournalFileStorage("optuna-journal"+repo_name+".log"))
+        storage = JournalStorage(JournalFileStorage("optuna-journal"+journal_name+".log"))
 
         study = optuna.create_study(
             study_name=repo_name,
