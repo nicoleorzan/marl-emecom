@@ -7,6 +7,7 @@ RANDOM_BASELINE = False
 
 
 def setup_training_hyperparams(args, trial):
+    print("trial=", trial)
 
     if (args.optuna_ == 1): 
         lr_a = trial.suggest_float("lr_actor", 1e-4, 1e-1, log=True) #0.002 reinforce, 0.0002 PPO mixed motive
@@ -32,8 +33,12 @@ def setup_training_hyperparams(args, trial):
         o_r_t = 1.
         c_t = 1.
     else: 
-        o_r_t = trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-        c_t = trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        if (args.optuna_ == 1): 
+            o_r_t = trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+            c_t = trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        else: 
+            o_r_t = 0.5 
+            c_t = 0.5
 
     game_params = dict(
         n_agents = args.n_agents,
