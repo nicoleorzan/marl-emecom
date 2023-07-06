@@ -63,10 +63,17 @@ def setup_training_hyperparams(args, trial):
     )
 
     if (args.algorithm == "reinforce"):
+        if (args.optuna_ == 1): 
+            num_hidden_a = trial.suggest_categorical("n_hidden_act", [1, 2])
+            hidden_size_a = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64])
+        else: 
+            num_hidden_a = 2
+            hidden_size_a = 16
+
         algo_params = dict(
             lr_actor = lr_a,
-            n_hidden_act = 2,
-            hidden_size_act = 16,
+            n_hidden_act = num_hidden_a,
+            hidden_size_act = hidden_size_a,
             batch_size = 128,
             decayRate = 0.999
         )
@@ -74,15 +81,19 @@ def setup_training_hyperparams(args, trial):
         if (args.optuna_ == 1): 
             c_1 = trial.suggest_float("c1", 0.001, 0.9, log=True)
             c_2 = trial.suggest_float("c1", 0.001, 0.9, log=True)
+            num_hidden_a = trial.suggest_categorical("n_hidden_act", [1, 2])
+            hidden_size_a = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64])
         else: 
             c_1 = 0.5
             c_2 = 0.01
-            
+            num_hidden_a = 2
+            hidden_size_a = 16
+
         algo_params = dict(
             lr_actor = lr_a,
             lr_critic = lr_c, 
-            n_hidden_act = 2,
-            hidden_size_act = 16,
+            n_hidden_act = num_hidden_a,
+            hidden_size_act = hidden_size_a, 
             batch_size = 128,
             decayRate = 0.999,
             K_epochs = 40,
