@@ -66,6 +66,7 @@ def objective(args, repo_name, trial=None):
     # print("config.uncertainties=", config.uncertainties)
     print("is_dummy=", is_dummy)
     non_dummy_idxs = [i for i,val in enumerate(is_dummy) if val==0]
+    print("non_dummy_idxs=",non_dummy_idxs)
 
     agents = define_agents(config, is_dummy)
     print("\nAGENTS=",agents)
@@ -97,9 +98,14 @@ def objective(args, repo_name, trial=None):
                 active_agents_idxs = [first_agent_idx, second_agent_idx]
             else:
                 active_agents_idxs = random.sample(range(config.n_agents), 2)
+                print("active_agents_idxs=",active_agents_idxs)
+                while ( any([i in non_dummy_idxs for i in active_agents_idxs]) == False):
+                    active_agents_idxs = random.sample(range(config.n_agents), 2)
+                    print("active_agents_idxs=",active_agents_idxs)
+
             #print("active_agents_idxs=",active_agents_idxs)
             active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
-            #print("ACTIVE AGENTS=", active_agents)
+            print("ACTIVE AGENTS=", active_agents)
 
         parallel_env.set_active_agents(active_agents_idxs)
 
