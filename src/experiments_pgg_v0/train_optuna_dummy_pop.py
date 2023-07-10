@@ -5,6 +5,7 @@ from src.algos.PPO import PPO
 import numpy as np
 import optuna
 import random
+from math import log10, floor
 from optuna.trial import TrialState
 import torch
 #from optuna.integration.wandb import WeightsAndBiasesCallback
@@ -153,7 +154,9 @@ def objective(args, repo_name, trial=None):
                 if (mf > 1.):
                     social_norm.save_actions(actions, active_agents_idxs)
 
-                rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
+                #print("parallel_env.current_multiplier[0])=", parallel_env.current_multiplier[0])
+                #print("np.around(parallel_env.current_multiplier[0], decimals=1)=",np.around(parallel_env.current_multiplier[0].item(), decimals=1))
+                rewards_norm = {key: value/max_values[np.around(parallel_env.current_multiplier[0].item(), decimals=1)] for key, value in rewards.items()}
                 #print("rewards_norm=", rewards_norm)
 
                 for ag_idx, agent in active_agents.items():
