@@ -92,7 +92,7 @@ class Reinforce(Agent):
                 loss_act.append(-act_logprobs[i] * (rew_norm[i] - self.baseline))# + self.list_lambda*self.List_loss_list[i])
             else:
                 #print("create loss act")
-                loss_act.append(-act_logprobs[i] * (rew_norm[i] - self.baseline))
+                loss_act.append(-act_logprobs[i] * (rew_norm[i]))# - self.baseline))
        
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in loss_act])))
         
@@ -129,5 +129,6 @@ class Reinforce(Agent):
 
         self.n_update += 1.
         self.baseline += (np.mean([i for i in rew_norm]) - self.baseline) / (self.n_update)
+        #print("baseline=", self.baseline)
 
         self.reset()
