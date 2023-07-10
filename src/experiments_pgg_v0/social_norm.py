@@ -13,7 +13,6 @@ class SocialNorm():
         #if (self.binary_reputation == True):
         #    self.threshold = 0.5
         #else: 
-        self.threshold = self.cooperation_threshold
 
         self.reset_saved_actions()
 
@@ -38,7 +37,7 @@ class SocialNorm():
                 other = self.agents["agent_"+str(other_idx)]
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
 
-                if (avg_cooperation_level >= self.threshold):
+                if (avg_cooperation_level >= self.cooperation_threshold):
                     if (other.old_reputation >= self.other_reputation_threshold):
                         agent.reputation = min(agent.reputation + 0.2, 1.)
                     else: 
@@ -66,7 +65,7 @@ class SocialNorm():
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
                 print("avg_cooperation_level=",avg_cooperation_level)
 
-                if (avg_cooperation_level >= self.threshold):
+                if (avg_cooperation_level >= self.cooperation_threshold):
                     if (other.old_reputation == 1.):
                         agent.reputation = 1.
                     else: 

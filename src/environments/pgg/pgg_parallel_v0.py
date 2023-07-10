@@ -92,6 +92,8 @@ class parallel_env(ParallelEnv):
             self.b = torch.Tensor([self.b_value])
             self.mat = torch.Tensor([[self.c, self.b+self.c],[0., self.b]])
             self.mv = torch.max(self.mat)
+            print("mv=", self.mv)
+            print("norm mat=", self.mat/self.mv)
 
     def set_active_agents(self, idxs):
         self.active_agents = ["agent_" + str(r) for r in idxs]

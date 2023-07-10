@@ -1,4 +1,4 @@
-EPOCHS = 400 # total episodes
+EPOCHS = 3000 # total episodes
 # batch size are the number of episodes in which 2 agents interact with each other alone
 OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation.
 # the opponent index is embedded in the agent class
@@ -17,7 +17,7 @@ def setup_training_hyperparams(args, trial):
         else:
             lr_opp = 0
     else:
-        lr_a = 0.002 # 0.002 reinforce 0.0002
+        lr_a = 0.0002 # 0.002 reinforce 0.0002
         lr_c = 0     # 0.001
         if (args.opponent_selection == 1):
             lr_opp = 0.001
@@ -27,14 +27,14 @@ def setup_training_hyperparams(args, trial):
 
     if (args.binary_reputation == True):
         o_r_t = 1.
-        c_t = 0.6
+        c_t = 0.4
     else: 
         if (args.optuna_ == 1): 
             o_r_t = trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
             c_t = trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
         else: 
-            o_r_t = 0.5 
-            c_t = 0.5
+            o_r_t = 0.6
+            c_t = 0.4
 
     game_params = dict(
         n_agents = args.n_agents,
