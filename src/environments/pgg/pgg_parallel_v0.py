@@ -89,8 +89,9 @@ class parallel_env(ParallelEnv):
         # c is fixed, b can change
         if hasattr(self, 'b_value'):
             self.c = torch.Tensor([1.])
+            self.d = torch.Tensor([self.d_value])
             self.b = torch.Tensor([self.b_value])
-            self.mat = torch.Tensor([[self.c, self.b+self.c],[0., self.b]])
+            self.mat = torch.Tensor([[self.c+self.d, self.b+self.c],[torch.Tensor([0.])+self.d, self.b]])
             self.mv = torch.max(self.mat)
             print("mv=", self.mv)
             print("norm mat=", self.mat/self.mv)
