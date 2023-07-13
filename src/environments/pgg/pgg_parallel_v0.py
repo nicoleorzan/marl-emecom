@@ -120,7 +120,7 @@ class parallel_env(ParallelEnv):
         self.coins = {}
         self.normalized_coins = {}
         for agent in self.agents:
-            self.coins[agent] = 4. # what they have
+            self.coins[agent] = self.coins_value # what they have
             self.normalized_coins[agent] = 0. # what they see
 
     def assign_coins_uniform(self):

@@ -53,7 +53,7 @@ def objective(args, repo_name, trial=None):
     print("binary_reputation=", config.binary_reputation)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
-    max_values = find_max_min(config, 4)
+    max_values = find_max_min(config, config.coins_value)
 
     n_communicating_agents = config.communicating_agents.count(1)
     n_uncertain = config.n_agents - config.uncertainties.count(0.)

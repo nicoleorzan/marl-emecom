@@ -40,6 +40,7 @@ def setup_training_hyperparams(args, trial):
         n_agents = args.n_agents,
         algorithm = args.algorithm,
         wandb_mode = args.wandb_mode,
+        coins_value = args.coins_value,
         num_game_iterations = 1,
         n_epochs = EPOCHS,
         obs_size = OBS_SIZE,

@@ -180,7 +180,7 @@ def eval_old(config, parallel_env, agents, m, device, _print=False):
 def best_strategy_reward(config):
     my_strategy = [0, 1, 1, 1]
     opponent_strategy = [0, 1, 1, 1]
-    all_returns_one_agent, returns, max_values = find_max_min(config, coins=4, strategy=True)
+    all_returns_one_agent, returns, max_values = find_max_min(config, coins=config.coins_value, strategy=True)
     #print("all_returns_one_agent=",all_returns_one_agent)
     ret = []
     for idx in range(len(config.mult_fact)):
@@ -208,7 +208,7 @@ def find_max_min(config, coins, strategy=False):
 
     i = 0
     for multiplier in multipliers:
-        #print("\nMultiplier=", multiplier)
+        print("\nMultiplier=", multiplier)
         possible_actions = ["C", "D"]
         possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
         returns = np.zeros((len(possible_scenarios), n_agents)) # TUTTI I POSSIBILI RITORNI CHE UN AGENTE PUO OTTENERE, PER OGNI AGENTE
@@ -233,12 +233,12 @@ def find_max_min(config, coins, strategy=False):
                     if (ag_idx == 0):
                         #print("x=", 0, "y=", y)
                         all_returns_one_agent[i, 0, y] = returns[idx_scenario, ag_idx]
-            #print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
+            print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
 
         max_values[multiplier] = np.amax(returns)
         min_values[multiplier] = np.amin(returns)
-        #print(" max_values[", multiplier, "]=",  max_values[multiplier])
-        #print(" min_values[", multiplier, "]=",  min_values[multiplier])
+        print(" max_values[", multiplier, "]=",  max_values[multiplier])
+        print(" min_values[", multiplier, "]=",  min_values[multiplier])
         normalized = returns/max_values[multiplier]
         
         #print("normalized=", returns/max_values[multiplier]) #(returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
