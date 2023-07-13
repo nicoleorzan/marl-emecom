@@ -158,7 +158,7 @@ def objective(args, repo_name, trial=None):
                 if (mf > 1.):
                     social_norm.save_actions(actions, active_agents_idxs)
 
-                rewards_norm = {key: value/max_values[np.around(parallel_env.current_multiplier[0].item(), decimals=1)] for key, value in rewards.items()}
+                rewards_norm = {key: value/parallel_env.mv for key, value in rewards.items()}
                 #print("rewards_norm=", rewards_norm)
                 
                 for ag_idx, agent in active_agents.items():
