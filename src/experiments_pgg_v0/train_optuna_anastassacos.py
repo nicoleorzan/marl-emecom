@@ -53,7 +53,7 @@ def objective(args, repo_name, trial=None):
     print("binary_reputation=", config.binary_reputation)
 
     parallel_env = pgg_parallel_v0.parallel_env(config)
-    max_values = find_max_min(config, 4)
+    max_values = find_max_min(config, config.coins_value)
 
     n_communicating_agents = config.communicating_agents.count(1)
     n_uncertain = config.n_agents - config.uncertainties.count(0.)
@@ -66,7 +66,6 @@ def objective(args, repo_name, trial=None):
     # print("config.uncertainties=", config.uncertainties)
     print("is_dummy=", is_dummy)
     non_dummy_idxs = [i for i,val in enumerate(is_dummy) if val==0]
-    print("non_dummy_idxs=",non_dummy_idxs)
 
     agents = define_agents(config, is_dummy)
     print("\nAGENTS=",agents)
@@ -105,7 +104,7 @@ def objective(args, repo_name, trial=None):
 
             #print("active_agents_idxs=",active_agents_idxs)
             active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
-            print("ACTIVE AGENTS=", active_agents)
+            #print("ACTIVE AGENTS=", active_agents)
 
         parallel_env.set_active_agents(active_agents_idxs)
 
@@ -195,7 +194,7 @@ def objective(args, repo_name, trial=None):
         for ag_idx in active_agents_idxs:       
             agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
 
-        #if agents["agent_1"].reputation == 0.0:
+        #if agents["agent_"+str(config.n_agents-1)+"].reputation == 0.0:
         #    print("\n\n\n\n\n\n\n\n\n\n\nERROR!!!!!!!!!!!!!!!")
 
         #print("NEW REPUTATIONS=", "agent_0 = ", agents["agent_0"].reputation, ", agent_1 = ", agents["agent_1"].reputation)
@@ -259,7 +258,7 @@ def objective(args, repo_name, trial=None):
                 wandb.finish()
                 raise optuna.exceptions.TrialPruned()
 
-        if (config.wandb_mode == "online" and float(epoch)%5. == 0.):
+        if (config.wandb_mode == "online" and float(epoch)%20. == 0.):
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
                     df_actions = {ag_idx+"actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
@@ -269,8 +268,6 @@ def objective(args, repo_name, trial=None):
                         ag_idx+"_return_train_norm": agent.return_episode_old_norm,
                         ag_idx+"_reputation": agent.reputation,
                         ag_idx+"_return_train_"+str(mf[0]): agent.return_episode_old,
-                        #ag_idx+"gmm_means": agent.means,
-                        #ag_idx+"gmm_probabilities": agent.probs,
                         'epoch': epoch}, 
                         **df_actions, **df_rew, **df_rew_norm}
                 else:
@@ -281,8 +278,6 @@ def objective(args, repo_name, trial=None):
                         ag_idx+"N_return_train_norm": agent.return_episode_old_norm,
                         ag_idx+"N_reputation": agent.reputation,
                         ag_idx+"N_return_train_"+str(mf[0]): agent.return_episode_old,
-                        #ag_idx+"gmm_means": agent.means,
-                        #ag_idx+"gmm_probabilities": agent.probs,
                         'epoch': epoch}, 
                         **df_actions, **df_rew, **df_rew_norm}
                 

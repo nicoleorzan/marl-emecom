@@ -5,7 +5,6 @@ from src.algos.PPO import PPO
 import numpy as np
 import optuna
 import random
-from math import log10, floor
 from optuna.trial import TrialState
 import torch
 #from optuna.integration.wandb import WeightsAndBiasesCallback
@@ -97,6 +96,11 @@ def objective(args, repo_name, trial=None):
                 active_agents_idxs = [first_agent_idx, second_agent_idx]
             else:
                 active_agents_idxs = random.sample(range(config.n_agents), 2)
+                print("active_agents_idxs=",active_agents_idxs)
+                while ( any([i in non_dummy_idxs for i in active_agents_idxs]) == False):
+                    active_agents_idxs = random.sample(range(config.n_agents), 2)
+                    print("active_agents_idxs=",active_agents_idxs)
+
             #print("active_agents_idxs=",active_agents_idxs)
             active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
             #print("ACTIVE AGENTS=", active_agents)
@@ -154,11 +158,9 @@ def objective(args, repo_name, trial=None):
                 if (mf > 1.):
                     social_norm.save_actions(actions, active_agents_idxs)
 
-                #print("parallel_env.current_multiplier[0])=", parallel_env.current_multiplier[0])
-                #print("np.around(parallel_env.current_multiplier[0], decimals=1)=",np.around(parallel_env.current_multiplier[0].item(), decimals=1))
                 rewards_norm = {key: value/max_values[np.around(parallel_env.current_multiplier[0].item(), decimals=1)] for key, value in rewards.items()}
                 #print("rewards_norm=", rewards_norm)
-
+                
                 for ag_idx, agent in active_agents.items():
                     
                     agent.buffer.rewards.append(rewards[ag_idx])
@@ -192,7 +194,7 @@ def objective(args, repo_name, trial=None):
         for ag_idx in active_agents_idxs:       
             agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
 
-        #if agents["agent_9"].reputation == 0.0:
+        #if agents["agent_"+str(config.n_agents-1)+"].reputation == 0.0:
         #    print("\n\n\n\n\n\n\n\n\n\n\nERROR!!!!!!!!!!!!!!!")
 
         #print("NEW REPUTATIONS=", "agent_0 = ", agents["agent_0"].reputation, ", agent_1 = ", agents["agent_1"].reputation)
@@ -256,7 +258,7 @@ def objective(args, repo_name, trial=None):
                 wandb.finish()
                 raise optuna.exceptions.TrialPruned()
 
-        if (config.wandb_mode == "online"  and float(epoch)%5. == 0.):
+        if (config.wandb_mode == "online" and float(epoch)%20. == 0.):
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
                     df_actions = {ag_idx+"actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
@@ -304,7 +306,7 @@ def objective(args, repo_name, trial=None):
                 step=epoch, commit=True)
 
         if (epoch%10 == 0):
-            print("Epoch : {} \t Mult factor: {}  \t Measure: {} ".format(epoch, mf, measure))
+            print("Epoch : {} \t Measure: {} ".format(epoch, measure))
     
     wandb.finish()
     return measure
@@ -339,7 +341,9 @@ def training_function(args):
         # sql not optimized for paralel sync
         #storage = optuna.storages.RDBStorage(url="sqlite:///"+repo_name+"-db") 
 
-        storage = JournalStorage(JournalFileStorage("optuna-journal"+repo_name+".log"))
+        journal_name = repo_name + "_binary_"+str(args.binary_reputation)
+
+        storage = JournalStorage(JournalFileStorage("optuna-journal"+journal_name+".log"))
 
         study = optuna.create_study(
             study_name=repo_name,
