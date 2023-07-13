@@ -46,7 +46,7 @@ def define_agents(config, is_dummy):
 def objective(args, repo_name, trial=None):
 
     all_params = setup_training_hyperparams(args, trial)
-    all_params = {**all_params, **dict(b_value = args.b_value)}
+    all_params = {**all_params, **dict(b_value = args.b_value, d_value = args.d_value)}
     wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=args.wandb_mode)#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
