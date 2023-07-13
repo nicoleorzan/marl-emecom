@@ -195,7 +195,7 @@ def best_strategy_reward(config):
     print("avg_return=",avg_return)
 
 def find_max_min(config, coins, strategy=False):
-    n_agents = config.n_agents
+    n_agents = 2 #config.n_agents
     multipliers = config.mult_fact
     max_values = {}
     min_values = {}
@@ -208,7 +208,7 @@ def find_max_min(config, coins, strategy=False):
 
     i = 0
     for multiplier in multipliers:
-        print("\nMultiplier=", multiplier)
+        #print("\nMultiplier=", multiplier)
         possible_actions = ["C", "D"]
         possible_scenarios = [''.join(i) for i in itertools.product(possible_actions, repeat = n_agents)]
         returns = np.zeros((len(possible_scenarios), n_agents)) # TUTTI I POSSIBILI RITORNI CHE UN AGENTE PUO OTTENERE, PER OGNI AGENTE
@@ -216,7 +216,7 @@ def find_max_min(config, coins, strategy=False):
         
         #scenarios_returns = {}
         for idx_scenario, scenario in enumerate(possible_scenarios):
-            #print("scenario=", scenario, "scenario[0]=",scenario[0])
+            print("scenario=", scenario, "scenario[0]=",scenario[0])
             y = 0
             if scenario[1] == 'C':
                 y = 1
@@ -233,7 +233,7 @@ def find_max_min(config, coins, strategy=False):
                     if (ag_idx == 0):
                         #print("x=", 0, "y=", y)
                         all_returns_one_agent[i, 0, y] = returns[idx_scenario, ag_idx]
-            print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
+            #print("scenario=", scenario, "common_pot=", common_pot, "return=", returns[idx_scenario])
 
         max_values[multiplier] = np.amax(returns)
         min_values[multiplier] = np.amin(returns)
