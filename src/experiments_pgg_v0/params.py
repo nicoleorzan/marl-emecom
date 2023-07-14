@@ -60,7 +60,9 @@ def setup_training_hyperparams(args, trial):
         opponent_selection = args.opponent_selection,
         other_reputation_threshold = o_r_t,
         cooperation_threshold = c_t,
-        optuna_ = args.optuna_
+        optuna_ = args.optuna_,
+        b_value = args.b_value, 
+        d_value = args.d_value
     )
 
     if (args.algorithm == "reinforce"):

@@ -93,6 +93,7 @@ class parallel_env(ParallelEnv):
             self.b = torch.Tensor([self.b_value])
             self.mat = torch.Tensor([[self.c+self.d, self.b+self.c],[self.d, self.b]])
         else: 
+            print("ELSE")
             self.mat = torch.Tensor([[self.coins_value, self.coins_value+self.coins_value*config.mult_fact[0]/2.],[self.coins_value*config.mult_fact[0]/2., self.coins_value*config.mult_fact[0]]])
 
         self.mv = torch.max(self.mat)
@@ -195,6 +196,7 @@ class parallel_env(ParallelEnv):
         ag0 = self.active_agents[0]
         ag1 = self.active_agents[1]
 
+        #print("actions=", actions)
         if (actions[ag0] == 0 and actions[ag1] == 0):
             rewards[ag0] = self.mat[0,0]
             rewards[ag1] = self.mat[0,0]
@@ -202,11 +204,12 @@ class parallel_env(ParallelEnv):
             rewards[ag0] = self.mat[0,1]
             rewards[ag1] = self.mat[1,0] 
         elif (actions[ag0] == 1 and actions[ag1] == 0):
-            rewards[ag0] = torch.Tensor([0.]) 
-            rewards[ag1] = self.mat[1,0]
+            rewards[ag0] = self.mat[1,0]
+            rewards[ag1] = self.mat[0,1]
         elif (actions[ag0] == 1 and actions[ag1] == 1):
             rewards[ag0] = self.mat[1,1]
             rewards[ag1] = self.mat[1,1]
+        #print("rewards=", rewards)
 
         self.num_moves += 1
         env_done = self.num_moves >= self.num_game_iterations
