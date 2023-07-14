@@ -15,7 +15,6 @@ from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, app
 from src.algos.normativeagent import NormativeAgent
 from social_norm import SocialNorm
 from params import setup_training_hyperparams
-#from sb3_contrib import RecurrentPPO
 
 
 torch.autograd.set_detect_anomaly(True)
@@ -38,8 +37,6 @@ def define_agents(config, is_dummy):
                 agents['agent_'+str(idx)] = Reinforce(config, idx)
             elif (config.algorithm == "PPO"):
                 agents['agent_'+str(idx)] = PPO(config, idx)
-            #elif (config.algorithm == "PPO1"):
-            #    agents['agent_'+str(idx)] = RecurrentPPO()
             elif (config.algorithm == "dqn"):
                 agents['agent_'+str(idx)] = DQN(config, idx)
         else: 
@@ -129,6 +126,7 @@ def objective(args, repo_name, trial=None):
                 
                 #for idx in active_agents_idxs:
                 #    print("agent=",idx, "rep=", active_agents["agent_"+str(idx)].reputation)
+                #print("observations[agent_+str(active_agents_idxs[0])]=", observations["agent_"+str(active_agents_idxs[0])])
                 
                 active_agents["agent_"+str(active_agents_idxs[0])].digest_input((observations["agent_"+str(active_agents_idxs[0])], active_agents["agent_"+str(active_agents_idxs[1])].reputation))
                 active_agents["agent_"+str(active_agents_idxs[1])].digest_input((observations["agent_"+str(active_agents_idxs[1])], active_agents["agent_"+str(active_agents_idxs[0])].reputation))
