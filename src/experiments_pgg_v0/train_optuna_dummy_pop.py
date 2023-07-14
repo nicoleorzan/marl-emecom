@@ -349,7 +349,7 @@ def training_function(args):
             study_name=repo_name,
             storage=storage,
             load_if_exists=True,
-            direction="maximize", 
+            direction="maximize",
             pruner=optuna.pruners.MedianPruner(
             n_startup_trials=0, n_warmup_steps=40, interval_steps=3
             )

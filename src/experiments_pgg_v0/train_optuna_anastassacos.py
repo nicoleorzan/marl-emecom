@@ -46,7 +46,6 @@ def define_agents(config, is_dummy):
 def objective(args, repo_name, trial=None):
 
     all_params = setup_training_hyperparams(args, trial)
-    all_params = {**all_params, **dict(b_value = args.b_value, d_value = args.d_value)}
     wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=args.wandb_mode)#, sync_tensorboard=True)
     config = wandb.config
     print("config=", config)
@@ -156,7 +155,8 @@ def objective(args, repo_name, trial=None):
                 observations, rewards, done, _ = parallel_env.step1(actions)
                 #print("rewards=", rewards)
 
-                social_norm.save_actions(actions, active_agents_idxs)
+                if (mf > 1.):
+                    social_norm.save_actions(actions, active_agents_idxs)
 
                 rewards_norm = {key: value/parallel_env.mv for key, value in rewards.items()}
                 #print("rewards_norm=", rewards_norm)
@@ -348,7 +348,7 @@ def training_function(args):
             study_name=repo_name,
             storage=storage,
             load_if_exists=True,
-            direction="maximize", 
+            direction="maximize",
             pruner=optuna.pruners.MedianPruner(
             n_startup_trials=0, n_warmup_steps=40, interval_steps=3
             )
