@@ -15,7 +15,7 @@ from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, app
 from src.algos.normativeagent import NormativeAgent
 from social_norm import SocialNorm
 from params import setup_training_hyperparams
-from sb3_contrib import RecurrentPPO
+#from sb3_contrib import RecurrentPPO
 
 
 torch.autograd.set_detect_anomaly(True)
@@ -38,8 +38,8 @@ def define_agents(config, is_dummy):
                 agents['agent_'+str(idx)] = Reinforce(config, idx)
             elif (config.algorithm == "PPO"):
                 agents['agent_'+str(idx)] = PPO(config, idx)
-            elif (config.algorithm == "PPO1"):
-                agents['agent_'+str(idx)] = RecurrentPPO()
+            #elif (config.algorithm == "PPO1"):
+            #    agents['agent_'+str(idx)] = RecurrentPPO()
             elif (config.algorithm == "dqn"):
                 agents['agent_'+str(idx)] = DQN(config, idx)
         else: 
