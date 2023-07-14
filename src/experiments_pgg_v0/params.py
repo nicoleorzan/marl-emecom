@@ -110,6 +110,11 @@ def setup_training_hyperparams(args, trial):
     elif (args.algorithm == "dqn"):
         algo_params = dict(
             memory_size = 500, #trial.suggest_int("memory_size", 100, 1000)
+            n_hidden_act = 2,
+            hidden_size_act = 16,
+            batch_size = 128,
+            lr_actor = lr_a,
+            decayRate = 0.999
         )
 
     if (args.communicating_agents.count(1.) != 0):
