@@ -88,7 +88,7 @@ class parallel_env(ParallelEnv):
 
         # c is fixed, b can change
         if hasattr(self, 'b_value'):
-            self.c = torch.Tensor([1.])
+            self.c = torch.Tensor([self.c_value])
             self.d = torch.Tensor([self.d_value])
             self.b = torch.Tensor([self.b_value])
             self.mat = torch.Tensor([[self.c+self.d, self.b+self.c],[self.d, self.b]])

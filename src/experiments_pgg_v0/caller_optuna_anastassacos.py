@@ -29,6 +29,7 @@ if __name__ == '__main__':
     parser.add_argument('--gmm_', type=int, default=0)
     parser.add_argument('--optuna_', type=int, default=0)
     parser.add_argument('--b_value', type=float, default=5.)
+    parser.add_argument('--c_value', type=float, default=1.)
     parser.add_argument('--d_value', type=float, default=0.)
     parser.add_argument('--coins_value', type=float, default=4.)
     parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
