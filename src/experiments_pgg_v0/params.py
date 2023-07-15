@@ -60,12 +60,15 @@ def setup_training_hyperparams(args, trial):
         opponent_selection = args.opponent_selection,
         other_reputation_threshold = o_r_t,
         cooperation_threshold = c_t,
-        optuna_ = args.optuna_,
-        b_value = args.b_value, 
-        c_value = args.c_value,
-        d_value = args.d_value
+        optuna_ = args.optuna_
     )
-
+    if hasattr(args, 'b_value'):
+        all_params = {**all_params,
+            **{"b_value": args.b_value, 
+            "c_value": args.c_value,
+            "d_value": args.d_value}
+            }
+        
     if (args.algorithm == "reinforce"):
         if (args.optuna_ == 1): 
             num_hidden_a = trial.suggest_categorical("n_hidden_act", [1, 2])
