@@ -85,14 +85,15 @@ def objective(args, repo_name, trial=None):
         active_agents_idxs = []
         while ((any(active_agents_idxs) == True) == False):
             if (config.opponent_selection == True):
-                first_agent_idx = random.sample(range(config.n_agents), 1)[0]
-                #print("first_agent_idx=", first_agent_idx)
+                print("opponent selection is true")
+                first_agent_idx = random.sample(non_dummy_idxs, 1)[0]
+                print("first_agent_idx=", first_agent_idx)
                 reputations = torch.Tensor([agent.reputation for ag_idx, agent in agents.items()])
-                #print("reputations=", reputations)
+                print("reputations=", reputations)
                 second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
                 while (second_agent_idx == first_agent_idx):
                     second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
-                #print("second_agent_idx=", second_agent_idx)
+                print("second_agent_idx=", second_agent_idx)
                 active_agents_idxs = [first_agent_idx, second_agent_idx]
             else:
                 active_agents_idxs = random.sample(range(config.n_agents), 2)
