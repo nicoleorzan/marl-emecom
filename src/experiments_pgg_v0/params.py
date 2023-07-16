@@ -122,15 +122,26 @@ def setup_training_hyperparams(args, trial):
         )
 
     if (args.communicating_agents.count(1.) != 0):
-        comm_params = dict(
-            n_hidden_comm = 2,
-            hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
-            lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-4, 1e-1, log=True),
-            lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-4, 1e-1, log=True),
-            mex_size = 5,
-            sign_lambda = trial.suggest_float("sign_lambda", -5.0, 5.0),
-            list_lambda = trial.suggest_float("list_lambda", -5.0, 5.0)
-        )
+        if (args.optuna_ == 1): 
+            comm_params = dict(
+                n_hidden_comm = 2,
+                hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
+                lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-4, 1e-1, log=True),
+                lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-4, 1e-1, log=True),
+                mex_size = 5,
+                sign_lambda = trial.suggest_float("sign_lambda", -5.0, 5.0),
+                list_lambda = trial.suggest_float("list_lambda", -5.0, 5.0)
+            )
+        else: 
+            comm_params = dict(
+                n_hidden_comm = 2,
+                hidden_size_comm = 16,
+                lr_actor_comm = 0.002,
+                lr_critic_comm = 0.002,
+                mex_size = 5,
+                sign_lambda = 0,
+                list_lambda = 0
+            )
     else: 
         comm_params = dict()
 

@@ -77,8 +77,8 @@ def objective(args, repo_name, trial=None):
     for epoch in range(config.n_epochs):
         #print("\n=========================")
         #print("\n==========>Epoch=", epoch)
-        for ag_idx, agent in agents.items():
-            print("Reputation agent ", ag_idx, agent.reputation)
+        #for ag_idx, agent in agents.items():
+        #    print("Reputation agent ", ag_idx, agent.reputation)
 
         #pick a pair of agents
         #print("OPPONENT SELECTION")
@@ -95,17 +95,6 @@ def objective(args, repo_name, trial=None):
                 parallel_env.set_active_agents(active_agents_idxs)
 
                 active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
-
-            
-                """  
-                reputations = torch.Tensor([agent.reputation for ag_idx, agent in agents.items()])
-                #print("reputations=", reputations)
-                second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
-                while (second_agent_idx == first_agent_idx):
-                    second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
-                #print("second_agent_idx=", second_agent_idx)
-                active_agents_idxs = [first_agent_idx, second_agent_idx]
-                """
 
         #[agent.reset_batch() for _, agent in active_agents.items()]
         act_batch = {}; rew_batch = {}; rew_norm_batch = {}
