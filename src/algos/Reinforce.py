@@ -59,12 +59,12 @@ class Reinforce(Agent):
         #print("\n=====>Update agent", self.idx)
         # I do not normalize rewards here because I already give normalized rewards to the agent
         rew_norm = self.buffer.rewards_norm # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
-        #print("rew norm=", rew_norm)
+        print("rew norm=", len(rew_norm))
         act_logprobs = self.buffer.act_logprobs
         comm_logprobs = self.buffer.comm_logprobs
         opponent_logprobs = self.buffer.opponent_logprobs 
         #print("act_logprobs=",act_logprobs)
-        #print("opponent_logprobs=", opponent_logprobs)
+        print("opponent_logprobs=", len(opponent_logprobs))
 
         loss_act = [] #torch.zeros_like(act_logprobs)
         loss_comm = [] #torch.zeros_like(comm_logprobs)
@@ -79,7 +79,8 @@ class Reinforce(Agent):
             #print("np.mean(rew_norm)=", np.mean(rew_norm))
             for i in range(len(opponent_logprobs)):
                 #print("-opponent_logprobs[i] * (np.mean(rew_norm) - self.baseline)=",-opponent_logprobs[i] * (np.mean(rew_norm) - self.baseline))
-                loss_opponent_choice.append(-opponent_logprobs[i] * (np.mean(rew_norm) - self.baseline))
+                loss_opponent_choice.append(-opponent_logprobs[i] * (rew_norm[i] - self.baseline))
+                #loss_opponent_choice.append(-opponent_logprobs[i] * (np.mean(rew_norm) - self.baseline))
                 #print("loss opp=", loss_opponent_choice)
         for i in range(len(act_logprobs)):
             if (self.is_communicating):

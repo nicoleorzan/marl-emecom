@@ -76,7 +76,7 @@ def objective(args, repo_name, trial=None):
 
     for epoch in range(config.n_epochs):
         #print("\n=========================")
-        print("\n==========>Epoch=", epoch)
+        #print("\n==========>Epoch=", epoch)
         for ag_idx, agent in agents.items():
             print("Reputation agent ", ag_idx, agent.reputation)
 
@@ -84,11 +84,20 @@ def objective(args, repo_name, trial=None):
         #print("OPPONENT SELECTION")
         active_agents_idxs = []
         first_agent_idx = random.sample(non_dummy_idxs, 1)[0]
-        while ((any(active_agents_idxs) == True) == False):
-            if (config.opponent_selection == True):
-                #print("opponent selection is true")
-                #first_agent_idx = random.sample(non_dummy_idxs, 1)[0]
-                #print("first_agent_idx=", first_agent_idx)
+        #print("first agent idx=", first_agent_idx)
+        if (config.opponent_selection == False):
+            #print("active_agents_idxs=",active_agents_idxs)
+            while ((any(active_agents_idxs) == True) == False):
+                new_list = list(set(range(0, config.n_agents)) - set([first_agent_idx]))
+                second_agent_idx = random.sample(new_list, 1)[0]
+                active_agents_idxs = [first_agent_idx, second_agent_idx]
+
+                parallel_env.set_active_agents(active_agents_idxs)
+
+                active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
+
+            
+                """  
                 reputations = torch.Tensor([agent.reputation for ag_idx, agent in agents.items()])
                 #print("reputations=", reputations)
                 second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
@@ -96,27 +105,30 @@ def objective(args, repo_name, trial=None):
                     second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
                 #print("second_agent_idx=", second_agent_idx)
                 active_agents_idxs = [first_agent_idx, second_agent_idx]
-            else:
-                new_list = list(set(range(0, config.n_agents)) - set([first_agent_idx]))
-                second_agent_idx = random.sample(new_list, 1)[0]
-                active_agents_idxs = [first_agent_idx, second_agent_idx] #random.sample(range(config.n_agents), 2)
-                #print("active_agents_idxs=",active_agents_idxs)
-                #while ( any([i in non_dummy_idxs for i in active_agents_idxs]) == False):
-                #    active_agents_idxs = random.sample(range(config.n_agents), 2)
-                #    print("active_agents_idxs=",active_agents_idxs)
+                """
 
-            print("active_agents_idxs=",active_agents_idxs)
-            active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
-            #print("ACTIVE AGENTS=", active_agents)
-
-        parallel_env.set_active_agents(active_agents_idxs)
-
-        [agent.reset_batch() for _, agent in active_agents.items()]
+        #[agent.reset_batch() for _, agent in active_agents.items()]
         act_batch = {}; rew_batch = {}; rew_norm_batch = {}
         
         for batch_idx in range(config.batch_size):
+            #print("batch_idx=", batch_idx)
+
+            if (config.opponent_selection == True):
+                #print("first agent idx=", first_agent_idx)
+                reputations = torch.Tensor([agent.reputation for ag_idx, agent in agents.items()])
+                #print("reputations=", reputations)
+                second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
+                #print("second agent idx=", second_agent_idx)
+                while (second_agent_idx == first_agent_idx):
+                    second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
+                active_agents_idxs = [first_agent_idx, second_agent_idx]
+                active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
+                
+                #print("active_agents_idxs=",active_agents_idxs)
+                parallel_env.set_active_agents(active_agents_idxs)
 
             observations = parallel_env.reset()
+            #print("obs=", observations)
             
             [agent.reset_episode() for _, agent in active_agents.items()]
 

@@ -1,6 +1,7 @@
 import argparse
 import ast
-from train_optuna_dummy_pop import training_function
+#from train_optuna_dummy_pop import training_function
+from one_agent_train_optuna_dummy_pop import training_function
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

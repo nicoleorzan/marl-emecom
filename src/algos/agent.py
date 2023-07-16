@@ -259,10 +259,10 @@ class Agent():
         elif(_eval == False):
             opponent_out, opponent_logprob, entropy = self.policy_opponent_selection.act(reputations)
             #("opponent_logprob=",opponent_logprob)
-
-            self.buffer.reputations.append(reputations)
-            self.buffer.opponent_choices.append(opponent_out)
-            self.buffer.opponent_logprobs.append(opponent_logprob)
+            if (opponent_out != self.idx):
+                self.buffer.reputations.append(reputations)
+                self.buffer.opponent_choices.append(opponent_out)
+                self.buffer.opponent_logprobs.append(opponent_logprob)
 
         return opponent_out
 
