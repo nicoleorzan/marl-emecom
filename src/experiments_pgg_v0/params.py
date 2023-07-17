@@ -17,24 +17,42 @@ def setup_training_hyperparams(args, trial):
         else:
             lr_opp = 0
     else:
-        lr_a = 0.0002 # 0.002 reinforce 0.0002
-        lr_c = 0     # 0.001
+        lr_a = 0.001 # 0.002 reinforce 0.0002
+        lr_c = 0.002     # 0.001
         if (args.opponent_selection == 1):
             lr_opp = 0.001
         else:
             lr_opp = 0
 
-
-    if (args.binary_reputation == True):
-        o_r_t = 1.
-        c_t = 0.4
+    if (args.optuna_ == 1): 
+        o_r_t = trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        c_t = trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     else: 
+        o_r_t = 0.6
+        c_t = 0.4
+
+    if (args.communicating_agents.count(1.) != 0):
         if (args.optuna_ == 1): 
-            o_r_t = trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-            c_t = trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+            comm_params = dict(
+                n_hidden_comm = 2,
+                hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
+                lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-4, 1e-1, log=True),
+                lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-4, 1e-1, log=True),
+                mex_size = 5,
+                sign_lambda = trial.suggest_float("sign_lambda", -5.0, 5.0),
+                list_lambda = trial.suggest_float("list_lambda", -5.0, 5.0))
         else: 
-            o_r_t = 0.6
-            c_t = 0.4
+            comm_params = dict(
+                n_hidden_comm = 2,
+                hidden_size_comm = 16,
+                lr_actor_comm = 0.002,
+                lr_critic_comm = 0.002,
+                mex_size = 5,
+                sign_lambda = 0,
+                list_lambda = 0
+            )
+    else: 
+        comm_params = dict()
 
     game_params = dict(
         n_agents = args.n_agents,
@@ -120,30 +138,6 @@ def setup_training_hyperparams(args, trial):
             lr_actor = lr_a,
             decayRate = 0.999
         )
-
-    if (args.communicating_agents.count(1.) != 0):
-        if (args.optuna_ == 1): 
-            comm_params = dict(
-                n_hidden_comm = 2,
-                hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
-                lr_actor_comm = trial.suggest_float("lr_actor_comm", 1e-4, 1e-1, log=True),
-                lr_critic_comm = trial.suggest_float("lr_critic_comm", 1e-4, 1e-1, log=True),
-                mex_size = 5,
-                sign_lambda = trial.suggest_float("sign_lambda", -5.0, 5.0),
-                list_lambda = trial.suggest_float("list_lambda", -5.0, 5.0)
-            )
-        else: 
-            comm_params = dict(
-                n_hidden_comm = 2,
-                hidden_size_comm = 16,
-                lr_actor_comm = 0.002,
-                lr_critic_comm = 0.002,
-                mex_size = 5,
-                sign_lambda = 0,
-                list_lambda = 0
-            )
-    else: 
-        comm_params = dict()
 
     all_params = {**game_params, **algo_params, **comm_params}
     print("all_params=", all_params)
