@@ -93,7 +93,7 @@ class Reinforce(Agent):
                 loss_act.append(-act_logprobs[i] * (rew_norm[i] - self.baseline))# + self.list_lambda*self.List_loss_list[i])
             else:
                 #print("create loss act")
-                loss_act.append(-act_logprobs[i] * (rew_norm[i]))# - self.baseline))
+                loss_act.append(-act_logprobs[i] * (rew_norm[i] - self.baseline))
        
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in loss_act])))
         
@@ -125,7 +125,7 @@ class Reinforce(Agent):
         #self.optimizer.step()
 
         #diminish learning rate
-        #self.scheduler.step()
+        self.scheduler.step()
         #print(self.scheduler.get_lr())
 
         self.n_update += 1.

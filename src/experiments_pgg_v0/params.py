@@ -17,22 +17,22 @@ def setup_training_hyperparams(args, trial):
         else:
             lr_opp = 0
     else:
-        lr_a = 0.001 # 0.002 reinforce 0.0002
-        lr_c = 0.002     # 0.001
+        lr_a = 0.005 # 0.002 reinforce 0.0002
+        lr_c = 0.01     # 0.001
         if (args.opponent_selection == 1):
             lr_opp = 0.001
         else:
             lr_opp = 0
 
-    if (args.optuna_ == 1): 
-        o_r_t = trial.suggest_categorical("other_reputation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-        c_t = trial.suggest_categorical("cooperation_threshold", [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    else: 
-        o_r_t = 0.6
+    if (args.optuna_ == 1):
+        o_r_t = trial.suggest_categorical("other_reputation_threshold", [0.4, 0.5, 0.6, 0.8, 1.0])
+        c_t = trial.suggest_categorical("cooperation_threshold", [0.4, 0.5, 0.6, 0.8, 1.0])
+    else:
+        o_r_t = 0.4
         c_t = 0.4
 
     if (args.communicating_agents.count(1.) != 0):
-        if (args.optuna_ == 1): 
+        if (args.optuna_ == 1):
             comm_params = dict(
                 n_hidden_comm = 2,
                 hidden_size_comm = trial.suggest_categorical("hidden_size_comm", [8, 16, 32, 64]),
@@ -41,17 +41,17 @@ def setup_training_hyperparams(args, trial):
                 mex_size = 5,
                 sign_lambda = trial.suggest_float("sign_lambda", -5.0, 5.0),
                 list_lambda = trial.suggest_float("list_lambda", -5.0, 5.0))
-        else: 
+        else:
             comm_params = dict(
                 n_hidden_comm = 2,
                 hidden_size_comm = 16,
-                lr_actor_comm = 0.002,
-                lr_critic_comm = 0.002,
+                lr_actor_comm = 0.005,
+                lr_critic_comm = 0.01,
                 mex_size = 5,
                 sign_lambda = 0,
                 list_lambda = 0
             )
-    else: 
+    else:
         comm_params = dict()
 
     game_params = dict(
@@ -70,7 +70,7 @@ def setup_training_hyperparams(args, trial):
         random_baseline = RANDOM_BASELINE,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
-        lr_opponent = lr_opp, 
+        lr_opponent = lr_opp,
         embedding_dim = 1,
         binary_reputation = args.binary_reputation,
         get_index = False,
@@ -86,12 +86,12 @@ def setup_training_hyperparams(args, trial):
             "c_value": args.c_value,
             "d_value": args.d_value}
             }
-        
+
     if (args.algorithm == "reinforce"):
         if (args.optuna_ == 1): 
             num_hidden_a = trial.suggest_categorical("n_hidden_act", [1, 2])
             hidden_size_a = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64])
-        else: 
+        else:
             num_hidden_a = 2
             hidden_size_a = 16
 
@@ -103,12 +103,12 @@ def setup_training_hyperparams(args, trial):
             decayRate = 0.999
         )
     elif (args.algorithm == "PPO"):
-        if (args.optuna_ == 1): 
+        if (args.optuna_ == 1):
             c_1 = trial.suggest_float("c1", 0.001, 0.9, log=True)
             c_2 = trial.suggest_float("c1", 0.001, 0.9, log=True)
             num_hidden_a = trial.suggest_categorical("n_hidden_act", [1, 2])
             hidden_size_a = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64])
-        else: 
+        else:
             c_1 = 0.5
             c_2 = 0.01
             num_hidden_a = 2
