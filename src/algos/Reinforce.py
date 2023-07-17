@@ -124,10 +124,6 @@ class Reinforce(Agent):
         
         #self.optimizer.step()
 
-        #diminish learning rate
-        self.scheduler.step()
-        #print(self.scheduler.get_lr())
-
         self.n_update += 1.
         self.baseline += (np.mean([i for i in rew_norm]) - self.baseline) / (self.n_update)
         #print("baseline=", self.baseline)
