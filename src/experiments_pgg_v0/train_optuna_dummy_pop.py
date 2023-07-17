@@ -167,7 +167,7 @@ def objective(args, repo_name, trial=None):
                 
                 for ag_idx, agent in active_agents.items():
                     
-                    agent.buffer.rewards.append(rewards[ag_idx])
+                    agent.buffer.rewards.append(rewards[ag_idx][0])
                     agent.buffer.rewards_norm.append(rewards_norm[ag_idx].item())
                     agent.buffer.next_states_a.append(observations[ag_idx])
                     agent.buffer.is_terminals.append(done)

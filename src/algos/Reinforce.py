@@ -58,6 +58,8 @@ class Reinforce(Agent):
         #print("agent=", self.idx)
         #print("\n=====>Update agent", self.idx)
         # I do not normalize rewards here because I already give normalized rewards to the agent
+        #print("self.buffer.rewards=", self.buffer.rewards)
+        #print("self.buffer.rewards_norm=", self.buffer.rewards_norm)
         rew_norm = self.buffer.rewards#_norm # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
         #print("rew norm=", len(rew_norm))
         act_logprobs = self.buffer.act_logprobs
