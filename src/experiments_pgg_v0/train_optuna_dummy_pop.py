@@ -159,7 +159,7 @@ def objective(args, repo_name, trial=None):
                 observations, rewards, done, _ = parallel_env.step(actions)
                 #print("rewards=", rewards)
 
-                if (mf > 1.):
+                if (mf > 1. and mf < 2.):
                     social_norm.save_actions(actions, active_agents_idxs)
 
                 rewards_norm = {key: value/parallel_env.mv for key, value in rewards.items()}
