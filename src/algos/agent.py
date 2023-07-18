@@ -32,6 +32,7 @@ class Agent():
         #print("rep=", self.reputation)
 
         self.is_dummy = False
+        self.previous_action = torch.Tensor([1.])
 
         self.idx = idx
         self.gmm_ = self.gmm_
@@ -150,6 +151,21 @@ class Agent():
             #digested_opponent_idx_comm = self.embed_opponent_idx_comm(opponent_idx)
             #self.state_comm = torch.cat((digested_m_factor, digested_opponent_idx_comm, opponent_reputation), 0)
             self.state_comm = torch.cat((digested_m_factor, opponent_reputation, my_reputation), 0)
+            #print("self.state_comm=", self.state_comm)
+    
+    def digest_input_anast(self, input):
+        #print("input=", input)
+        opponent_reputation, opponent_previous_action = input
+
+        opponent_reputation = torch.Tensor([opponent_reputation])
+        my_reputation = torch.Tensor([self.reputation])
+        ##### concatenate all stuff in a single vector
+        #digested_opponent_idx_act = self.embed_opponent_idx_act(opponent_idx)
+        self.state_act = torch.cat((opponent_reputation, my_reputation, opponent_previous_action), 0)
+        #print("self.state_act=", self.state_act)
+
+        if (self.is_communicating):
+            self.state_comm = torch.cat((opponent_reputation, my_reputation, opponent_previous_action), 0)
             #print("self.state_comm=", self.state_comm)
 
     def digest_input_with_idx(self, input):

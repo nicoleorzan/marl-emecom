@@ -147,6 +147,35 @@ def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _pr
 
     return actions, mex_distrib, act_distrib, rewards_eval 
 
+def eval_anast(parallel_env, active_agents, active_agents_idxs, _print=False):
+
+    done = False
+    while not done:
+
+        actions = {}
+        act_distrib = {}
+
+        active_agents["agent_"+str(active_agents_idxs[0])].digest_input_anast((active_agents["agent_"+str(active_agents_idxs[1])].reputation, active_agents["agent_"+str(active_agents_idxs[1])].previous_action))
+        active_agents["agent_"+str(active_agents_idxs[1])].digest_input_anast((active_agents["agent_"+str(active_agents_idxs[0])].reputation, active_agents["agent_"+str(active_agents_idxs[0])].previous_action))
+
+        # acting
+        #print("\nacting")
+        for agent in parallel_env.active_agents:
+            actions[agent] = active_agents[agent].select_action(_eval=True)
+            if (active_agents[agent].is_dummy == False):
+                act_distrib[agent] = active_agents[agent].get_action_distribution()
+        _, rewards_eval, _, _ = parallel_env.step(actions)
+        
+        for ag_idx, agent in active_agents.items():
+            agent.previous_action = actions[ag_idx].reshape(1)
+
+        if (_print == True):
+            print("actions=", actions)
+            print("distrib=", act_distrib)
+        _, _, done, _ = parallel_env.step(actions)
+
+    return actions, act_distrib, rewards_eval 
+
 
 def eval_old(config, parallel_env, agents, m, device, _print=False):
     observations = parallel_env.reset(m)

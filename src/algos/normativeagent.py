@@ -27,6 +27,8 @@ class NormativeAgent():
         self.is_listening = self.listening_agents[self.idx]
         self.is_dummy = True
 
+        self.previous_action = torch.Tensor([1.])
+
         if (self.is_communicating != 0):
             self.mex = torch.zeros(self.mex_size).long()
         
@@ -55,6 +57,12 @@ class NormativeAgent():
         obs_m_fact, opponent_reputation = input
         self.obs_m_fact = obs_m_fact[0]
         self.opponent_reputation = opponent_reputation
+
+    def digest_input_anast(self, input):
+        opponent_reputation, opponent_previous_action = input
+        self.opponent_reputation = opponent_reputation
+        self.opponent_previous_action = opponent_previous_action
+        self.obs_m_fact = 1.5
     
     def digest_input_with_idx(self, input):
         obs_m_fact, opponent_idx, opponent_reputation = input
