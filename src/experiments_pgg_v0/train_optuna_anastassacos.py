@@ -222,9 +222,9 @@ def objective(args, repo_name, trial=None):
         if (config.wandb_mode == "online" and float(epoch)%20. == 0.):
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
-                    df_actions = {ag_idx+"actions_eval": actions_eval[i][ag_idx]}
-                    df_rew = {ag_idx+"rewards_eval": rewards_eval[i][ag_idx]}
-                    df_rew_norm = {ag_idx+"rewards_eval_norm"+str(i): rewards_eval_norm[i][ag_idx]}
+                    df_actions = {ag_idx+"actions_eval": actions_eval[ag_idx]}
+                    df_rew = {ag_idx+"rewards_eval": rewards_eval[ag_idx]}
+                    df_rew_norm = {ag_idx+"rewards_eval_norm": rewards_eval_norm[ag_idx]}
                     df_agent = {**{
                         ag_idx+"_return_train_norm": agent.return_episode_old_norm,
                         ag_idx+"_reputation": agent.reputation,
