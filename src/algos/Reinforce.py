@@ -112,7 +112,7 @@ class Reinforce(Agent):
         if (self.opponent_selection):
             self.opt_opponent.zero_grad()
             tmp = [torch.ones(a.data.shape) for a in loss_opponent_choice]
-            autograd.backward(loss_comm, tmp, retain_graph=True)
+            autograd.backward(loss_opponent_choice, tmp, retain_graph=True)
             self.opt_opponent.step()
         
         #print("update act loss")
@@ -122,6 +122,7 @@ class Reinforce(Agent):
         autograd.backward(loss_act, tmp1, retain_graph=True)
         self.opt_act.step()
         self.scheduler_act.step()
+        print("new lr=",self.scheduler_act.get_lr())
         #print("optimized")
         
         #self.optimizer.step()

@@ -2,6 +2,7 @@ import functools
 from gym.spaces import Discrete, Box
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
+import supersuit as ss
 from pettingzoo.utils import parallel_to_aec
 import random
 from torch.distributions import uniform, normal
@@ -28,6 +29,8 @@ def env(config):
     # Provides a wide vareity of helpful user errors
     # Strongly recommended
     env = wrappers.OrderEnforcingWrapper(env)
+    env_ = ss.pettingzoo_env_to_vec_env_v1(env_)
+    env_ = ss.concat_vec_envs_v1(env_, 1, base_class="stable_baselines3")
     return env
 
 def raw_env(config):
@@ -92,6 +95,11 @@ class parallel_env(ParallelEnv):
             self.d = torch.Tensor([self.d_value])
             self.b = torch.Tensor([self.b_value])
             self.mat = torch.Tensor([[self.c+self.d, self.b+self.c],[self.d, self.b]])
+            print("DD=", self.mat[0,0])
+            print("Dc=", self.mat[0,1])
+            print("Cd=", self.mat[1,0])
+            print("CC=", self.mat[1,1])
+            # Dd, Dc, Cd, Cc
         else: 
             print("ELSE")
             self.mat = torch.Tensor([[self.coins_value, self.coins_value+self.coins_value*config.mult_fact[0]/2.],[self.coins_value*config.mult_fact[0]/2., self.coins_value*config.mult_fact[0]]])
@@ -214,8 +222,8 @@ class parallel_env(ParallelEnv):
         self.num_moves += 1
         env_done = self.num_moves >= self.num_game_iterations
 
-        if (env_done):
-            observations = {agent: torch.Tensor([0.]) for agent in self.active_agents}
+        #if (env_done):
+        observations = {agent: torch.Tensor([0.]) for agent in self.active_agents}
 
         if (self.num_game_iterations > 1):
 

@@ -189,12 +189,6 @@ def objective(args, repo_name, trial=None):
         #print("Avg act agent1=", np.mean(act_batch["agent_1"]))
         #print("last rewards=",rewards)
 
-        #print("update reputation")
-        if (config.binary_reputation == True):
-            social_norm.rule09_binary(active_agents_idxs)
-        else:    
-            social_norm.rule09(active_agents_idxs)
-
         for ag_idx in active_agents_idxs:       
             agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
 
@@ -251,6 +245,13 @@ def objective(args, repo_name, trial=None):
         measure = np.mean(avg_rew_time[-10:])
 
         avg_rep = np.mean([agent.reputation for ag_idx, agent in agents.items() if (agent.is_dummy == False)])
+
+        #print("update reputation")
+        if (config.binary_reputation == True):
+            social_norm.rule09_binary(active_agents_idxs)
+        else:    
+            social_norm.rule09(active_agents_idxs)
+            
         #print("avg_rep=", avg_rep)
         if (config.optuna_):
             measure = avg_rep

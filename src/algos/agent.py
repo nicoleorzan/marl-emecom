@@ -1,9 +1,8 @@
 
-from src.algos.buffer import RolloutBufferComm
+from src.algos.buffer import RolloutBufferComm, RolloutBuffer
 import torch
 import copy
 import torch.nn.functional as F
-import torch.autograd as autograd
 import numpy as np
 from sklearn.mixture import GaussianMixture as GMM
 
@@ -22,12 +21,11 @@ class Agent():
 
         for key, val in params.items(): setattr(self, key, val)
 
-        self.buffer = RolloutBufferComm()
-        self.reputation = 0.5 # change this based on initial probs
+        #self.reputation = 0.5 # change this based on initial probs
         if (params.binary_reputation == True):
             #print("rep is binary")
             #self.reputation = float(np.random.binomial(1,0.5))
-            self.reputation = 1.0
+            self.reputation = torch.Tensor([1.0])
         self.old_reputation = self.reputation
         #print("rep=", self.reputation)
 
@@ -44,7 +42,11 @@ class Agent():
         print("is listening?:", self.is_listening)
         print("uncertainty:", self.uncertainties[idx])
         print("gmm=", self.gmm_)
-        #print("binary_reputation=", params.binary_reputation)
+
+        if (self.is_communicating == 0):
+            self.buffer = RolloutBuffer()
+        else:
+            self.buffer = RolloutBufferComm()
 
         self.is_uncertain = torch.Tensor([0.])
         if (self.uncertainties[idx] != 0.):
@@ -56,7 +58,7 @@ class Agent():
         self.min_f = min(self.mult_fact)
         # Action Policy
         self.input_act = self.obs_size
-        #print("obs_size=", self.obs_size)
+        print("obs_size=", self.obs_size)
         if (self.gmm_):
             self.input_act = self.n_gmm_components  #gmm components for the m factor, 1 for the coins I get
         if (self.get_index == True):
@@ -152,53 +154,6 @@ class Agent():
             #self.state_comm = torch.cat((digested_m_factor, digested_opponent_idx_comm, opponent_reputation), 0)
             self.state_comm = torch.cat((digested_m_factor, opponent_reputation, my_reputation), 0)
             #print("self.state_comm=", self.state_comm)
-    
-    def digest_input_anast(self, input):
-        #print("input=", input)
-        opponent_reputation, opponent_previous_action = input
-
-        opponent_reputation = torch.Tensor([opponent_reputation])
-        my_reputation = torch.Tensor([self.reputation])
-        ##### concatenate all stuff in a single vector
-        #digested_opponent_idx_act = self.embed_opponent_idx_act(opponent_idx)
-        self.state_act = torch.cat((opponent_reputation, my_reputation, opponent_previous_action), 0)
-        #print("self.state_act=", self.state_act)
-
-        if (self.is_communicating):
-            self.state_comm = torch.cat((opponent_reputation, my_reputation, opponent_previous_action), 0)
-            #print("self.state_comm=", self.state_comm)
-
-    def digest_input_with_idx(self, input):
-        #print("digest_input_with_idx")
-        #print("input=", input)
-        obs_m_fact, opponent_idx, opponent_reputation = input
-        #print("obs_m_fact, opponent_idx, opponent_reputation =", obs_m_fact, opponent_idx, opponent_reputation )
-
-        ##### set multiplier factor observation (if uncertainty is modeled, gmm is used)
-        digested_m_factor = self.set_mult_fact_obs(obs_m_fact)
-        #print("digested_m_factor=",digested_m_factor)
-        ##### embed adversary index
-        #digested_opponent_idx = self.embed_opponent_idx(opponent_idx)
-        #print("digested_opponent_idx=",digested_opponent_idx)
-        ##### make reputation a tensor
-        opponent_reputation = torch.Tensor([opponent_reputation])
-        my_reputation = torch.Tensor([self.reputation])
-        ##### concatenate all stuff in a single vector
-        #self.state = torch.cat((digested_m_factor, digested_opponent_idx, opponent_reputation), 0)
-        #print("digested state=", self.state)
-
-        digested_opponent_idx_act = self.embed_opponent_idx_act(opponent_idx)
-        #print("\ndigested_opponent_idx_act=",digested_opponent_idx_act)
-        self.state_act = torch.cat((digested_m_factor, digested_opponent_idx_act, my_reputation), 0)
-        #print("self.state_act=", self.state_act)
-
-        if (self.is_communicating):
-            digested_opponent_idx_comm = self.embed_opponent_idx_comm(opponent_idx)
-            self.state_comm = torch.cat((digested_m_factor, digested_opponent_idx_comm, opponent_reputation), 0)
-            #self.state_comm = torch.cat((digested_m_factor, opponent_reputation, my_reputation), 0)
-            #print("self.state_comm=", self.state_comm)
-
-        #print("self.state_act=", self.state_act)
 
     def digest_input_no_reputation(self, input):
         #print("digest_input_no_reputation=")
@@ -325,6 +280,7 @@ class Agent():
 
         elif (_eval == False):
             action, action_logprob, entropy, distrib = self.policy_act.act(state=state_to_act, greedy=False, get_distrib=True)
+            #print('action=', action, "distrib=", distrib)
             if (self.is_listening == True and self.n_communicating_agents != 0.):
                 #print("self.state_act=", self.state_act)
                 state_empty_mex = torch.cat((self.state_act.detach(), torch.zeros_like(self.message_in))).to(device)

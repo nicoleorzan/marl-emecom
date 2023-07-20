@@ -1,7 +1,7 @@
 
 import torch
 import random
-from src.algos.buffer import RolloutBufferComm
+from src.algos.buffer import RolloutBuffer
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -16,11 +16,13 @@ class NormativeAgent():
 
     def __init__(self, params, idx):
 
-        self.buffer = RolloutBufferComm()
+        self.buffer = RolloutBuffer()
+
+        self.obs_m_fact = 1.5
 
         for key, val in params.items(): setattr(self, key, val)
 
-        self.reputation = 1.0
+        self.reputation = torch.Tensor([1.0])
         self.old_reputation = self.reputation
         self.idx = idx
         self.is_communicating = self.communicating_agents[self.idx]
@@ -37,9 +39,6 @@ class NormativeAgent():
         self.return_episode_norm = 0
         self.return_episode_old_norm = torch.Tensor([0.])
         self.return_episode = 0
-
-        self.buffer = RolloutBufferComm()
-
 
     def reset(self):
         self.buffer.clear()
@@ -90,6 +89,8 @@ class NormativeAgent():
         self.message_in = message_in
 
     def select_action(self, m_val=None, _eval=False):
+        if (hasattr(self, 'state_act')):
+            self.opponent_reputation = self.state_act[0]
         action = torch.Tensor([0.])
         #if (self.obs_m_fact > 2): # cooperative env
         #    action = torch.Tensor([1.])
@@ -98,10 +99,10 @@ class NormativeAgent():
                 action = torch.Tensor([1.]) # I will play cooperatively
 
         self.buffer.actions.append(action[0])
-        if (m_val in self.buffer.actions_given_m):
-                self.buffer.actions_given_m[m_val].append(action[0])
+        if (m_val in self.buffer.actions):
+                self.buffer.actions[m_val].append(action[0])
         else: 
-            self.buffer.actions_given_m[m_val] = [action[0]]
+            self.buffer.actions = [action[0]]
         return action[0]
         
     def update(self):

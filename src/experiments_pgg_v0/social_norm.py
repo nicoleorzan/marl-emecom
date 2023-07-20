@@ -57,22 +57,22 @@ class SocialNorm():
             if (self.saved_actions[ag_idx] != []):
                 other_idx = list(set(active_agents_idxs) - set([agent.idx]))[0]
                 other = self.agents["agent_"+str(other_idx)]
-                #print("other.old_reputation=", other.old_reputation)
+                #print("other.reputation=", other.old_reputation)
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
-                #print("avg_cooperation_level=",avg_cooperation_level)
+                #print("my_cooperation_level=",avg_cooperation_level)
 
                 if (avg_cooperation_level >= self.cooperation_threshold):
                     if (other.old_reputation == 1.):
-                        agent.reputation = 1.
+                        agent.reputation = torch.Tensor([1.0])
                     else: 
-                        agent.reputation = 0.
+                        agent.reputation = torch.Tensor([0.0])
                 else: 
                     if (other.old_reputation == 1.):
-                        agent.reputation = 0.
+                        agent.reputation = torch.Tensor([0.0])
                     else: 
-                        agent.reputation = 1.
+                        agent.reputation = torch.Tensor([1.0])
 
-            #print("reputation after=", agent.reputation)
+            #print("new reputation=", agent.reputation)
 
         self.reset_saved_actions()
 

@@ -84,16 +84,17 @@ class DQNBuffer(RolloutBufferComm):
 
     def __len__(self):
         return len(self.states_a)
-    
 
 
-"""class RolloutBuffer:
+class RolloutBuffer:
     
     def __init__(self, recurrent = False):
         self.actions = []
         self.states = []
+        self.next_states = []
         self.logprobs = []
         self.rewards = []
+        self.rewards_norm = []
         self.is_terminals = []
         self.recurrent = recurrent
         if self.recurrent:
@@ -103,9 +104,11 @@ class DQNBuffer(RolloutBufferComm):
     def clear(self):
         del self.actions[:]
         del self.states[:]
+        del self.next_states[:]
         del self.logprobs[:]
         del self.rewards[:]
+        del self.rewards_norm[:]
         del self.is_terminals[:]
         if self.recurrent:
             del self.hstates[:]
-            del self.cstates[:]"""
+            del self.cstates[:]

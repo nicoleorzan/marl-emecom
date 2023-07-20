@@ -1,13 +1,19 @@
-EPOCHS = 3000 # total episodes
+import torch
+
+EPOCHS = 2000 # total episodes
 # batch size are the number of episodes in which 2 agents interact with each other alone
-OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation.
+#OBS_SIZE = 3 # input: multiplication factor (with noise), opponent reputation.
+#OBS_SIZE_ANAST = 4 # opponent previous act, my previous act, opponent reputation, my reputation
 # the opponent index is embedded in the agent class
 ACTION_SIZE = 2
 RANDOM_BASELINE = False
 
+DEVICE = torch.device('cpu')
+if(torch.cuda.is_available()): 
+    DEVICE = torch.device('cuda:0') 
+    torch.cuda.empty_cache()
 
 def setup_training_hyperparams(args, trial):
-    print("trial=", trial)
 
     all_params = {}
 
@@ -19,8 +25,8 @@ def setup_training_hyperparams(args, trial):
         else:
             lr_opp = 0
     else:
-        lr_a = 0.005 # 0.002 reinforce 0.0002
-        lr_c = 0.01     # 0.001
+        lr_a = 0.01 # 0.002 reinforce 0.0002
+        lr_c = 0.01  # 0.001
         if (args.opponent_selection == 1):
             lr_opp = 0.001
         else:
@@ -61,9 +67,9 @@ def setup_training_hyperparams(args, trial):
         algorithm = args.algorithm,
         wandb_mode = args.wandb_mode,
         coins_value = args.coins_value,
-        num_game_iterations = 1,
+        num_game_iterations = args.num_game_iterations,
         n_epochs = EPOCHS,
-        obs_size = OBS_SIZE,
+        obs_size = args.obs_size,
         action_size = ACTION_SIZE,
         n_gmm_components = args.mult_fact,
         mult_fact = args.mult_fact,
@@ -80,7 +86,9 @@ def setup_training_hyperparams(args, trial):
         opponent_selection = args.opponent_selection,
         other_reputation_threshold = o_r_t,
         cooperation_threshold = c_t,
-        optuna_ = args.optuna_
+        optuna_ = args.optuna_,
+        device = DEVICE,
+        reputation_in_reward = args.reputation_in_reward
     )
     if hasattr(args, 'b_value'):
         all_params = {**all_params,
@@ -101,7 +109,7 @@ def setup_training_hyperparams(args, trial):
             lr_actor = lr_a,
             n_hidden_act = num_hidden_a,
             hidden_size_act = hidden_size_a,
-            batch_size = 128,
+            batch_size = 1,
             decayRate = 0.999
         )
     elif (args.algorithm == "PPO"):
@@ -141,7 +149,7 @@ def setup_training_hyperparams(args, trial):
             decayRate = 0.999
         )
 
-    all_params = {**game_params, **algo_params, **comm_params}
+    all_params = {**all_params, **game_params, **algo_params, **comm_params}
     print("all_params=", all_params)
 
     return all_params

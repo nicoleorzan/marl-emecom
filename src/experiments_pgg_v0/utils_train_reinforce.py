@@ -2,7 +2,6 @@ import torch
 import itertools
 import numpy as np
 
-
 class SocialNorm():
 
     def __init__(self, agents):
@@ -33,59 +32,6 @@ class SocialNorm():
             #print("rep dopo",self.agents["agent_"+str(ag_idx)].reputation)
         self.reset_saved_actions()
 
-def eval_no_reputation(config, parallel_env, active_agents, active_agents_idxs, m, device, _print=False):
-    #print("\nEVAL<<<=====================")
-    observations = parallel_env.reset(m)
-
-    if (_print == True):
-        print("\n Eval ===> Mult factor=", m)
-        print("obs=", observations)
-
-    n_communicating_agents = config.communicating_agents.count(1)
-    message = None
-    done = False
-    while not done:
-
-        messages = {}
-        actions = {}
-        mex_distrib = {}
-        act_distrib = {}
-
-        active_agents["agent_"+str(active_agents_idxs[0])].digest_input_no_reputation((observations["agent_"+str(active_agents_idxs[0])], active_agents["agent_"+str(active_agents_idxs[1])].is_uncertain))
-        active_agents["agent_"+str(active_agents_idxs[1])].digest_input_no_reputation((observations["agent_"+str(active_agents_idxs[1])], active_agents["agent_"+str(active_agents_idxs[0])].is_uncertain))
-
-        # speaking
-        #print("\nspeaking")
-        for agent in parallel_env.active_agents:
-            if (active_agents[agent].is_communicating):
-                messages[agent] = active_agents[agent].select_message(_eval=True)
-                #print("messages["+str(agent)+"]=", messages[agent])
-                mex_distrib[agent] = active_agents[agent].get_message_distribution()
-
-        # listening
-        #print("\nlistening")
-        for agent in parallel_env.active_agents:
-            other = list(set(active_agents_idxs) - set([active_agents[agent].idx]))[0]
-            if (active_agents[agent].is_listening and len(messages) != 0):
-                active_agents[agent].get_message(messages["agent_"+str(other)])
-            if (active_agents[agent].is_listening and n_communicating_agents != 0 and len(messages) == 0):
-                message = torch.zeros(config.mex_size)
-                active_agents[agent].get_message(message)
-
-        # acting
-        #print("\nacting")
-        for agent in parallel_env.active_agents:
-            actions[agent] = active_agents[agent].select_action(_eval=True)
-            act_distrib[agent] = active_agents[agent].get_action_distribution()
-        _, rewards_eval, _, _ = parallel_env.step(actions)
-
-        if (_print == True):
-            print("message=", message)
-            print("actions=", actions)
-            print("distrib=", act_distrib)
-        observations, _, done, _ = parallel_env.step(actions)
-
-    return actions, mex_distrib, act_distrib, rewards_eval      
 
 def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _print=False):
     #print("\nEVAL<<<=====================")
@@ -147,64 +93,116 @@ def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _pr
 
     return actions, mex_distrib, act_distrib, rewards_eval 
 
-def eval_anast(parallel_env, active_agents, active_agents_idxs, _print=False):
+def eval_anast(parallel_env, active_agents, active_agents_idxs, n_iterations, social_norm, gamma):
+
+    [agent.reset() for _, agent in active_agents.items()]
+    rewards = {}
+    
+    _ = parallel_env.reset()
+    
+    states = {}; next_states = {}
+    for idx_agent, agent in active_agents.items():
+        other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
+        next_states[idx_agent] = torch.cat((other.reputation, agent.reputation, other.previous_action, agent.previous_action), 0)
+        agent.state_act = next_states[idx_agent]
 
     done = False
-    while not done:
+    for i in range(n_iterations):
+        if (i == 9): 
+            done = True
 
-        actions = {}
-        act_distrib = {}
-
-        active_agents["agent_"+str(active_agents_idxs[0])].digest_input_anast((active_agents["agent_"+str(active_agents_idxs[1])].reputation, active_agents["agent_"+str(active_agents_idxs[1])].previous_action))
-        active_agents["agent_"+str(active_agents_idxs[1])].digest_input_anast((active_agents["agent_"+str(active_agents_idxs[0])].reputation, active_agents["agent_"+str(active_agents_idxs[0])].previous_action))
-
+        actions = {}; states = next_states
+        
         # acting
-        #print("\nacting")
         for agent in parallel_env.active_agents:
-            actions[agent] = active_agents[agent].select_action(_eval=True)
-            if (active_agents[agent].is_dummy == False):
-                act_distrib[agent] = active_agents[agent].get_action_distribution()
-        _, rewards_eval, _, _ = parallel_env.step(actions)
+            actions[agent] = active_agents[agent].select_action()
+
+        _, rew, _, _ = parallel_env.step1(actions)
         
-        for ag_idx, agent in active_agents.items():
-            agent.previous_action = actions[ag_idx].reshape(1)
+        social_norm.save_actions(actions, active_agents_idxs)
+        social_norm.rule09_binary(active_agents_idxs)
+        for ag_idx in active_agents_idxs:       
+            active_agents["agent_"+str(ag_idx)].old_reputation = active_agents["agent_"+str(ag_idx)].reputation
+            if "agent_"+str(ag_idx) not in rewards.keys():
+                rewards["agent_"+str(ag_idx)] = [rew["agent_"+str(ag_idx)]]
+            else:
+                rewards["agent_"+str(ag_idx)].append(rew["agent_"+str(ag_idx)])
 
-        if (_print == True):
-            print("actions=", actions)
-            print("distrib=", act_distrib)
-        _, _, done, _ = parallel_env.step(actions)
+        next_states = {}
+        for idx_agent, agent in active_agents.items():
+            other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
+            next_states[idx_agent] = torch.cat((other.reputation, agent.reputation, other.previous_action, agent.previous_action), 0)
+            agent.state_act = next_states[idx_agent]
 
-    return actions, act_distrib, rewards_eval 
+        #print("next_states=", next_states)
+        rew = {key: value+active_agents[key].reputation for key, value in rew.items()}
+        #print("after rewards=", rew)
 
+        if done:
+            break
 
-def eval_old(config, parallel_env, agents, m, device, _print=False):
-    observations = parallel_env.reset(m)
+    R = {}
+    for ag_idx, agent in active_agents.items():
+        R[ag_idx] = 0
+        for r in rewards[ag_idx][::-1]:
+            R[ag_idx] = r + gamma * R[ag_idx]
+    return R
 
-    if (_print == True):
-        print("\n Eval ===> Mult factor=", m)
-        print("obs=", observations)
+def eval_new(parallel_env, active_agents, active_agents_idxs, n_iterations, social_norm, gamma):
+
+    [agent.reset() for _, agent in active_agents.items()]
+    rewards = {}
+    
+    observations = parallel_env.reset()
+    
+    states = {}; next_states = {}
+    for idx_agent, agent in active_agents.items():
+        other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
+        next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation, agent.reputation, other.previous_action, agent.previous_action), 0)
+        agent.state_act = next_states[idx_agent]
 
     done = False
-    while not done:
+    for i in range(n_iterations):
+        if (i == 9): 
+            done = True
 
-        if (config.random_baseline):
-            messages = {agent: agents[agent].random_messages(observations[agent]) for agent in parallel_env.agents}
-            mex_distrib = 0
-        else:
-            messages = {agent: agents[agent].select_message(observations[agent], True) for agent in parallel_env.agents}
-            mex_distrib = {agent: agents[agent].get_message_distribution(observations[agent]) for agent in parallel_env.agents}
-        message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
-        actions = {agent: agents[agent].select_action(observations[agent], message, True) for agent in parallel_env.agents}
-        acts_distrib = {agent: agents[agent].get_action_distribution(observations[agent], message) for agent in parallel_env.agents}
+        actions = {}; states = next_states
         
-        _, rewards_eval, _, _ = parallel_env.step(actions)
+        # acting
+        for agent in parallel_env.active_agents:
+            actions[agent] = active_agents[agent].select_action()
 
-        if (_print == True):
-            print("message=", message)
-            print("actions=", actions)
-        observations, _, done, _ = parallel_env.step(actions)
+        observations, rew, _, _ = parallel_env.step1(actions)
+        
+        social_norm.save_actions(actions, active_agents_idxs)
+        social_norm.rule09_binary(active_agents_idxs)
+        for ag_idx in active_agents_idxs:       
+            active_agents["agent_"+str(ag_idx)].old_reputation = active_agents["agent_"+str(ag_idx)].reputation
+            if "agent_"+str(ag_idx) not in rewards.keys():
+                rewards["agent_"+str(ag_idx)] = [rew["agent_"+str(ag_idx)]]
+            else:
+                rewards["agent_"+str(ag_idx)].append(rew["agent_"+str(ag_idx)])
 
-    return actions, mex_distrib, acts_distrib, rewards_eval 
+        next_states = {}
+        for idx_agent, agent in active_agents.items():
+            other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
+            next_states[idx_agent] = torch.cat((observations[idx_agent],other.reputation, agent.reputation, other.previous_action, agent.previous_action), 0)
+            agent.state_act = next_states[idx_agent]
+
+        #print("next_states=", next_states)
+        rew = {key: value+active_agents[key].reputation for key, value in rew.items()}
+        #print("after rewards=", rew)
+
+        if done:
+            break
+
+    R = {}
+    for ag_idx, agent in active_agents.items():
+        R[ag_idx] = 0
+        for r in rewards[ag_idx][::-1]:
+            R[ag_idx] = r + gamma * R[ag_idx]
+    return R
+
 
 def best_strategy_reward(config):
     my_strategy = [0, 1, 1, 1]
@@ -245,7 +243,7 @@ def find_max_min(config, coins, strategy=False):
         
         #scenarios_returns = {}
         for idx_scenario, scenario in enumerate(possible_scenarios):
-            print("scenario=", scenario, "scenario[0]=",scenario[0])
+            #print("scenario=", scenario, "scenario[0]=",scenario[0])
             y = 0
             if scenario[1] == 'C':
                 y = 1
@@ -268,7 +266,7 @@ def find_max_min(config, coins, strategy=False):
         min_values[multiplier] = np.amin(returns)
         print(" max_values[", multiplier, "]=",  max_values[multiplier])
         print(" min_values[", multiplier, "]=",  min_values[multiplier])
-        normalized = returns/max_values[multiplier]
+        #normalized = returns/max_values[multiplier]
         
         #print("normalized=", returns/max_values[multiplier]) #(returns-min_values[multiplier])/(max_values[multiplier] - min_values[multiplier]))
         all_returns.append(returns)
@@ -277,85 +275,3 @@ def find_max_min(config, coins, strategy=False):
     if (strategy == True):
         return all_returns_one_agent, all_returns, max_values
     return max_values
-
-def apply_norm(active_agents, active_agents_idxs, actions, f):
-    reputation_rewards = {}
-    addition = {}
-    for idx in active_agents_idxs:
-        agent = active_agents["agent_"+str(idx)]
-        if (agent.is_dummy == False):
-            #print("agent=", agent.idx)
-            old_reputation = active_agents["agent_"+str(idx)].reputation
-            #print("old rep=", old_reputation)
-            other = list(set(active_agents_idxs) - set([idx]))[0]
-            change_reputation(f, agent, actions["agent_"+str(idx)], active_agents["agent_"+str(other)].reputation, addition)
-            #print("new one=", agent.reputation)
-            reputation_rewards["agent_"+str(idx)] = active_agents["agent_"+str(idx)].reputation - old_reputation
-    return reputation_rewards, addition
-   
-def apply_norm2(active_agents, active_agents_idxs, actions, f):
-    reputation_rewards = {}
-    addition = {}
-    #for idx in active_agents_idxs:
-    agent = active_agents["agent_0"]
-    #print("agent=", agent.idx)
-    old_reputation = active_agents["agent_0"].reputation
-    #print("old rep=", old_reputation)
-    print("actions=", actions)
-    avg_val = np.mean(actions)
-    print("avg=", avg_val)
-    other = list(set(active_agents_idxs) - set([0]))[0]
-    agent.reputation = avg_val
-    #change_reputation(f, agent, actions["agent_0"], active_agents["agent_"+str(other)].reputation, addition)
-    #print("new one=", agent.reputation)
-    reputation_rewards["agent_0"] = active_agents["agent_0"].reputation - old_reputation
-    return reputation_rewards, addition
-   
-def change_reputation(f, agent, action, opponent_reputation, addition):
-    if ( f > 1 and f < 2. ):
-        if (action == 1):
-            if (opponent_reputation == 1):
-                agent.reputation = min(agent.reputation + 0.1, 1.)
-            elif (opponent_reputation == 0):
-                agent.reputation = max(agent.reputation - 0.4, 0.)
-        
-        elif (action == 0):
-            if (opponent_reputation == 1):
-                agent.reputation = max(agent.reputation - 0.4, 0.)
-            elif (opponent_reputation == 0):
-                agent.reputation = min(agent.reputation + 0.1, 1.)
-
-def binary_change_reputation(f, agent, action, opponent_reputation, addition):
-    if ( f > 1. ):
-        if (action == 1):
-            if (opponent_reputation == 1):
-                agent.reputation = 1.
-            elif (opponent_reputation == 0):
-                agent.reputation = 0.
-        
-        elif (action == 0):
-            if (opponent_reputation == 1):
-                agent.reputation = 0.
-            elif (opponent_reputation == 0):
-                agent.reputation = 1.
-
-def change_reputation_f_aware(f, agent, action, addition):
-    # if the game is purely competitive (f<1), I do not encourage anyone to defect or cooperate. 
-    # Reputation therefore reamins unchanged for every action agents take
-    # if the game is cooperative or mixed motive (f>1), I want a metric that encourages cooperation
-    #print("agent=", agent.idx)
-    #print("reputation before=", agent.reputation)
-    if (f > 1):
-        if (action == 0):
-            agent.reputation = max(agent.reputation-0.5, 0.)
-        if (action == 1):
-            agent.reputation = min(agent.reputation+0.2, 1.)
-
-        if (agent.reputation == 1.):
-            addition["agent_"+str(agent.idx)] = 0
-        else: 
-            addition["agent_"+str(agent.idx)] = 0.2
-            
-    else: 
-        addition["agent_"+str(agent.idx)] = 0
-    #print("reputation after=", agent.reputation)

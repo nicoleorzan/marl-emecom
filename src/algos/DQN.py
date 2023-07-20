@@ -6,8 +6,6 @@ import copy
 import torch
 import torch.nn as nn
 
-#https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
-
 # set device to cpu or cuda
 device = torch.device('cpu')
 if(torch.cuda.is_available()): 
@@ -31,7 +29,6 @@ class DQN(Agent):
         self.policy_act_target.load_state_dict(self.policy_act.state_dict())
 
         opt_params.append({'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor})
-        #opt_params.append({'params': self.policy_act.critic.parameters(), 'lr': self.lr_critic})
 
         if (self.is_communicating):
             self.policy_comm = Actor(params=params, input_size=self.input_comm, output_size=self.mex_size, \
@@ -40,7 +37,6 @@ class DQN(Agent):
             self.policy_comm_target.load_state_dict(self.policy_comm.state_dict())
             
             opt_params.append({'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm})
-            #opt_params.append({'params': self.policy_comm.critic.parameters(), 'lr': self.lr_critic_comm})
 
         self.buffer = DQNBuffer(self.memory_size)
 
@@ -78,7 +74,7 @@ class DQN(Agent):
 
         state_batch = torch.stack(state_batch) #torch.cat(state_batch.unsqueeze(0))
         #print("\nstate_batch=", state_batch, state_batch.shape)
-        #next_state_batch = torch.stack(next_state_batch) #torch.cat(next_state_batch).unsqueeze(1)
+        next_state_batch = torch.stack(next_state_batch) #torch.cat(next_state_batch).unsqueeze(1)
         #print("next_state_batch=", next_state_batch, next_state_batch.shape)
         action_batch = torch.stack(action_batch)
         #print("action_batch", action_batch, action_batch.shape)

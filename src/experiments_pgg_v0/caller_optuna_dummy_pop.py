@@ -1,6 +1,7 @@
 import argparse
 import ast
-from train_optuna_dummy_pop import training_function
+#from train_optuna_dummy_pop import training_function
+from new_train_my_game import training_function
 #from one_agent_train_optuna_dummy_pop import training_function
 
 if __name__ == '__main__':
@@ -10,7 +11,7 @@ if __name__ == '__main__':
         "--mult_fact",
         nargs="*",
         type=float,
-        default=[])
+        default=[1.5])
     parser.add_argument( # to fill with values of uncertainties for every agent (can be 0.)
         "--uncertainties",
         nargs="*",
@@ -28,6 +29,8 @@ if __name__ == '__main__':
         default=[]) # to fill with 0 if agent does not list, 1 is agent does list
         
     parser.add_argument('--gmm_', type=int, default=0)
+    parser.add_argument('--num_game_iterations', type=int, default=1)
+    parser.add_argument('--obs_size', type=int, default=5)
     parser.add_argument('--optuna_', type=int, default=0)
     parser.add_argument('--coins_value', type=float, default=4.)
     parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
