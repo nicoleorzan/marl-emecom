@@ -7,11 +7,10 @@ import optuna
 import random
 from optuna.trial import TrialState
 import torch
-#from optuna.integration.wandb import WeightsAndBiasesCallback
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
-from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm
+from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min
 from src.algos.normativeagent import NormativeAgent
 from social_norm import SocialNorm
 from params import setup_training_hyperparams
@@ -46,7 +45,7 @@ def define_agents(config, is_dummy):
 def objective(args, repo_name, trial=None):
 
     all_params = setup_training_hyperparams(args, trial)
-    wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=args.wandb_mode)#, sync_tensorboard=True)
+    wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=args.wandb_mode)
     config = wandb.config
     print("config=", config)
     print("binary_reputation=", config.binary_reputation)
@@ -86,24 +85,14 @@ def objective(args, repo_name, trial=None):
         first_agent_idx = random.sample(non_dummy_idxs, 1)[0]
         while ((any(active_agents_idxs) == True) == False):
             if (config.opponent_selection == True):
-                #print("opponent selection is true")
-                #first_agent_idx = random.sample(non_dummy_idxs, 1)[0]
-                #print("first_agent_idx=", first_agent_idx)
                 reputations = torch.Tensor([agent.reputation for ag_idx, agent in agents.items()])
-                #print("reputations=", reputations)
                 second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
                 while (second_agent_idx == first_agent_idx):
                     second_agent_idx = int(agents["agent_"+str(first_agent_idx)].select_opponent(reputations))
-                #print("second_agent_idx=", second_agent_idx)
                 active_agents_idxs = [first_agent_idx, second_agent_idx]
             else:
-                new_list = list(set(range(0, config.n_agents)) - set([first_agent_idx]))
-                second_agent_idx = random.sample(new_list, 1)[0]
+                second_agent_idx = random.sample(list(set(range(0, config.n_agents)) - set([first_agent_idx])), 1)[0]
                 active_agents_idxs = [first_agent_idx, second_agent_idx] #random.sample(range(config.n_agents), 2)
-                #print("active_agents_idxs=",active_agents_idxs)
-                #while ( any([i in non_dummy_idxs for i in active_agents_idxs]) == False):
-                #    active_agents_idxs = random.sample(range(config.n_agents), 2)
-                #    print("active_agents_idxs=",active_agents_idxs)
 
             print("active_agents_idxs=",active_agents_idxs)
             active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, value in zip(active_agents_idxs, agents)}
@@ -157,13 +146,13 @@ def objective(args, repo_name, trial=None):
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
                 #print("\nactions=", actions)
                 observations, rewards, done, _ = parallel_env.step(actions)
-                #print("rewards=", rewards)
+                print("rewards=", rewards)
 
                 if (mf > 1. and mf < 2.):
                     social_norm.save_actions(actions, active_agents_idxs)
 
                 rewards_norm = {key: value/parallel_env.mv for key, value in rewards.items()}
-                #print("rewards_norm=", rewards_norm)
+                print("rewards_norm=", rewards_norm)
                 
                 for ag_idx, agent in active_agents.items():
                     
@@ -191,9 +180,6 @@ def objective(args, repo_name, trial=None):
 
         for ag_idx in active_agents_idxs:       
             agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
-
-        #if agents["agent_"+str(config.n_agents-1)+"].reputation == 0.0:
-        #    print("\n\n\n\n\n\n\n\n\n\n\nERROR!!!!!!!!!!!!!!!")
 
         #print("NEW REPUTATIONS=", "agent_0 = ", agents["agent_0"].reputation, ", agent_1 = ", agents["agent_1"].reputation)
 

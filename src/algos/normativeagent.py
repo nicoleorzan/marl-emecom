@@ -1,7 +1,7 @@
 
 import torch
 import random
-from src.algos.buffer import RolloutBuffer
+from src.algos.buffer import RolloutBufferComm
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -16,7 +16,7 @@ class NormativeAgent():
 
     def __init__(self, params, idx):
 
-        self.buffer = RolloutBuffer()
+        self.buffer = RolloutBufferComm()
 
         self.obs_m_fact = 1.5
 
@@ -36,9 +36,9 @@ class NormativeAgent():
         
         print("\nNormative agent", self.idx)
 
-        self.return_episode_norm = 0
+        self.return_episode_norm = torch.Tensor([0.])
         self.return_episode_old_norm = torch.Tensor([0.])
-        self.return_episode = 0
+        self.return_episode = torch.Tensor([0.])
 
     def reset(self):
         self.buffer.clear()
@@ -49,8 +49,8 @@ class NormativeAgent():
     def reset_episode(self):
         self.return_episode_old_norm = self.return_episode_norm
         self.return_episode_old = self.return_episode
-        self.return_episode_norm = 0
-        self.return_episode = 0
+        self.return_episode_norm = torch.Tensor([0.])
+        self.return_episode = torch.Tensor([0.])
 
     def digest_input(self, input):
         obs_m_fact, opponent_reputation = input

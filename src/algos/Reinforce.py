@@ -45,28 +45,19 @@ class Reinforce(Agent):
         self.baseline = 0.
 
     def embed_opponent_idx_act(self, idx):
-        #print("embed_opponent_idx, inside reinforce")
         out = self.policy_act.embed_opponent_index(idx).t()[0]
         return out
     
     def embed_opponent_idx_comm(self, idx):
-        #print("embed_opponent_idx, inside reinforce")
         out = self.policy_comm.embed_opponent_index(idx).t()[0]
         return out
 
     def update(self):
-        #print("agent=", self.idx)
-        #print("\n=====>Update agent", self.idx)
-        # I do not normalize rewards here because I already give normalized rewards to the agent
-        #print("self.buffer.rewards=", self.buffer.rewards)
-        #print("self.buffer.rewards_norm=", self.buffer.rewards_norm)
+      
         rew_norm = self.buffer.rewards_norm # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
-        #print("rew norm=", len(rew_norm))
         act_logprobs = self.buffer.act_logprobs
         comm_logprobs = self.buffer.comm_logprobs
         opponent_logprobs = self.buffer.opponent_logprobs 
-        #print("act_logprobs=",act_logprobs)
-        #print("opponent_logprobs=", len(opponent_logprobs))
 
         loss_act = [] #torch.zeros_like(act_logprobs)
         loss_comm = [] #torch.zeros_like(comm_logprobs)
@@ -77,13 +68,8 @@ class Reinforce(Agent):
         hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
         
         if (self.opponent_selection):
-            #print("create loss opponent selections")
-            #print("np.mean(rew_norm)=", np.mean(rew_norm))
             for i in range(len(opponent_logprobs)):
-                #print("-opponent_logprobs[i] * (np.mean(rew_norm) - self.baseline)=",-opponent_logprobs[i] * (np.mean(rew_norm) - self.baseline))
                 loss_opponent_choice.append(-opponent_logprobs[i] * (rew_norm[i] - self.baseline))
-                #loss_opponent_choice.append(-opponent_logprobs[i] * (np.mean(rew_norm) - self.baseline))
-                #print("loss opp=", loss_opponent_choice)
         for i in range(len(act_logprobs)):
             if (self.is_communicating):
                 loss_comm.append(-comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i])
@@ -115,20 +101,14 @@ class Reinforce(Agent):
             autograd.backward(loss_opponent_choice, tmp, retain_graph=True)
             self.opt_opponent.step()
         
-        #print("update act loss")
-        #print("loss_act=", loss_act)
         self.opt_act.zero_grad()
         tmp1 = [torch.ones(a.data.shape) for a in loss_act]
         autograd.backward(loss_act, tmp1, retain_graph=True)
         self.opt_act.step()
         self.scheduler_act.step()
         print("new lr=",self.scheduler_act.get_lr())
-        #print("optimized")
         
-        #self.optimizer.step()
-
         self.n_update += 1.
         self.baseline += (np.mean([i for i in rew_norm]) - self.baseline) / (self.n_update)
-        #print("baseline=", self.baseline)
 
         self.reset()

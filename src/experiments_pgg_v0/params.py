@@ -129,7 +129,7 @@ def setup_training_hyperparams(args, trial):
             lr_critic = lr_c, 
             n_hidden_act = num_hidden_a,
             hidden_size_act = hidden_size_a, 
-            batch_size = 128,
+            batch_size = 1,
             decayRate = 0.999,
             K_epochs = 40,
             eps_clip = 0.2,

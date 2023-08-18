@@ -1,1 +1,1 @@
-from .prisoner_dilemma.prisoner_dilemma import env, raw_env
+from .pd.prisoner_dilemma import env, raw_env, parallel_env

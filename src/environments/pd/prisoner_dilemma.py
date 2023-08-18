@@ -4,9 +4,9 @@ from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
 import supersuit as ss
 from pettingzoo.utils import parallel_to_aec
-import random
-from torch.distributions import uniform, normal
 import torch
+
+
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -41,7 +41,7 @@ def raw_env(config):
 class parallel_env(ParallelEnv):
     metadata = {
         'render.modes': ['human'], 
-        "name": "pgg_parallel_v0"
+        "name": "prisoner_dilemma"
         }
 
     def __init__(self, config):
@@ -160,8 +160,7 @@ class parallel_env(ParallelEnv):
         self.num_moves += 1
         env_done = self.num_moves >= self.num_game_iterations
 
-        if (env_done):
-            observations = {agent: torch.Tensor([0.]) for agent in self.active_agents}
+        observations = {agent: torch.Tensor([0.]) for agent in self.active_agents}
 
         if env_done:
             self.agents = []

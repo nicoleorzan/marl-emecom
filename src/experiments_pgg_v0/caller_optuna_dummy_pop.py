@@ -1,7 +1,7 @@
 import argparse
 import ast
-#from train_optuna_dummy_pop import training_function
-from new_train_my_game import training_function
+from train_optuna_dummy_pop import training_function
+#from new_train_my_game import training_function
 #from one_agent_train_optuna_dummy_pop import training_function
 
 if __name__ == '__main__':
@@ -30,7 +30,8 @@ if __name__ == '__main__':
         
     parser.add_argument('--gmm_', type=int, default=0)
     parser.add_argument('--num_game_iterations', type=int, default=1)
-    parser.add_argument('--obs_size', type=int, default=5)
+    parser.add_argument('--reputation_in_reward', type=int, default=0)
+    parser.add_argument('--obs_size', type=int, default=3)
     parser.add_argument('--optuna_', type=int, default=0)
     parser.add_argument('--coins_value', type=float, default=4.)
     parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
