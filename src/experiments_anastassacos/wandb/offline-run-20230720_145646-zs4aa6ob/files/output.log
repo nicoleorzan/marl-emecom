@@ -1,0 +1,12 @@
+
+config= {'b_value': 5.0, 'c_value': 1.0, 'd_value': 0.0, 'n_agents': 2, 'algorithm': 'reinforce', 'wandb_mode': 'offline', 'num_game_iterations': 10, 'n_epochs': 2000, 'obs_size': 4, 'action_size': 2, 'random_baseline': False, 'lr_opponent': 0, 'embedding_dim': 1, 'binary_reputation': 1, 'opponent_selection': 0, 'other_reputation_threshold': 0.4, 'cooperation_threshold': 0.4, 'optuna_': 0, 'device': 'cpu', 'reputation_in_reward': 0, 'lr_actor': 0.01, 'n_hidden_act': 2, 'hidden_size_act': 16, 'batch_size': 1, 'decayRate': 0.999}
+Traceback (most recent call last):
+  File "caller_optuna_anastassacos.py", line 64, in <module>
+    training_function(args)
+  File "/home/nicole/marl-emecom/src/experiments_pgg_v0/anastassacos/train_optuna_anastassacos.py", line 210, in training_function
+    objective(args, repo_name)
+  File "/home/nicole/marl-emecom/src/experiments_pgg_v0/anastassacos/train_optuna_anastassacos.py", line 36, in objective
+    parallel_env = pgg_parallel_v0.parallel_env(config)
+  File "/home/nicole/marl-emecom/src/environments/pgg/pgg_parallel_v0.py", line 65, in __init__
+    if hasattr(self.mult_fact, '__len__'):
+AttributeError: 'parallel_env' object has no attribute 'mult_fact'

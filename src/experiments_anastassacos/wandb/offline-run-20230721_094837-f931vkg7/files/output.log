@@ -1,0 +1,247 @@
+config= {'b_value': 5.0, 'c_value': 1.0, 'd_value': 0.0, 'n_agents': 2, 'algorithm': 'reinforce', 'wandb_mode': 'offline', 'num_game_iterations': 10, 'n_epochs': 2000, 'obs_size': 4, 'action_size': 2, 'random_baseline': False, 'lr_opponent': 0, 'embedding_dim': 1, 'binary_reputation': 1, 'opponent_selection': 0, 'other_reputation_threshold': 0.4, 'cooperation_threshold': 0.4, 'optuna_': 0, 'device': 'cpu', 'reputation_in_reward': 0, 'lr_actor': 0.01, 'n_hidden_act': 2, 'hidden_size_act': 16, 'batch_size': 1, 'decayRate': 0.999}
+DD= tensor(1.)
+Dc= tensor(6.)
+Cd= tensor(0.)
+CC= tensor(5.)
+mv= tensor(6.)
+mat= tensor([[1., 6.],
+        [0., 5.]])
+norm mat= tensor([[0.1667, 1.0000],
+        [0.0000, 0.8333]])
+is_dummy= [0, 0]
+Agent 0
+Agent 1
+==========>Epoch= 0
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(1)}
+UPDATE
+Epoch : 0 	 Measure: nan
+==========>Epoch= 1
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+UPDATE
+==========>Epoch= 2
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+UPDATE
+==========>Epoch= 3
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+UPDATE
+==========>Epoch= 4
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+UPDATE
+==========>Epoch= 5
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+UPDATE
+==========>Epoch= 6
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+UPDATE
+==========>Epoch= 7
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+UPDATE
+==========>Epoch= 8
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+UPDATE
+==========>Epoch= 9
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+UPDATE
+==========>Epoch= 10
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+UPDATE
+Epoch : 10 	 Measure: nan
+==========>Epoch= 11
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+UPDATE
+==========>Epoch= 12
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+UPDATE
+==========>Epoch= 13
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+UPDATE
+==========>Epoch= 14
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(1)}
+UPDATE
+==========>Epoch= 15
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(1)}
+UPDATE
+==========>Epoch= 16
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(0)}
+actions= {'agent_1': tensor(1), 'agent_0': tensor(1)}
+actions= {'agent_1': tensor(0), 'agent_0': tensor(0)}
+UPDATE
+/home/nicole/marl-emecom/env1/lib/python3.8/site-packages/numpy/core/fromnumeric.py:3432: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/home/nicole/marl-emecom/env1/lib/python3.8/site-packages/numpy/core/_methods.py:190: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+Traceback (most recent call last):
+  File "caller.py", line 63, in <module>
+    training_function(args)
+  File "/home/nicole/marl-emecom/src/experiments_anastassacos/train.py", line 209, in training_function
+    objective(args, repo_name)
+  File "/home/nicole/marl-emecom/src/experiments_anastassacos/train.py", line 135, in objective
+    returns_eval = eval_anast(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, 0.99)
+  File "/home/nicole/marl-emecom/src/utils/utils.py", line 87, in eval_anast
+    actions[agent] = active_agents[agent].select_action()
+  File "/home/nicole/marl-emecom/src/algos/anast/agent_anast.py", line 49, in select_action
+    action, action_logprob, entropy, distrib = self.policy_act.act(state=state_to_act, greedy=False, get_distrib=True)
+  File "/home/nicole/marl-emecom/src/algos/anast/Actor.py", line 41, in act
+    out = self.actor(state)
+  File "/home/nicole/marl-emecom/env1/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1110, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/nicole/marl-emecom/env1/lib/python3.8/site-packages/torch/nn/modules/container.py", line 141, in forward
+    input = module(input)
+  File "/home/nicole/marl-emecom/env1/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1110, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/nicole/marl-emecom/env1/lib/python3.8/site-packages/torch/nn/modules/linear.py", line 103, in forward
+    return F.linear(input, self.weight, self.bias)
+  File "/usr/lib/python3.8/traceback.py", line 193, in format_stack
+    def format_stack(f=None, limit=None):
+KeyboardInterrupt

@@ -1,0 +1,18 @@
+2023-07-20 15:49:09,435 INFO    MainThread:13256 [internal.py:wandb_internal():90] W&B internal server running at pid: 13256, started at: 2023-07-20 15:49:09.435472
+2023-07-20 15:49:09,437 DEBUG   HandlerThread:13256 [handler.py:handle_request():141] handle_request: run_start
+2023-07-20 15:49:09,438 INFO    WriterThread:13256 [datastore.py:open_for_write():75] open: /home/nicole/marl-emecom/src/experiments_pgg_v0/anastassacos/wandb/offline-run-20230720_154909-3mih81v6/run-3mih81v6.wandb
+2023-07-20 15:49:09,438 DEBUG   HandlerThread:13256 [meta.py:__init__():35] meta init
+2023-07-20 15:49:09,439 DEBUG   HandlerThread:13256 [meta.py:__init__():49] meta init done
+2023-07-20 15:49:09,439 DEBUG   HandlerThread:13256 [meta.py:probe():209] probe
+2023-07-20 15:49:09,440 DEBUG   HandlerThread:13256 [meta.py:_setup_git():199] setup git
+2023-07-20 15:49:09,448 DEBUG   HandlerThread:13256 [meta.py:_setup_git():206] setup git done
+2023-07-20 15:49:09,448 DEBUG   HandlerThread:13256 [meta.py:_save_pip():53] save pip
+2023-07-20 15:49:09,449 DEBUG   HandlerThread:13256 [meta.py:_save_pip():67] save pip done
+2023-07-20 15:49:09,449 DEBUG   HandlerThread:13256 [meta.py:probe():247] probe done
+2023-07-20 15:49:18,944 WARNING MainThread:13256 [internal.py:wandb_internal():153] Internal process interrupt: 1
+2023-07-20 15:49:19,146 WARNING MainThread:13256 [internal.py:wandb_internal():153] Internal process interrupt: 2
+2023-07-20 15:49:19,147 ERROR   MainThread:13256 [internal.py:wandb_internal():156] Internal process interrupted.
+2023-07-20 15:49:19,441 INFO    SenderThread:13256 [sender.py:finish():1111] shutting down sender
+2023-07-20 15:49:19,946 INFO    WriterThread:13256 [datastore.py:close():279] close: /home/nicole/marl-emecom/src/experiments_pgg_v0/anastassacos/wandb/offline-run-20230720_154909-3mih81v6/run-3mih81v6.wandb
+2023-07-20 15:49:19,946 INFO    HandlerThread:13256 [handler.py:finish():806] shutting down handler
+2023-07-20 15:49:19,947 INFO    MainThread:13256 [internal.py:handle_exit():80] Internal process exited

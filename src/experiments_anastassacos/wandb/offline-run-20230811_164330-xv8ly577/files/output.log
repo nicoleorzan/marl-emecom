@@ -1,0 +1,1399 @@
+config= {'b_value': 5.0, 'c_value': 1.0, 'd_value': 0.0, 'n_agents': 2, 'algorithm': 'reinforce', 'wandb_mode': 'offline', 'num_game_iterations': 10, 'n_epochs': 2000, 'obs_size': 4, 'action_size': 2, 'random_baseline': False, 'embedding_dim': 1, 'binary_reputation': 1, 'other_reputation_threshold': 0.4, 'cooperation_threshold': 0.4, 'optuna_': 0, 'device': 'cpu', 'reputation_in_reward': 0, 'lr_actor': 0.01, 'n_hidden_act': 2, 'hidden_size_act': 16, 'batch_size': 1, 'decayRate': 0.999}
+DD= tensor(1.)
+Dc= tensor(6.)
+Cd= tensor(0.)
+CC= tensor(5.)
+mv= tensor(6.)
+mat= tensor([[1., 6.],
+        [0., 5.]])
+norm mat= tensor([[0.1667, 1.0000],
+        [0.0000, 0.8333]])
+is_dummy= [0, 0]
+Agent 0
+Agent 1
+==========>Epoch= 0
+ action, distrib= tensor(0) tensor([0.5148, 0.4852], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3962, 0.6038], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5301, 0.4699], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3956, 0.6044], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5392, 0.4608], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4348, 0.5652], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4899, 0.5101], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4030, 0.5970], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4965, 0.5035], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4263, 0.5737], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4703, 0.5297], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4315, 0.5685], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.5159, 0.4841], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4406, 0.5594], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4441, 0.5559], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3924, 0.6076], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.5392, 0.4608], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4348, 0.5652], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4965, 0.5035], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4263, 0.5737], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_1': tensor(39.1196), 'agent_0': tensor(22.2861)}
+Epoch : 0 	 Measure: nan
+==========>Epoch= 1
+ action, distrib= tensor(0) tensor([0.5923, 0.4077], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3398, 0.6602], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.6172, 0.3828], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3848, 0.6152], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5912, 0.4088], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4105, 0.5895], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.5821, 0.4179], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3434, 0.6566], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4863, 0.5137], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3439, 0.6561], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5821, 0.4179], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3434, 0.6566], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5821, 0.4179], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3434, 0.6566], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.6172, 0.3828], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3848, 0.6152], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4863, 0.5137], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3439, 0.6561], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.5346, 0.4654], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3897, 0.6103], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_1': tensor(40.0828), 'agent_0': tensor(17.4798)}
+==========>Epoch= 2
+ action, distrib= tensor(0) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2919, 0.7081], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5059, 0.4941], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3437, 0.6563], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6061, 0.3939], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.2875, 0.7125], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5884, 0.4116], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3828, 0.6172], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5778, 0.4222], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2777, 0.7223], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5226, 0.4774], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3172, 0.6828], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5538, 0.4462], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2882, 0.7118], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6047, 0.3953], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3815, 0.6185], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6019, 0.3981], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(23.8785), 'agent_1': tensor(52.5951)}
+==========>Epoch= 3
+ action, distrib= tensor(0) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5718, 0.4282], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2769, 0.7231], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5372, 0.4628], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3137, 0.6863], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5921, 0.4079], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2755, 0.7245], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5908, 0.4092], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3860, 0.6140], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5908, 0.4092], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3860, 0.6140], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.6152, 0.3848], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3356, 0.6644], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5647, 0.4353], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3099, 0.6901], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5898, 0.4102], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3408, 0.6592], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_1': tensor(39.2942), 'agent_0': tensor(22.1072)}
+==========>Epoch= 4
+ action, distrib= tensor(1) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3409, 0.6591], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6077, 0.3923], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3572, 0.6428], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4946, 0.5054], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2655, 0.7345], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6056, 0.3944], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3335, 0.6665], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6305, 0.3695], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.3964, 0.6036], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5761, 0.4239], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.3964, 0.6036], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5761, 0.4239], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3471, 0.6529], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5227, 0.4773], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(28.3473), 'agent_1': tensor(28.8697)}
+==========>Epoch= 5
+ action, distrib= tensor(1) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.3258, 0.6742], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6268, 0.3732], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2562, 0.7438], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5994, 0.4006], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.2917, 0.7083], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5553, 0.4447], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.2997, 0.7003], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5465, 0.4535], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3412, 0.6588], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5225, 0.4775], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.3412, 0.6588], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5225, 0.4775], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2564, 0.7436], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5825, 0.4175], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.2583, 0.7417], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4891, 0.5109], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2978, 0.7022], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5702, 0.4298], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(23.8027), 'agent_1': tensor(30.1457)}
+==========>Epoch= 6
+ action, distrib= tensor(1) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2466, 0.7534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5627, 0.4373], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2479, 0.7521], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4768, 0.5232], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3820, 0.6180], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5628, 0.4372], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2478, 0.7522], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5794, 0.4206], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3208, 0.6792], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6091, 0.3909], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3843, 0.6157], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5875, 0.4125], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3223, 0.6777], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5873, 0.4127], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2901, 0.7099], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5543, 0.4457], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(25.5605), 'agent_1': tensor(43.2629)}
+==========>Epoch= 7
+ action, distrib= tensor(0) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.3337, 0.6663], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5054, 0.4946], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2199, 0.7801], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4833, 0.5167], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2461, 0.7539], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4449, 0.5551], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2458, 0.7542], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5563, 0.4437], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2484, 0.7516], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5708, 0.4292], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3926, 0.6074], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5810, 0.4190], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3926, 0.6074], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5810, 0.4190], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.3261, 0.6739], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5819, 0.4181], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(32.9902), 'agent_1': tensor(27.8014)}
+==========>Epoch= 8
+ action, distrib= tensor(1) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2612, 0.7388], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5566, 0.4434], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3491, 0.6509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5677, 0.4323], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2598, 0.7402], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5409, 0.4591], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3065, 0.6935], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5136, 0.4864], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2612, 0.7388], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5566, 0.4434], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.4150, 0.5850], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5719, 0.4281], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4107, 0.5893], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5480, 0.4520], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4150, 0.5850], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5719, 0.4281], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2998, 0.7002], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5000, 0.5000], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(28.6210), 'agent_1': tensor(28.3962)}
+==========>Epoch= 9
+ action, distrib= tensor(0) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5349, 0.4651], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2705, 0.7295], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5308, 0.4692], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4283, 0.5717], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.5308, 0.4692], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4283, 0.5717], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.4789, 0.5211], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3070, 0.6930], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4492, 0.5508], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2530, 0.7470], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.5166, 0.4834], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2686, 0.7314], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4666, 0.5334], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2265, 0.7735], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5308, 0.4692], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4283, 0.5717], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_1': tensor(47.5676), 'agent_0': tensor(25.2558)}
+==========>Epoch= 10
+ action, distrib= tensor(0) tensor([0.4977, 0.5023], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5177, 0.4823], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2808, 0.7192], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5440, 0.4560], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4542, 0.5458], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.4809, 0.5191], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3334, 0.6666], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4124, 0.5876], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2616, 0.7384], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.5251, 0.4749], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3854, 0.6146], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4546, 0.5454], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2296, 0.7704], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5491, 0.4509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3843, 0.6157], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5440, 0.4560], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4542, 0.5458], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5491, 0.4509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3843, 0.6157], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_1': tensor(24.1138), 'agent_0': tensor(29.5314)}
+Epoch : 10 	 Measure: nan
+==========>Epoch= 11
+ action, distrib= tensor(1) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5472, 0.4528], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.4127, 0.5873], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5226, 0.4774], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3492, 0.6508], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5086, 0.4914], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4127, 0.5873], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5226, 0.4774], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2954, 0.7046], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5158, 0.4842], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4127, 0.5873], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5226, 0.4774], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4951, 0.5049], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4779, 0.5221], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5142, 0.4858], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3236, 0.6764], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4831, 0.5169], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.3325, 0.6675], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4607, 0.5393], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(39.1494), 'agent_1': tensor(21.6787)}
+==========>Epoch= 12
+ action, distrib= tensor(1) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4140, 0.5860], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5225, 0.4775], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4829, 0.5171], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5148, 0.4852], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.3857, 0.6143], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4458, 0.5542], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3857, 0.6143], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4458, 0.5542], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2609, 0.7391], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4408, 0.5592], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4140, 0.5860], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5225, 0.4775], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4158, 0.5842], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5467, 0.4533], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3290, 0.6710], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4603, 0.5397], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3516, 0.6484], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4799, 0.5201], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(17.0834), 'agent_1': tensor(40.4410)}
+==========>Epoch= 13
+ action, distrib= tensor(1) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5011, 0.4989], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3004, 0.6996], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.5522, 0.4478], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4291, 0.5709], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4787, 0.5213], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3932, 0.6068], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5296, 0.4704], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4275, 0.5725], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.5491, 0.4509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5059, 0.4941], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4348, 0.5652], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2347, 0.7653], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4430, 0.5570], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2637, 0.7363], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5491, 0.4509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5059, 0.4941], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5224, 0.4776], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4987, 0.5013], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_1': tensor(45.7536), 'agent_0': tensor(11.5018)}
+==========>Epoch= 14
+ action, distrib= tensor(1) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5179, 0.4821], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3107, 0.6893], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4859, 0.5141], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3772, 0.6228], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.4824, 0.5176], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3362, 0.6638], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4767, 0.5233], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4035, 0.5965], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5503, 0.4497], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4430, 0.5570], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.4996, 0.5004], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3117, 0.6883], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4138, 0.5862], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2751, 0.7249], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_1': tensor(35.4116), 'agent_0': tensor(18.0003)}
+==========>Epoch= 15
+ action, distrib= tensor(1) tensor([0.4487, 0.5513], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5245, 0.4755], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.3101, 0.6899], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5145, 0.4855], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3101, 0.6899], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5145, 0.4855], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4106, 0.5894], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4497, 0.5503], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3101, 0.6899], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5145, 0.4855], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.4491, 0.5509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5462, 0.4538], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5322, 0.4678], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5455, 0.4545], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3107, 0.6893], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4966, 0.5034], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.2675, 0.7325], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4417, 0.5583], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3803, 0.6197], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4848, 0.5152], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(31.6737), 'agent_1': tensor(37.1559)}
+==========>Epoch= 16
+ action, distrib= tensor(1) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3108, 0.6892], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4919, 0.5081], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3113, 0.6887], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5109, 0.4891], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.5399, 0.4601], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5423, 0.4577], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.3829, 0.6171], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5097, 0.4903], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2304, 0.7696], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4481, 0.5519], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.4097, 0.5903], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4761, 0.5239], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5399, 0.4601], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5423, 0.4577], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4532, 0.5468], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5404, 0.4596], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.3113, 0.6887], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5109, 0.4891], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(26.2635), 'agent_1': tensor(38.8301)}
+==========>Epoch= 17
+ action, distrib= tensor(0) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5378, 0.4622], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4453, 0.5547], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.5109, 0.4891], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.3750, 0.6250], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4555, 0.5445], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.3287, 0.6713], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.5145, 0.4855], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4436, 0.5564], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2564, 0.7436], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5145, 0.4855], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4436, 0.5564], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5094, 0.4906], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2970, 0.7030], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5378, 0.4622], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4453, 0.5547], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5423, 0.4577], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5423, 0.4577], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_1': tensor(30.4159), 'agent_0': tensor(42.2936)}
+==========>Epoch= 18
+ action, distrib= tensor(0) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2523, 0.7477], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4202, 0.5798], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.3745, 0.6255], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4822, 0.5178], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4476, 0.5524], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5115, 0.4885], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2093, 0.7907], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4302, 0.5698], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.3745, 0.6255], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4822, 0.5178], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4493, 0.5507], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5348, 0.4652], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2523, 0.7477], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4202, 0.5798], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.2523, 0.7477], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4202, 0.5798], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(36.1433), 'agent_1': tensor(13.4220)}
+==========>Epoch= 19
+ action, distrib= tensor(0) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4466, 0.5534], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5144, 0.4856], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4047, 0.5953], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4825, 0.5175], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.1936, 0.8064], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4536, 0.5464], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.3084, 0.6916], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4794, 0.5206], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3657, 0.6343], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4858, 0.5142], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2345, 0.7655], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4529, 0.5471], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.5620, 0.4380], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5402, 0.4598], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5620, 0.4380], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5402, 0.4598], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4491, 0.5509], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5353, 0.4647], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(18.0288), 'agent_1': tensor(35.4971)}
+==========>Epoch= 20
+ action, distrib= tensor(1) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4665, 0.5335], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5416, 0.4584], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.4663, 0.5337], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5228, 0.4772], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5831, 0.4169], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5451, 0.4549], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(0) tensor([0.3184, 0.6816], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4706, 0.5294], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.5831, 0.4169], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5451, 0.4549], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.1852, 0.8148], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4611, 0.5389], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.3099, 0.6901], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4872, 0.5128], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.5831, 0.4169], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5451, 0.4549], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(23.1586), 'agent_1': tensor(34.0534)}
+Epoch : 20 	 Measure: nan
+==========>Epoch= 21
+ action, distrib= tensor(0) tensor([0.4804, 0.5196], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5470, 0.4530], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2719, 0.7281], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5203, 0.4797], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3221, 0.6779], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.4796, 0.5204], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2719, 0.7281], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5203, 0.4797], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.4836, 0.5164], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5302, 0.4698], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+ action, distrib= tensor(1) tensor([0.2765, 0.7235], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5064, 0.4936], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.3782, 0.6218], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5008, 0.4992], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2765, 0.7235], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5064, 0.4936], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2765, 0.7235], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5064, 0.4936], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(1) tensor([0.2765, 0.7235], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5064, 0.4936], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+ action, distrib= tensor(0) tensor([0.2846, 0.7154], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5149, 0.4851], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2846, 0.7154], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5149, 0.4851], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2846, 0.7154], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5149, 0.4851], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2846, 0.7154], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5149, 0.4851], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.2846, 0.7154], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5149, 0.4851], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2846, 0.7154], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5149, 0.4851], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2846, 0.7154], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5149, 0.4851], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2846, 0.7154], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5149, 0.4851], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2846, 0.7154], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(0) tensor([0.5149, 0.4851], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.2846, 0.7154], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.5149, 0.4851], grad_fn=<SoftmaxBackward0>)
+R eval= {'agent_0': tensor(31.8084), 'agent_1': tensor(36.9408)}
+==========>Epoch= 22
+/home/nicole/marl-emecom/env1/lib/python3.8/site-packages/numpy/core/fromnumeric.py:3432: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/home/nicole/marl-emecom/env1/lib/python3.8/site-packages/numpy/core/_methods.py:190: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+Traceback (most recent call last):
+  File "caller.py", line 63, in <module>
+    train_reinforce(args)
+  File "/home/nicole/marl-emecom/src/experiments_anastassacos/train_reinforce.py", line 211, in train_reinforce
+    objective(args, repo_name)
+  File "/home/nicole/marl-emecom/src/experiments_anastassacos/train_reinforce.py", line 59, in objective
+    [agent.reset() for _, agent in active_agents.items()]
+  File "/home/nicole/marl-emecom/src/experiments_anastassacos/train_reinforce.py", line 59, in <listcomp>
+    [agent.reset() for _, agent in active_agents.items()]
+  File "/home/nicole/marl-emecom/src/algos/anast/agent_anast.py", line 28, in reset
+    self.buffer.clear()
+  File "/home/nicole/marl-emecom/src/algos/buffer.py", line 107, in clear
+    del self.logprobs[:]
+KeyboardInterrupt

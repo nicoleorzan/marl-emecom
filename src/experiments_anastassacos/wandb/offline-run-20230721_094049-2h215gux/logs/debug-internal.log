@@ -1,0 +1,18 @@
+2023-07-21 09:40:49,908 INFO    MainThread:26404 [internal.py:wandb_internal():90] W&B internal server running at pid: 26404, started at: 2023-07-21 09:40:49.908378
+2023-07-21 09:40:49,910 DEBUG   HandlerThread:26404 [handler.py:handle_request():141] handle_request: run_start
+2023-07-21 09:40:49,910 INFO    WriterThread:26404 [datastore.py:open_for_write():75] open: /home/nicole/marl-emecom/src/experiments_anastassacos/wandb/offline-run-20230721_094049-2h215gux/run-2h215gux.wandb
+2023-07-21 09:40:49,911 DEBUG   HandlerThread:26404 [meta.py:__init__():35] meta init
+2023-07-21 09:40:49,911 DEBUG   HandlerThread:26404 [meta.py:__init__():49] meta init done
+2023-07-21 09:40:49,912 DEBUG   HandlerThread:26404 [meta.py:probe():209] probe
+2023-07-21 09:40:49,913 DEBUG   HandlerThread:26404 [meta.py:_setup_git():199] setup git
+2023-07-21 09:40:49,920 DEBUG   HandlerThread:26404 [meta.py:_setup_git():206] setup git done
+2023-07-21 09:40:49,921 DEBUG   HandlerThread:26404 [meta.py:_save_pip():53] save pip
+2023-07-21 09:40:49,921 DEBUG   HandlerThread:26404 [meta.py:_save_pip():67] save pip done
+2023-07-21 09:40:49,921 DEBUG   HandlerThread:26404 [meta.py:probe():247] probe done
+2023-07-21 09:40:52,906 WARNING MainThread:26404 [internal.py:wandb_internal():153] Internal process interrupt: 1
+2023-07-21 09:40:53,073 WARNING MainThread:26404 [internal.py:wandb_internal():153] Internal process interrupt: 2
+2023-07-21 09:40:53,073 ERROR   MainThread:26404 [internal.py:wandb_internal():156] Internal process interrupted.
+2023-07-21 09:40:53,908 INFO    WriterThread:26404 [datastore.py:close():279] close: /home/nicole/marl-emecom/src/experiments_anastassacos/wandb/offline-run-20230721_094049-2h215gux/run-2h215gux.wandb
+2023-07-21 09:40:53,909 INFO    HandlerThread:26404 [handler.py:finish():806] shutting down handler
+2023-07-21 09:40:53,913 INFO    SenderThread:26404 [sender.py:finish():1111] shutting down sender
+2023-07-21 09:40:53,914 INFO    MainThread:26404 [internal.py:handle_exit():80] Internal process exited

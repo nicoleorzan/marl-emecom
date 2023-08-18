@@ -1,0 +1,141 @@
+config= {'b_value': 5.0, 'c_value': 1.0, 'd_value': 0.0, 'n_agents': 2, 'algorithm': 'reinforce', 'wandb_mode': 'offline', 'num_game_iterations': 10, 'n_epochs': 2000, 'obs_size': 4, 'action_size': 2, 'random_baseline': False, 'embedding_dim': 1, 'binary_reputation': 1, 'other_reputation_threshold': 0.4, 'cooperation_threshold': 0.4, 'optuna_': 0, 'device': 'cpu', 'reputation_in_reward': 0, 'lr_actor': 0.01, 'n_hidden_act': 2, 'hidden_size_act': 16, 'batch_size': 1, 'decayRate': 0.999}
+DD= tensor(1.)
+Dc= tensor(6.)
+Cd= tensor(0.)
+CC= tensor(5.)
+mv= tensor(6.)
+mat= tensor([[1., 6.],
+        [0., 5.]])
+norm mat= tensor([[0.1667, 1.0000],
+        [0.0000, 0.8333]])
+is_dummy= [0, 0]
+Agent 0
+Agent 1
+==========>Epoch= 0
+states= {'agent_0': tensor([1., 1., 1., 1.]), 'agent_1': tensor([1., 1., 1., 1.])}
+agent.state_act= tensor([1., 1., 1., 1.])
+ action, distrib= tensor(0) tensor([0.5185, 0.4815], grad_fn=<SoftmaxBackward0>)
+states= {'agent_0': tensor([1., 1., 1., 1.]), 'agent_1': tensor([1., 1., 1., 1.])}
+agent.state_act= tensor([1., 1., 1., 1.])
+ action, distrib= tensor(0) tensor([0.6069, 0.3931], grad_fn=<SoftmaxBackward0>)
+rewards= {'agent_0': tensor(1.), 'agent_1': tensor(1.)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+d= tensor([0.6069, 0.3931], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+states= {'agent_0': tensor([0., 0., 1., 1.]), 'agent_1': tensor([0., 0., 1., 1.])}
+agent.state_act= tensor([0., 0., 1., 1.])
+ action, distrib= tensor(0) tensor([0.4957, 0.5043], grad_fn=<SoftmaxBackward0>)
+states= {'agent_0': tensor([0., 0., 1., 1.]), 'agent_1': tensor([0., 0., 1., 1.])}
+agent.state_act= tensor([0., 0., 1., 1.])
+ action, distrib= tensor(0) tensor([0.6197, 0.3803], grad_fn=<SoftmaxBackward0>)
+rewards= {'agent_0': tensor(1.), 'agent_1': tensor(1.)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+d= tensor([0.6197, 0.3803], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+states= {'agent_0': tensor([1., 1., 0., 0.]), 'agent_1': tensor([1., 1., 0., 0.])}
+agent.state_act= tensor([1., 1., 0., 0.])
+ action, distrib= tensor(0) tensor([0.5412, 0.4588], grad_fn=<SoftmaxBackward0>)
+states= {'agent_0': tensor([1., 1., 0., 0.]), 'agent_1': tensor([1., 1., 0., 0.])}
+agent.state_act= tensor([1., 1., 0., 0.])
+ action, distrib= tensor(0) tensor([0.6204, 0.3796], grad_fn=<SoftmaxBackward0>)
+rewards= {'agent_0': tensor(1.), 'agent_1': tensor(1.)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+d= tensor([0.6204, 0.3796], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+states= {'agent_0': tensor([0., 0., 0., 0.]), 'agent_1': tensor([0., 0., 0., 0.])}
+agent.state_act= tensor([0., 0., 0., 0.])
+ action, distrib= tensor(1) tensor([0.5157, 0.4843], grad_fn=<SoftmaxBackward0>)
+states= {'agent_0': tensor([0., 0., 0., 0.]), 'agent_1': tensor([0., 0., 0., 0.])}
+agent.state_act= tensor([0., 0., 0., 0.])
+ action, distrib= tensor(1) tensor([0.6344, 0.3656], grad_fn=<SoftmaxBackward0>)
+rewards= {'agent_0': tensor(5.), 'agent_1': tensor(5.)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(1)}
+d= tensor([0.6344, 0.3656], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(1)]
+states= {'agent_0': tensor([0., 0., 0., 0.]), 'agent_1': tensor([0., 0., 0., 0.])}
+agent.state_act= tensor([0., 0., 0., 0.])
+ action, distrib= tensor(0) tensor([0.5157, 0.4843], grad_fn=<SoftmaxBackward0>)
+states= {'agent_0': tensor([0., 0., 0., 0.]), 'agent_1': tensor([0., 0., 0., 0.])}
+agent.state_act= tensor([0., 0., 0., 0.])
+ action, distrib= tensor(0) tensor([0.6344, 0.3656], grad_fn=<SoftmaxBackward0>)
+rewards= {'agent_0': tensor(1.), 'agent_1': tensor(1.)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+d= tensor([0.6344, 0.3656], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+states= {'agent_0': tensor([1., 1., 1., 1.]), 'agent_1': tensor([1., 1., 1., 1.])}
+agent.state_act= tensor([1., 1., 1., 1.])
+ action, distrib= tensor(1) tensor([0.5185, 0.4815], grad_fn=<SoftmaxBackward0>)
+states= {'agent_0': tensor([1., 1., 1., 1.]), 'agent_1': tensor([1., 1., 1., 1.])}
+agent.state_act= tensor([1., 1., 1., 1.])
+ action, distrib= tensor(0) tensor([0.6069, 0.3931], grad_fn=<SoftmaxBackward0>)
+rewards= {'agent_0': tensor(0.), 'agent_1': tensor(6.)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+d= tensor([0.6069, 0.3931], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+states= {'agent_0': tensor([0., 1., 0., 0.]), 'agent_1': tensor([1., 0., 0., 0.])}
+agent.state_act= tensor([0., 1., 0., 0.])
+ action, distrib= tensor(0) tensor([0.5480, 0.4520], grad_fn=<SoftmaxBackward0>)
+states= {'agent_0': tensor([0., 1., 0., 0.]), 'agent_1': tensor([1., 0., 0., 0.])}
+agent.state_act= tensor([1., 0., 0., 0.])
+ action, distrib= tensor(0) tensor([0.6264, 0.3736], grad_fn=<SoftmaxBackward0>)
+rewards= {'agent_0': tensor(1.), 'agent_1': tensor(1.)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+d= tensor([0.6264, 0.3736], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+states= {'agent_0': tensor([0., 1., 0., 1.]), 'agent_1': tensor([1., 0., 1., 0.])}
+agent.state_act= tensor([0., 1., 0., 1.])
+ action, distrib= tensor(0) tensor([0.5692, 0.4308], grad_fn=<SoftmaxBackward0>)
+states= {'agent_0': tensor([0., 1., 0., 1.]), 'agent_1': tensor([1., 0., 1., 0.])}
+agent.state_act= tensor([1., 0., 1., 0.])
+ action, distrib= tensor(0) tensor([0.6036, 0.3964], grad_fn=<SoftmaxBackward0>)
+rewards= {'agent_0': tensor(1.), 'agent_1': tensor(1.)}
+actions= {'agent_0': tensor(0), 'agent_1': tensor(0)}
+d= tensor([0.6036, 0.3964], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(0)]
+self.saved_actions[ag_idx]= [tensor(0)]
+states= {'agent_0': tensor([0., 1., 0., 0.]), 'agent_1': tensor([1., 0., 0., 0.])}
+agent.state_act= tensor([0., 1., 0., 0.])
+ action, distrib= tensor(1) tensor([0.5480, 0.4520], grad_fn=<SoftmaxBackward0>)
+states= {'agent_0': tensor([0., 1., 0., 0.]), 'agent_1': tensor([1., 0., 0., 0.])}
+agent.state_act= tensor([1., 0., 0., 0.])
+ action, distrib= tensor(0) tensor([0.6264, 0.3736], grad_fn=<SoftmaxBackward0>)
+rewards= {'agent_0': tensor(0.), 'agent_1': tensor(6.)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+d= tensor([0.6264, 0.3736], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+states= {'agent_0': tensor([0., 0., 0., 0.]), 'agent_1': tensor([0., 0., 0., 0.])}
+agent.state_act= tensor([0., 0., 0., 0.])
+ action, distrib= tensor(1) tensor([0.5157, 0.4843], grad_fn=<SoftmaxBackward0>)
+states= {'agent_0': tensor([0., 0., 0., 0.]), 'agent_1': tensor([0., 0., 0., 0.])}
+agent.state_act= tensor([0., 0., 0., 0.])
+ action, distrib= tensor(0) tensor([0.6344, 0.3656], grad_fn=<SoftmaxBackward0>)
+rewards= {'agent_0': tensor(0.), 'agent_1': tensor(6.)}
+actions= {'agent_0': tensor(1), 'agent_1': tensor(0)}
+d= tensor([0.6344, 0.3656], grad_fn=<SoftmaxBackward0>)
+self.saved_actions[ag_idx]= [tensor(1)]
+self.saved_actions[ag_idx]= [tensor(0)]
+UPDATE
+inside update
+inside update
+done
+ action, distrib= tensor(1) tensor([0.5554, 0.4446], grad_fn=<SoftmaxBackward0>)
+ action, distrib= tensor(1) tensor([0.6134, 0.3866], grad_fn=<SoftmaxBackward0>)
+rew= {}
+Traceback (most recent call last):
+  File "caller.py", line 63, in <module>
+    train_reinforce(args)
+  File "/home/nicole/marl-emecom/src/experiments_anastassacos/train_reinforce.py", line 212, in train_reinforce
+    objective(args, repo_name)
+  File "/home/nicole/marl-emecom/src/experiments_anastassacos/train_reinforce.py", line 138, in objective
+    returns_eval = eval_anast(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, 0.99)
+  File "/home/nicole/marl-emecom/src/utils/utils.py", line 99, in eval_anast
+    rewards["agent_"+str(ag_idx)] = [rew["agent_"+str(ag_idx)]]
+KeyError: 'agent_0'

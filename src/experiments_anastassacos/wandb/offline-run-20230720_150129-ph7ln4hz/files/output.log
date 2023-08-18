@@ -1,0 +1,24 @@
+config= {'b_value': 5.0, 'c_value': 1.0, 'd_value': 0.0, 'n_agents': 2, 'algorithm': 'reinforce', 'wandb_mode': 'offline', 'num_game_iterations': 10, 'n_epochs': 2000, 'obs_size': 4, 'action_size': 2, 'random_baseline': False, 'lr_opponent': 0, 'embedding_dim': 1, 'binary_reputation': 1, 'opponent_selection': 0, 'other_reputation_threshold': 0.4, 'cooperation_threshold': 0.4, 'optuna_': 0, 'device': 'cpu', 'reputation_in_reward': 0, 'lr_actor': 0.01, 'n_hidden_act': 2, 'hidden_size_act': 16, 'batch_size': 1, 'decayRate': 0.999}
+DD= tensor(1.)
+Dc= tensor(6.)
+Cd= tensor(0.)
+CC= tensor(5.)
+mv= tensor(6.)
+mat= tensor([[1., 6.],
+        [0., 5.]])
+norm mat= tensor([[0.1667, 1.0000],
+        [0.0000, 0.8333]])
+is_dummy= [0, 0]
+Agent 0
+Agent 1
+==========>Epoch= 0
+Traceback (most recent call last):
+  File "caller_optuna_anastassacos.py", line 64, in <module>
+    training_function(args)
+  File "/home/nicole/marl-emecom/src/experiments_pgg_v0/anastassacos/train_optuna_anastassacos.py", line 209, in training_function
+    objective(args, repo_name)
+  File "/home/nicole/marl-emecom/src/experiments_pgg_v0/anastassacos/train_optuna_anastassacos.py", line 90, in objective
+    _, rewards, _, _ = parallel_env.step(actions)
+  File "/home/nicole/marl-emecom/src/environments/pd/prisoner_dilemma.py", line 169, in step
+    return observations, rewards, env_done, self.infos
+UnboundLocalError: local variable 'observations' referenced before assignment
