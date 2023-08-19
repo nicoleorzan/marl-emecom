@@ -1,5 +1,5 @@
 gym==0.24.1
-pettingzoo==1.19.0
+pettingzoo
 matplotlib
 wandb
 scikit-learn
