@@ -49,7 +49,7 @@ class parallel_env(ParallelEnv):
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
         - action_spaces
-        - observation_spacesf
+        - observation_spaces
 
         These attributes should not be changed after initialization.
 

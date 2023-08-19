@@ -1,5 +1,5 @@
 from src.environments import prisoner_dilemma
-from src.algos.anast.Reinforce_anast import Reinforce
+from src.algos.anast.Q_learning_anast import Q_learning_agent
 import numpy as np
 import optuna
 import random
@@ -19,7 +19,7 @@ def define_agents(config, is_dummy):
     agents = {}
     for idx in range(config.n_agents):
         if (is_dummy[idx] == 0):
-            agents['agent_'+str(idx)] = Reinforce(config, idx) 
+            agents['agent_'+str(idx)] = Q_learning_agent(config, idx) 
         else: 
             agents['agent_'+str(idx)] = NormativeAgent(config, idx)
     return agents
@@ -46,7 +46,7 @@ def objective(args, repo_name, trial=None):
 
     social_norm = SocialNorm(config, agents)
 
-    for epoch in range(config.n_epochs):
+    for epoch in range(config.n_episodes):
         print("\n==========>Epoch=", epoch)
 
         #pick a pair of agents
@@ -64,34 +64,24 @@ def objective(args, repo_name, trial=None):
         states = {}; next_states = {}
         for idx_agent, agent in active_agents.items():
             other = agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
-            next_states[idx_agent] = torch.cat((other.reputation, agent.reputation, other.previous_action, agent.previous_action), 0)
+            next_states[idx_agent] = torch.Tensor([other.reputation])
 
         done = False
-        for i in range(config.num_game_iterations):
-            #print("iter=", i)
+        for i in range(config.K):
 
-            if (i == config.num_game_iterations-1): 
+            if (i == config.K-1): 
                 done = True
 
             actions = {}; states = next_states
             for idx_agent, agent in active_agents.items():
                 agent.state_act = states[idx_agent]
-                #print("agent.state_act=", agent.state_act)
             
             # acting
             for agent in parallel_env.active_agents:
-                #print("states=", states)
-                #print("agent.state_act=", active_agents[agent].state_act)
-                a, d = agents[agent].select_action()#states[idx_agent])
+                a, d = agents[agent].select_action()
                 actions[agent] = a
-                print("agent=", agent, "distrib=", d)
 
             _, rewards, _, _ = parallel_env.step(actions)
-            #print("rewards=", rewards)
-            #print("actions=", actions)
-            #print("d=", d)
-            
-            #print("rewards from the game=", rewards)
 
             social_norm.save_actions(actions, active_agents_idxs)
             social_norm.rule09_binary(active_agents_idxs)
@@ -101,33 +91,29 @@ def objective(args, repo_name, trial=None):
 
             if (config.reputation_in_reward):
                 rewards = {key: value+agents[key].reputation for key, value in rewards.items()}
-            #print("after rewards=", rewards)
 
             next_states = {}
             for idx_agent, agent in active_agents.items():
                 other = agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
-                next_states[idx_agent] = torch.cat((other.reputation, agent.reputation, other.previous_action, agent.previous_action), 0)
-            #print("next_states=", next_states)
+                next_states[idx_agent] = torch.Tensor([other.reputation]) #torch.cat((other.reputation, agent.reputation, other.previous_action, agent.previous_action), 0)
 
-            #rewards_norm = {key: value/(parallel_env.mv+1.) for key, value in rewards.items()}
             
             for ag_idx, agent in active_agents.items():
-                #print("buffer")
+
+                agent.append_to_replay(states[idx_agent], actions[idx_agent], rewards[idx_agent], next_states[idx_agent])
                 
-                agent.previous_action = actions[ag_idx].reshape(1)
+                #agent.previous_action = actions[ag_idx].reshape(1)
                 agent.buffer.states.append(states[ag_idx])
                 agent.buffer.rewards.append(rewards[ag_idx])
                 agent.buffer.next_states.append(next_states[ag_idx])
                 agent.buffer.is_terminals.append(done)
                 agent.return_episode =+ rewards[ag_idx]
-                agent.previous_action = actions[ag_idx].reshape(1)
+                #agent.previous_action = actions[ag_idx].reshape(1)
 
-            # break; if the episode is over
             if done:
                 break
 
         # update agents
-        #print("UPDATE")
         for ag_idx, agent in active_agents.items():
             agent.update()
 
@@ -194,7 +180,7 @@ def objective(args, repo_name, trial=None):
     return measure
 
 
-def train_reinforce(args):
+def train_q_learning(args):
 
     unc_string = "no_unc_"
     if (args.uncertainties.count(0.) != args.n_agents):

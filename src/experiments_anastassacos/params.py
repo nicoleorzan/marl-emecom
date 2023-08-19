@@ -129,6 +129,15 @@ def setup_training_hyperparams(args, trial):
             lr_actor = lr_a,
             decayRate = 0.999
         )
+    elif (args.algorithm == "q-learning"):
+        algo_params = dict(
+            obs_size = 2,
+            lr_actor = 0.01,
+            gamma = 0.99,
+            epsilon = 0.01,
+            n_episodes = 10000,
+            K = 200
+        )
 
     all_params = {**all_params, **game_params, **algo_params, **comm_params}
     print("all_params=", all_params)
