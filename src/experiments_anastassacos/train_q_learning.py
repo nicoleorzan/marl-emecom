@@ -9,20 +9,85 @@ from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 from src.algos.normativeagent import NormativeAgent
 from src.utils.social_norm import SocialNorm
-from src.utils.utils import eval_anast
+from src.utils.utils import  pick_agents_idxs
 from src.experiments_anastassacos.params import setup_training_hyperparams
 
 torch.autograd.set_detect_anomaly(True)
 
 
-def define_agents(config, is_dummy):
+def define_agents(config):
     agents = {}
     for idx in range(config.n_agents):
-        if (is_dummy[idx] == 0):
+        if (config.is_dummy[idx] == 0):
             agents['agent_'+str(idx)] = Q_learning_agent(config, idx) 
         else: 
             agents['agent_'+str(idx)] = NormativeAgent(config, idx)
     return agents
+
+def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iterations, social_norm, gamma, _eval=False):
+    # By default this is a training loop
+
+    _ = parallel_env.reset()
+    rewards_dict = {}
+    actions_dict = {}
+        
+    states = {}; next_states = {}
+    for idx_agent, agent in active_agents.items():
+        other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
+        next_states[idx_agent] = torch.Tensor([other.reputation])
+
+    done = False
+    for i in range(n_iterations):
+
+        # state
+        actions = {}; states = next_states
+        for idx_agent, agent in active_agents.items():
+            agent.state_act = states[idx_agent]
+        
+        # action
+        for agent in parallel_env.active_agents:
+            a, d = active_agents[agent].select_action(_eval)
+            actions[agent] = a
+
+        # reward
+        _, rewards, done, _ = parallel_env.step(actions)
+
+        if (_eval==True):
+            for ag_idx in active_agents_idxs:       
+                if "agent_"+str(ag_idx) not in rewards_dict.keys():
+                    rewards_dict["agent_"+str(ag_idx)] = [rewards["agent_"+str(ag_idx)]]
+                    actions_dict["agent_"+str(ag_idx)] = [actions["agent_"+str(ag_idx)]]
+                else:
+                    rewards_dict["agent_"+str(ag_idx)].append(rewards["agent_"+str(ag_idx)])
+                    actions_dict["agent_"+str(ag_idx)].append(actions["agent_"+str(ag_idx)])
+
+        social_norm.save_actions(actions, active_agents_idxs)
+        social_norm.rule09_binary(active_agents, active_agents_idxs)
+
+        # next state
+        next_states = {}
+        for idx_agent, agent in active_agents.items():
+            other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
+            next_states[idx_agent] = torch.Tensor([other.reputation])
+
+        if (_eval == False):
+            # save iteration            
+            for ag_idx, agent in active_agents.items():
+                agent.append_to_replay(states[idx_agent], actions[idx_agent], rewards[idx_agent], next_states[idx_agent])
+                agent.return_episode =+ rewards[ag_idx]
+
+        if done:
+            if (_eval == True):
+                R = {}; avg_coop = {}
+                for ag_idx, agent in active_agents.items():
+                    R[ag_idx] = 0
+                    for r in rewards_dict[ag_idx][::-1]:
+                        R[ag_idx] = r + gamma * R[ag_idx]
+                    avg_coop[ag_idx] = torch.mean(torch.stack(actions_dict[ag_idx]))
+            break
+
+    if (_eval == True):
+        return R, avg_coop
 
 def objective(args, repo_name, trial=None):
 
@@ -31,110 +96,43 @@ def objective(args, repo_name, trial=None):
     config = wandb.config
     print("config=", config)
 
+    # define env
     parallel_env = prisoner_dilemma.parallel_env(config)
 
-    n_dummy = int(args.proportion_dummy_agents*config.n_agents)
-    is_dummy = list(reversed([1 if i<n_dummy else 0 for i in range(config.n_agents) ]))
-    print("is_dummy=", is_dummy)
-    non_dummy_idxs = [i for i,val in enumerate(is_dummy) if val==0]
+    # define agents
+    agents = define_agents(config)
 
-    agents = define_agents(config, is_dummy)
-    #print("\nAGENTS=",agents)
+    # define social norm
+    social_norm = SocialNorm(config, agents)
     
     #### TRAINING LOOP
     avg_returns_train = []; avg_rep_list = []
-
-    social_norm = SocialNorm(config, agents)
-
     for epoch in range(config.n_episodes):
         print("\n==========>Epoch=", epoch)
 
-        #pick a pair of agents
-        active_agents_idxs = []
-        first_agent_idx = random.sample(non_dummy_idxs, 1)[0]        
-        second_agent_idx = random.sample( list(set(range(0, config.n_agents)) - set([first_agent_idx])) , 1)[0]
-        active_agents_idxs = [first_agent_idx, second_agent_idx]
+        # pick a pair of agents
+        active_agents_idxs = pick_agents_idxs(config)
         active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, _ in zip(active_agents_idxs, agents)}
+
         [agent.reset() for _, agent in active_agents.items()]
 
         parallel_env.set_active_agents(active_agents_idxs)
         
-        _ = parallel_env.reset()
-        
-        states = {}; next_states = {}
-        for idx_agent, agent in active_agents.items():
-            other = agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
-            next_states[idx_agent] = torch.Tensor([other.reputation])
-
-        done = False
-        for i in range(config.K):
-
-            if (i == config.K-1): 
-                done = True
-
-            actions = {}; states = next_states
-            for idx_agent, agent in active_agents.items():
-                agent.state_act = states[idx_agent]
-            
-            # acting
-            for agent in parallel_env.active_agents:
-                a, d = agents[agent].select_action()
-                actions[agent] = a
-
-            _, rewards, _, _ = parallel_env.step(actions)
-
-            social_norm.save_actions(actions, active_agents_idxs)
-            social_norm.rule09_binary(active_agents_idxs)
-
-            for ag_idx in active_agents_idxs:       
-                agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
-
-            if (config.reputation_in_reward):
-                rewards = {key: value+agents[key].reputation for key, value in rewards.items()}
-
-            next_states = {}
-            for idx_agent, agent in active_agents.items():
-                other = agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
-                next_states[idx_agent] = torch.Tensor([other.reputation]) #torch.cat((other.reputation, agent.reputation, other.previous_action, agent.previous_action), 0)
-
-            
-            for ag_idx, agent in active_agents.items():
-
-                agent.append_to_replay(states[idx_agent], actions[idx_agent], rewards[idx_agent], next_states[idx_agent])
-                
-                #agent.previous_action = actions[ag_idx].reshape(1)
-                agent.buffer.states.append(states[ag_idx])
-                agent.buffer.rewards.append(rewards[ag_idx])
-                agent.buffer.next_states.append(next_states[ag_idx])
-                agent.buffer.is_terminals.append(done)
-                agent.return_episode =+ rewards[ag_idx]
-                #agent.previous_action = actions[ag_idx].reshape(1)
-
-            if done:
-                break
+        interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=False)
 
         # update agents
         for ag_idx, agent in active_agents.items():
             agent.update()
 
-        # =================== EVALUATION =================== CHANGE!!!
-        #print("EVALUATION")
-
-        returns_eval = eval_anast(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, 0.99)
-        #print("R eval=", returns_eval)
-        #print(np.mean([val for k, val in returns_eval.items()]))
-        #rewards_eval = {key: value+agents[key].reputation for key, value in rewards_eval.items()}
-
-        #avg_return = np.mean([agent.return_episode_old.numpy().item() for _, agent in active_agents.items()])
-        #avg_returns_train.append(avg_return)
-
-        #measure = np.mean(avg_returns_train[-10:])
+        # evalutaion step
+        returns_eval, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=True)
+        print("returns_eval=", returns_eval)
+        print("avg_coop=", avg_coop)
 
         avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
         measure = avg_rep
-        #print("avg_rep=",avg_rep)
         avg_rep_list.append(avg_rep)
-        #print("avg rep in time=", np.mean(avg_rep_list[-10:]))
+
         if (config.optuna_):
             trial.report(measure, epoch)
             
@@ -142,34 +140,38 @@ def objective(args, repo_name, trial=None):
                 print("is time to pruneee")
                 wandb.finish()
                 raise optuna.exceptions.TrialPruned()
-        
 
-        if (config.wandb_mode == "online" and float(epoch)%20. == 0.):
+        if (config.wandb_mode == "online" and float(epoch)%10. == 0.):
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
-                    #df_actions = {ag_idx+"actions_eval": actions_eval[ag_idx]}
-                    #df_rew = {ag_idx+"rewards_eval": rewards_eval[ag_idx]}
+                    df_avg_coop = {ag_idx+"actions_eval": avg_coop[ag_idx]}
+                    df_ret = {ag_idx+"returns_eval": returns_eval[ag_idx]}
+                    df_Q = {ag_idx+"Q[0,0]": agent.Q[0,0], ag_idx+"Q[0,1]": agent.Q[0,1], ag_idx+"Q[1,0]": agent.Q[1,0], ag_idx+"Q[1,1]": agent.Q[1,1]}
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
                         'epoch': epoch}, 
-                        #**df_actions, **df_rew
+                        **df_avg_coop, **df_ret, **df_Q
                         }
                 else:
-                    #df_actions = {ag_idx+"N_actions_eval": actions_eval[ag_idx]}
-                    #df_rew = {ag_idx+"N_rewards_eval": rewards_eval[ag_idx]}
+                    df_avg_coop = {ag_idx+"dummy_actions_eval": avg_coop[ag_idx]}
+                    df_ret = {ag_idx+"dummy_returns_eval": returns_eval[ag_idx]}
                     df_agent = {**{
-                        ag_idx+"N_reputation": agent.reputation,
+                        ag_idx+"dummy_reputation": agent.reputation,
                         'epoch': epoch}, 
-                        #**df_actions, **df_rew
+                        **df_avg_coop, **df_ret
                         }
                 
                 if ('df_agent' in locals() ):
                     wandb.log(df_agent, step=epoch, commit=False)
-
+                    
             wandb.log({
                 "epoch": epoch,
                 "avg_rep": avg_rep,
                 "avg_rew_time": measure,
+                "mean_Q00": torch.mean(torch.stack([agent.Q[0,0] for _, agent in agents.items() if agent.is_dummy == False])),
+                "mean_Q01": torch.mean(torch.stack([agent.Q[0,1] for _, agent in agents.items() if agent.is_dummy == False])),
+                "mean_Q10": torch.mean(torch.stack([agent.Q[1,0] for _, agent in agents.items() if agent.is_dummy == False])),
+                "mean_Q11": torch.mean(torch.stack([agent.Q[1,1] for _, agent in agents.items() if agent.is_dummy == False]))
                 },
                 step=epoch, commit=True)
 

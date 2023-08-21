@@ -46,7 +46,7 @@ class SocialNorm():
 
         self.reset_saved_actions()
 
-    def rule09_binary(self, active_agents_idxs):
+    def rule09_binary(self, agents, active_agents_idxs):
         # agent that cooperates with good agents, and does not cooperate with bad ones is good
         for ag_idx in active_agents_idxs:
             #print("ag_idx=", ag_idx)
@@ -74,6 +74,8 @@ class SocialNorm():
                         agent.reputation = torch.Tensor([1.0])
 
             #print("new reputation=", agent.reputation)
+        for ag_idx in active_agents_idxs:       
+            agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
 
         self.reset_saved_actions()
 

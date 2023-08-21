@@ -1,6 +1,16 @@
 import torch
 import itertools
 import numpy as np
+import random
+
+def pick_agents_idxs(config):
+
+    active_agents_idxs = []
+    first_agent_idx = random.sample(config.non_dummy_idxs, 1)[0]        
+    second_agent_idx = random.sample( list(set(range(0, config.n_agents)) - set([first_agent_idx])) , 1)[0]
+    active_agents_idxs = [first_agent_idx, second_agent_idx]
+
+    return active_agents_idxs
 
 def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _print=False):
     #print("\nEVAL<<<=====================")
@@ -89,7 +99,8 @@ def eval_anast(parallel_env, active_agents, active_agents_idxs, n_iterations, so
         for agent in parallel_env.active_agents:
             #print("states=", states)
             #print("agent.state_act=", active_agents[agent].state_act)
-            a, d = active_agents[agent].select_action()#states[idx_agent])
+            a, d = active_agents[agent].select_action(_eval=True)
+            #print("a=", a,  "d=", d)
             actions[agent] = a
 
         _, rew, _, _ = parallel_env.step(actions)
@@ -122,6 +133,7 @@ def eval_anast(parallel_env, active_agents, active_agents_idxs, n_iterations, so
         R[ag_idx] = 0
         for r in rewards[ag_idx][::-1]:
             R[ag_idx] = r + gamma * R[ag_idx]
+
     return R
 
 def eval_new(parallel_env, active_agents, active_agents_idxs, n_iterations, social_norm, gamma):

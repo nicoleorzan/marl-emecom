@@ -1,5 +1,4 @@
 
-from src.algos.buffer import RolloutBuffer
 import torch
 import random
 
@@ -29,15 +28,13 @@ class Q_learning_agent():
         self.idx = idx
         print("\nAgent", self.idx)
 
-        self.buffer = RolloutBuffer()
-
         # Action Policy
         self.input_act = self.obs_size
         self.max_value = 10
         self.Q = torch.full((self.input_act, self.action_size), self.max_value, dtype=float)
         print("self.Q=", self.Q)
     
-        self.memory = ExperienceReplayMemory(self.K)
+        self.memory = ExperienceReplayMemory(self.num_game_iterations)
 
         self.reset()
 
@@ -59,7 +56,6 @@ class Q_learning_agent():
         return random.choice(ties) #self.rand_generator.choice(ties)
 
     def reset(self):
-        self.buffer.clear()
         self.previous_action = torch.Tensor([1.])
         self.return_episode = 0
 
@@ -82,9 +78,6 @@ class Q_learning_agent():
                 action = random.choice([i for i in range(self.action_size)])
             else:
                 action = self.argmax(current_q)
-
-            self.buffer.states.append(state_to_act)
-            self.buffer.actions.append(action)
                 
         return torch.Tensor([action]), current_q
     
@@ -96,7 +89,7 @@ class Q_learning_agent():
     
     def update(self):
         
-        for i in range(self.K):
+        for i in range(self.num_game_iterations):
             state, action, reward, next_state = self.memory.memory[i]
             state = state.long()
             action = action.long()
@@ -104,3 +97,4 @@ class Q_learning_agent():
             self.Q[state, action] += self.lr_actor*(reward + self.gamma*self.argmax(self.Q[next_state,:][0]) - self.Q[state, action])
 
         self.memory.memory = []
+        self.reset()
