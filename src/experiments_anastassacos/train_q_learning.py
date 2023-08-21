@@ -131,6 +131,8 @@ def objective(args, repo_name, trial=None):
         avg_rew, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=True)
         print("avg_rew=", {ag_idx:avg_i/config.b_value for ag_idx, avg_i in avg_rew.items()})
         print("avg_coop=", avg_coop)
+        avg_coop_tot = torch.mean(torch.stack([cop_val for _, cop_val in avg_coop.items()]))
+        print("avg_coop_tot=", avg_coop_tot)
 
         avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
         weighted_average_coop = torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()]))
@@ -177,6 +179,7 @@ def objective(args, repo_name, trial=None):
                 "epoch": epoch,
                 "avg_rep": avg_rep,
                 "avg_rew_time": measure,
+                "avg_coop_from_agents": avg_coop_tot,
                 "weighted_average_coop": torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()])), # only on the agents that played, of course
                 "weighted_average_coop_time": weighted_average_coop_time # only on the agents that played, of course
                 }
