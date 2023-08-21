@@ -69,12 +69,15 @@ class Q_learning_agent():
         
         state_to_act = self.state_act
         current_q = self.Q[state_to_act.long(),:][0]
+        #print("current_q=", current_q)
+        #print("state_to_act=",state_to_act)
 
         if (_eval == True):
             action = self.argmax(current_q)
         elif (_eval == False):   
 
             if torch.rand(1) < self.epsilon:
+                #print("random")
                 action = random.choice([i for i in range(self.action_size)])
             else:
                 action = self.argmax(current_q)
@@ -91,6 +94,7 @@ class Q_learning_agent():
         
         for i in range(self.num_game_iterations):
             state, action, reward, next_state, done = self.memory.memory[i]
+            #print("state, action, reward, next_state, done=",state, action, reward, next_state, done)
             state = state.long()
             action = action.long()
             next_state = next_state.long()
@@ -98,6 +102,8 @@ class Q_learning_agent():
                 self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
             else:
                 self.Q[state, action] += self.lr_actor*(reward + self.gamma*self.argmax(self.Q[next_state,:][0]) - self.Q[state, action])
+
+        print("self.Q=",self.Q)
 
         self.memory.memory = []
         self.reset()

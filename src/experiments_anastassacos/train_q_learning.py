@@ -76,7 +76,7 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
             # save iteration            
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
-                    agent.append_to_replay(states[idx_agent], actions[idx_agent], rewards[idx_agent], next_states[idx_agent], done)
+                    agent.append_to_replay(states[ag_idx], actions[ag_idx], rewards[ag_idx], next_states[ag_idx], done)
                     agent.return_episode =+ rewards[ag_idx]
 
         if done:
