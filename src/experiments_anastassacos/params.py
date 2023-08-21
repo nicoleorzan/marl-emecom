@@ -136,7 +136,8 @@ def setup_training_hyperparams(args, trial):
             gamma = 0.99,
             epsilon = 0.01,
             n_episodes = 10000,
-            num_game_iterations = 200 # K 
+            num_game_iterations = 200, # K 
+            chi = 0.0001
         )
 
     n_dummy = int(args.proportion_dummy_agents*args.n_agents)
