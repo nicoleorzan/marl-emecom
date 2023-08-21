@@ -2,12 +2,11 @@ from src.environments import prisoner_dilemma
 from src.algos.anast.Q_learning_anast import Q_learning_agent
 import numpy as np
 import optuna
-import random
 from optuna.trial import TrialState
 import torch
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
-from src.algos.normativeagent import NormativeAgent
+from src.algos.anast.normativeagent_anast import NormativeAgent
 from src.utils.social_norm import SocialNorm
 from src.utils.utils import  pick_agents_idxs
 from src.experiments_anastassacos.params import setup_training_hyperparams

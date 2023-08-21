@@ -1,7 +1,6 @@
 
 import torch
 import random
-from src.algos.buffer import RolloutBuffer
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -16,7 +15,7 @@ class NormativeAgent():
 
     def __init__(self, params, idx):
 
-        self.buffer = RolloutBuffer()
+        #self.buffer = RolloutBuffer()
 
         for key, val in params.items(): setattr(self, key, val)
 
@@ -34,29 +33,26 @@ class NormativeAgent():
         self.return_episode = 0
 
     def reset(self):
-        self.buffer.clear()
+        pass
+        #self.buffer.clear()
 
     def digest_input_anast(self, input):
-        opponent_reputation, opponent_previous_action = input
-        self.opponent_reputation = opponent_reputation
-        self.opponent_previous_action = opponent_previous_action
+        #opponent_reputation, opponent_previous_action = input
+        self.opponent_reputation = input #opponent_reputation
+        #self.opponent_previous_action = opponent_previous_action
     
     def select_opponent(self, reputations):
         return random.randint(0, self.n_agents-1)
 
-    def select_action(self, m_val=None, _eval=False):
-        if (hasattr(self, 'state_act')):
-            self.opponent_reputation = self.state_act[0]
+    def select_action(self,_eval=False):
+        
+        #if (hasattr(self, 'state_act')):
+        #    self.opponent_reputation = self.state_act[0]
         action = torch.Tensor([0.])
 
         if (self.opponent_reputation >= self.other_reputation_threshold): # and the reputation of my opponent is big enough
             action = torch.Tensor([1.]) # I will play cooperatively
 
-        self.buffer.actions.append(action[0])
-        if (m_val in self.buffer.actions):
-                self.buffer.actions[m_val].append(action[0])
-        else: 
-            self.buffer.actions = [action[0]]
         return action[0]
         
     def update(self):
