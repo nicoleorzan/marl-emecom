@@ -41,6 +41,7 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
         # state
         actions = {}; states = next_states
         for idx_agent, agent in active_agents.items():
+            #print("agent", idx_agent, "rep=", agent.reputation)
             agent.state_act = states[idx_agent]
         
         # action
@@ -50,6 +51,8 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
+        #print("actions=", actions)
+        #print("rewards=", rewards)
 
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
@@ -73,7 +76,7 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
             # save iteration            
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
-                    agent.append_to_replay(states[idx_agent], actions[idx_agent], rewards[idx_agent], next_states[idx_agent])
+                    agent.append_to_replay(states[idx_agent], actions[idx_agent], rewards[idx_agent], next_states[idx_agent], done)
                     agent.return_episode =+ rewards[ag_idx]
 
         if done:
@@ -126,7 +129,7 @@ def objective(args, repo_name, trial=None):
 
         # evalutaion step
         avg_rew, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=True)
-        print("avg_rew=", [avg_i/config.b_value for _, avg_i in avg_rew.items()])
+        print("avg_rew=", {ag_idx:avg_i/config.b_value for ag_idx, avg_i in avg_rew.items()})
         print("avg_coop=", avg_coop)
 
         avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])

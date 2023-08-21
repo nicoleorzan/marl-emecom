@@ -85,11 +85,16 @@ class SocialNorm():
 
         self.reset_saved_actions()
 
-    def rule00(self, active_agents_idxs):
+    def rule00_binary(self, agents, active_agents_idxs):
         # agent that never cooperates (baseline)
         for ag_idx in active_agents_idxs:
             agent = self.agents["agent_"+str(ag_idx)]
-            agent.reputation = 0
+            agent.reputation = torch.Tensor([0.0])
+        
+        for ag_idx in active_agents_idxs:       
+            agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
+
+        self.reset_saved_actions()
 
     def reputation_as_avg_cooperation(self, active_agents_idxs):
         for ag_idx in active_agents_idxs:

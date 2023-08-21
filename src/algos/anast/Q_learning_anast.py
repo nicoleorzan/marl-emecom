@@ -38,8 +38,8 @@ class Q_learning_agent():
 
         self.reset()
 
-    def append_to_replay(self, s, a, r, s_):
-        self.memory.push((s, a, r, s_))
+    def append_to_replay(self, s, a, r, s_, d):
+        self.memory.push((s, a, r, s_, d))
 
     def argmax(self, q_values):
         top = torch.Tensor([-10000000])
@@ -90,11 +90,14 @@ class Q_learning_agent():
     def update(self):
         
         for i in range(self.num_game_iterations):
-            state, action, reward, next_state = self.memory.memory[i]
+            state, action, reward, next_state, done = self.memory.memory[i]
             state = state.long()
             action = action.long()
             next_state = next_state.long()
-            self.Q[state, action] += self.lr_actor*(reward + self.gamma*self.argmax(self.Q[next_state,:][0]) - self.Q[state, action])
+            if (done):
+                self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
+            else:
+                self.Q[state, action] += self.lr_actor*(reward + self.gamma*self.argmax(self.Q[next_state,:][0]) - self.Q[state, action])
 
         self.memory.memory = []
         self.reset()
