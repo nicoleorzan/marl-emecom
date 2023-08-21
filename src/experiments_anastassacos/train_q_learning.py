@@ -78,16 +78,14 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
 
         if done:
             if (_eval == True):
-                R = {}; avg_coop = {}
+                avg_reward = {}; avg_coop = {}
                 for ag_idx, agent in active_agents.items():
-                    R[ag_idx] = 0
-                    for r in rewards_dict[ag_idx][::-1]:
-                        R[ag_idx] = r + gamma * R[ag_idx]
                     avg_coop[ag_idx] = torch.mean(torch.stack(actions_dict[ag_idx]))
+                    avg_reward[ag_idx] = torch.mean(torch.stack(rewards_dict[ag_idx]))
             break
 
     if (_eval == True):
-        return R, avg_coop
+        return avg_reward, avg_coop
 
 def objective(args, repo_name, trial=None):
 
@@ -125,8 +123,8 @@ def objective(args, repo_name, trial=None):
             agent.update()
 
         # evalutaion step
-        returns_eval, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=True)
-        print("returns_eval=", returns_eval)
+        avg_rew, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=True)
+        print("avg_rew=", avg_rew)
         print("avg_coop=", avg_coop)
 
         avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
@@ -145,20 +143,20 @@ def objective(args, repo_name, trial=None):
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
                     df_avg_coop = {ag_idx+"actions_eval": avg_coop[ag_idx]}
-                    df_ret = {ag_idx+"returns_eval": returns_eval[ag_idx]}
+                    df_avg_rew = {ag_idx+"returns_eval": avg_rew[ag_idx]}
                     df_Q = {ag_idx+"Q[0,0]": agent.Q[0,0], ag_idx+"Q[0,1]": agent.Q[0,1], ag_idx+"Q[1,0]": agent.Q[1,0], ag_idx+"Q[1,1]": agent.Q[1,1]}
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
                         'epoch': epoch}, 
-                        **df_avg_coop, **df_ret, **df_Q
+                        **df_avg_coop, **df_avg_rew, **df_Q
                         }
                 else:
                     df_avg_coop = {ag_idx+"dummy_actions_eval": avg_coop[ag_idx]}
-                    df_ret = {ag_idx+"dummy_returns_eval": returns_eval[ag_idx]}
+                    df_avg_rew = {ag_idx+"dummy_returns_eval": avg_rew[ag_idx]}
                     df_agent = {**{
                         ag_idx+"dummy_reputation": agent.reputation,
                         'epoch': epoch}, 
-                        **df_avg_coop, **df_ret
+                        **df_avg_coop, **df_avg_rew
                         }
                 
                 if ('df_agent' in locals() ):
