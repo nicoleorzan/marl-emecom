@@ -15,7 +15,7 @@ class Actor(nn.Module):
         self.output_size = output_size
         self.n_hidden = n_hidden
         self.hidden_size = hidden_size
-        self.softmax = nn.Softmax(dim=0)
+        self.softmax = nn.Softmax(dim=1)
 
         self.embedding = nn.Embedding(num_embeddings=2, embedding_dim=self.embedding_dim)
 
@@ -37,11 +37,11 @@ class Actor(nn.Module):
             )
 
     def act(self, state, greedy=False, get_distrib=False):
-        #print("act (in actor)")
         out = self.actor(state)
         out = self.softmax(out)
+        #print("out=", out)
         dist = Categorical(out)
-        #print("out=", out, out.shape)
+        #print("dist=", dist)
 
         if (self.random_baseline == True): 
             act = torch.randint(0, self.action_size, (1,))[0]

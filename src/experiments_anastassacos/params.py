@@ -122,22 +122,28 @@ def setup_training_hyperparams(args, trial):
         )
     elif (args.algorithm == "dqn"):
         algo_params = dict(
-            memory_size = 500, #trial.suggest_int("memory_size", 100, 1000)
+            obs_size = 1,
+            n_episodes = 10000,
+            num_game_iterations = 200, # K 
+            gamma = 0.99,
+            chi = 0.0001,
+            epsilon = 0.01,
+            memory_size = 500,
             n_hidden_act = 2,
-            hidden_size_act = 16,
+            hidden_size_act = 4,
             batch_size = 5,
             lr_actor = lr_a,
             decayRate = 0.999
         )
     elif (args.algorithm == "q-learning"):
         algo_params = dict(
-            obs_size = 2,
-            lr_actor = 0.01,
-            gamma = 0.99,
-            epsilon = 0.01,
+            obs_size = 1,
             n_episodes = 10000,
             num_game_iterations = 200, # K 
-            chi = 0.0001
+            gamma = 0.99,
+            chi = 0.0001,
+            epsilon = 0.01,
+            lr_actor = 0.01
         )
 
     n_dummy = int(args.proportion_dummy_agents*args.n_agents)

@@ -8,7 +8,7 @@ from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 from src.algos.anast.normativeagent_anast import NormativeAgent
 from src.utils.social_norm import SocialNorm
-from src.utils.utils import  pick_agents_idxs
+from src.utils.utils import pick_agents_idxs
 from src.experiments_anastassacos.params import setup_training_hyperparams
 
 torch.autograd.set_detect_anomaly(True)
@@ -41,7 +41,6 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
         # state
         actions = {}; states = next_states
         for idx_agent, agent in active_agents.items():
-            #print("agent", idx_agent, "rep=", agent.reputation)
             agent.state_act = states[idx_agent]
         
         # action
@@ -51,8 +50,6 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
-        #print("actions=", actions)
-        #print("rewards=", rewards)
 
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
@@ -114,7 +111,6 @@ def objective(args, repo_name, trial=None):
 
         # pick a pair of agents
         active_agents_idxs = pick_agents_idxs(config)
-        print("active_agents_idxs=",active_agents_idxs)
         active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, _ in zip(active_agents_idxs, agents)}
 
         [agent.reset() for _, agent in active_agents.items()]
@@ -127,11 +123,10 @@ def objective(args, repo_name, trial=None):
         for ag_idx, agent in active_agents.items():
             agent.update()
 
-        # evalutaion step
+        # evaluation step
         avg_rew, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=True)
-        print("avg_rew=", {ag_idx:avg_i/config.b_value for ag_idx, avg_i in avg_rew.items()})
-        print("avg_coop=", avg_coop)
         avg_coop_tot = torch.mean(torch.stack([cop_val for _, cop_val in avg_coop.items()]))
+        print("avg_rew=", {ag_idx:avg_i/config.b_value for ag_idx, avg_i in avg_rew.items()})
         print("avg_coop_tot=", avg_coop_tot)
 
         avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
@@ -220,7 +215,6 @@ def train_q_learning(args):
         func = lambda trial: objective(args, repo_name, trial)
 
         # sql not optimized for paralel sync
-        #storage = optuna.storages.RDBStorage(url="sqlite:///"+repo_name+"-db") 
         journal_name = repo_name + "_binary_"+str(args.binary_reputation)
 
         storage = JournalStorage(JournalFileStorage("optuna-journal"+journal_name+".log"))
