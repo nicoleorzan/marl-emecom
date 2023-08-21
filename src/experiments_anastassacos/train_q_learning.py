@@ -142,8 +142,8 @@ def objective(args, repo_name, trial=None):
         if (config.wandb_mode == "online" and float(epoch)%10. == 0.):
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
-                    df_avg_coop = {ag_idx+"actions_eval": avg_coop[ag_idx]}
-                    df_avg_rew = {ag_idx+"returns_eval": avg_rew[ag_idx]}
+                    df_avg_coop = {ag_idx+"avg_coop": avg_coop[ag_idx]}
+                    df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
                     df_Q = {ag_idx+"Q[0,0]": agent.Q[0,0], ag_idx+"Q[0,1]": agent.Q[0,1], ag_idx+"Q[1,0]": agent.Q[1,0], ag_idx+"Q[1,1]": agent.Q[1,1]}
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
@@ -151,8 +151,8 @@ def objective(args, repo_name, trial=None):
                         **df_avg_coop, **df_avg_rew, **df_Q
                         }
                 else:
-                    df_avg_coop = {ag_idx+"dummy_actions_eval": avg_coop[ag_idx]}
-                    df_avg_rew = {ag_idx+"dummy_returns_eval": avg_rew[ag_idx]}
+                    df_avg_coop = {ag_idx+"dummy_avg_coop": avg_coop[ag_idx]}
+                    df_avg_rew = {ag_idx+"dummy_avg_rew": avg_rew[ag_idx]}
                     df_agent = {**{
                         ag_idx+"dummy_reputation": agent.reputation,
                         'epoch': epoch}, 
