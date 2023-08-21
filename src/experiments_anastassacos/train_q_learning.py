@@ -104,7 +104,8 @@ def objective(args, repo_name, trial=None):
     social_norm = SocialNorm(config, agents)
     
     #### TRAINING LOOP
-    avg_returns_train = []; avg_rep_list = []
+    avg_rep_list = []
+    weighted_average_coop_list = []
     for epoch in range(config.n_episodes):
         print("\n==========>Epoch=", epoch)
 
@@ -126,10 +127,16 @@ def objective(args, repo_name, trial=None):
         avg_rew, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=True)
         print("avg_rew=", [avg_i/config.b_value for _, avg_i in avg_rew.items()])
         print("avg_coop=", avg_coop)
-        print("weighted_average_coop", torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()])))
 
         avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
+        weighted_average_coop = torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()]))
+        weighted_average_coop_list.append(weighted_average_coop)
+        weighted_average_coop_time = torch.mean(torch.stack(weighted_average_coop_list[-10:]))
         measure = avg_rep
+
+        print("weighted_average_coop", weighted_average_coop)
+        print("weighted_average_coop_time", weighted_average_coop_time)
+
         avg_rep_list.append(avg_rep)
 
         if (config.optuna_):
@@ -171,7 +178,8 @@ def objective(args, repo_name, trial=None):
                 "mean_Q01": torch.mean(torch.stack([agent.Q[0,1] for _, agent in agents.items() if agent.is_dummy == False])),
                 "mean_Q10": torch.mean(torch.stack([agent.Q[1,0] for _, agent in agents.items() if agent.is_dummy == False])),
                 "mean_Q11": torch.mean(torch.stack([agent.Q[1,1] for _, agent in agents.items() if agent.is_dummy == False])),
-                "weighted_average_coop": torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()])) # only on the agents that played, of course
+                "weighted_average_coop": torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()])), # only on the agents that played, of course
+                "weighted_average_coop_time": weighted_average_coop_time # only on the agents that played, of course
                 },
                 step=epoch, commit=True)
 
