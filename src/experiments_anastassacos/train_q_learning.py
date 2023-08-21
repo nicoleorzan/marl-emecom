@@ -72,8 +72,9 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
         if (_eval == False):
             # save iteration            
             for ag_idx, agent in active_agents.items():
-                agent.append_to_replay(states[idx_agent], actions[idx_agent], rewards[idx_agent], next_states[idx_agent])
-                agent.return_episode =+ rewards[ag_idx]
+                if (agent.is_dummy == False):
+                    agent.append_to_replay(states[idx_agent], actions[idx_agent], rewards[idx_agent], next_states[idx_agent])
+                    agent.return_episode =+ rewards[ag_idx]
 
         if done:
             if (_eval == True):
@@ -110,6 +111,7 @@ def objective(args, repo_name, trial=None):
 
         # pick a pair of agents
         active_agents_idxs = pick_agents_idxs(config)
+        print("active_agents_idxs=",active_agents_idxs)
         active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, _ in zip(active_agents_idxs, agents)}
 
         [agent.reset() for _, agent in active_agents.items()]

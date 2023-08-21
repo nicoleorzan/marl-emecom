@@ -46,14 +46,14 @@ class NormativeAgent():
 
     def select_action(self,_eval=False):
         
-        #if (hasattr(self, 'state_act')):
-        #    self.opponent_reputation = self.state_act[0]
+        if (hasattr(self, 'state_act')):
+            self.opponent_reputation = self.state_act[0]
         action = torch.Tensor([0.])
 
         if (self.opponent_reputation >= self.other_reputation_threshold): # and the reputation of my opponent is big enough
             action = torch.Tensor([1.]) # I will play cooperatively
 
-        return action[0]
+        return action[0], 0
         
     def update(self):
         pass
