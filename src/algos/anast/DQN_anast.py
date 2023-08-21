@@ -61,6 +61,7 @@ class DQN(nn.Module):
 
         self.is_dummy = False
         self.idx = idx
+        self.batch_size = self.num_game_iterations
 
         self.action_selections = [0 for _ in range(self.action_size)]
         self.action_log_frequency = 1.
@@ -195,9 +196,6 @@ class DQN(nn.Module):
             self.policy_act_target.load_state_dict(self.policy_act.state_dict())
 
     def get_max_next_state_action(self, next_states):
-        #print("next_states=", next_states)
-        #var = self.policy_act_target.act(state=next_states, greedy=False, get_distrib=True)
-        #print("self.policy_act_target(next_states)=",var)
         _, _, _, dist = self.policy_act_target.act(state=next_states, greedy=False, get_distrib=True)
         max_vals = dist.max(dim=1)[1].view(-1, 1)
         return max_vals

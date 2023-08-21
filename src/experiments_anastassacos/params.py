@@ -129,9 +129,9 @@ def setup_training_hyperparams(args, trial):
             chi = 0.0001,
             epsilon = 0.01,
             memory_size = 500,
-            n_hidden_act = 2,
+            n_hidden_act = 1,
             hidden_size_act = 4,
-            batch_size = 5,
+            #batch_size = 5,
             lr_actor = lr_a,
             decayRate = 0.999
         )
