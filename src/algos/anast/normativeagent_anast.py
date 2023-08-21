@@ -50,7 +50,6 @@ class NormativeAgent():
             self.opponent_reputation = self.state_act[0]
         action = torch.Tensor([0.])
 
-        #print("self.opponent_reputation=",self.opponent_reputation)
         if (self.opponent_reputation >= self.other_reputation_threshold): # and the reputation of my opponent is big enough
             action = torch.Tensor([1.]) # I will play cooperatively
 
