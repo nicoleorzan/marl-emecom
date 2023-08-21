@@ -28,7 +28,7 @@ def setup_training_hyperparams(args, trial):
         o_r_t = trial.suggest_categorical("other_reputation_threshold", [0.4, 0.5, 0.6, 0.8, 1.0])
         c_t = trial.suggest_categorical("cooperation_threshold", [0.4, 0.5, 0.6, 0.8, 1.0])
     else:
-        o_r_t = 0.4
+        o_r_t = 0.9
         c_t = 0.4
 
     if (args.communicating_agents.count(1.) != 0):

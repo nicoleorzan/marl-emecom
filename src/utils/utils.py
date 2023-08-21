@@ -6,7 +6,10 @@ import random
 def pick_agents_idxs(config):
 
     active_agents_idxs = []
-    first_agent_idx = random.sample(config.non_dummy_idxs, 1)[0]        
+    if (config.non_dummy_idxs != []):
+        first_agent_idx = random.sample(config.non_dummy_idxs, 1)[0] 
+    else: 
+        first_agent_idx = random.sample([i for i in range(config.n_agents)], 1)[0]
     second_agent_idx = random.sample( list(set(range(0, config.n_agents)) - set([first_agent_idx])) , 1)[0]
     active_agents_idxs = [first_agent_idx, second_agent_idx]
 
