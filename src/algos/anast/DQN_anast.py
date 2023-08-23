@@ -171,8 +171,8 @@ class DQN(nn.Module):
         possible_states = torch.Tensor([[0.], [1.]])
         Q = torch.full((2, 2),  0.)
         for state in possible_states:
-            #Q[state.long(),:] = self.policy_act.get_values(state.view(-1,1))
-            Q[state.long(),:] = self.policy_act.get_distribution(state.view(-1,1)).detach()
+            Q[state.long(),:] = self.policy_act.get_values(state.view(-1,1))
+            #Q[state.long(),:] = self.policy_act.get_distribution(state.view(-1,1)).detach()
         return Q
 
     def compute_loss(self, batch_vars):
