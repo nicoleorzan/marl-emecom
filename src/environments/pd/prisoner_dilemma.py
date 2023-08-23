@@ -72,7 +72,6 @@ class parallel_env(ParallelEnv):
         self.c = torch.Tensor([self.c_value])
         self.d = torch.Tensor([self.d_value])
         self.b = torch.Tensor([self.b_value])
-        #self.mat = torch.Tensor([[0, 0],[1, 1]])
         self.mat = torch.Tensor([[self.c+self.d, self.b+self.c],[self.d, self.b]])
         #self.mat = torch.Tensor([[torch.Tensor([0.]), self.b],[-self.c, self.b-self.c]])
         print("DD=", self.mat[0,0])

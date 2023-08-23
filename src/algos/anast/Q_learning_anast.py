@@ -102,7 +102,7 @@ class Q_learning_agent():
             else:
                 self.Q[state, action] += self.lr_actor*(reward + self.gamma*self.argmax(self.Q[next_state,:][0]) - self.Q[state, action])
 
-        print("self.Q=",self.Q)
+        #print("self.Q=",self.Q)
 
         self.memory.memory = []
         self.reset()

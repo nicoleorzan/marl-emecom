@@ -3,6 +3,13 @@ import itertools
 import numpy as np
 import random
 
+def introspective_rewards(config, active_agents, parallel_env, rewards, actions):
+    new_rewards = {}
+    for ag_idx, _ in active_agents.items():
+        s = parallel_env.mat[actions[ag_idx], actions[ag_idx]]
+        new_rewards[ag_idx] = config.alpha*rewards[ag_idx] + (1-config.alpha)*s
+    return new_rewards
+
 def pick_agents_idxs(config):
 
     active_agents_idxs = []

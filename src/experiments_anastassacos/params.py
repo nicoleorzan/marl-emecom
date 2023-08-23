@@ -139,7 +139,9 @@ def setup_training_hyperparams(args, trial):
             n_hidden_act = 1,
             hidden_size_act = 4,
             lr_actor = 0.001,
-            decayRate = 0.999
+            decayRate = 0.999, 
+            alpha = 0.1, # introspection level
+            introspective = False
         )
     elif (args.algorithm == "q-learning"):
         algo_params = dict(

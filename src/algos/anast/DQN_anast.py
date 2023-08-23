@@ -134,6 +134,14 @@ class DQN(nn.Module):
             empty_next_state_values = True
 
         return batch_state, batch_action, batch_reward, non_final_next_states, non_final_mask, empty_next_state_values
+    
+    def read_q_matrix(self):
+        possible_states = torch.Tensor([[0.], [1.]])
+        Q = torch.full((2, 2),  0.)
+        for state in possible_states:
+            #Q[state.long(),:] = self.policy_act.get_values(state.view(-1,1))
+            Q[state.long(),:] = self.policy_act.get_distribution(state.view(-1,1)).detach()
+        return Q
 
     def compute_loss(self, batch_vars):
         batch_state, batch_action, batch_reward, non_final_next_states, non_final_mask, empty_next_state_values = batch_vars
