@@ -107,6 +107,7 @@ def objective(args, repo_name, trial=None):
     #### TRAINING LOOP
     avg_rep_list = []
     weighted_average_coop_list = []
+
     for epoch in range(config.n_episodes):
         print("\n==========>Epoch=", epoch)
 
@@ -117,17 +118,11 @@ def objective(args, repo_name, trial=None):
         [agent.reset() for _, agent in active_agents.items()]
 
         parallel_env.set_active_agents(active_agents_idxs)
-        
-        interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=False)
 
-        # update agents
-        for ag_idx, agent in active_agents.items():
-            agent.update()
-
-        # evaluation step
+        # evaluation before
         avg_rew, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=True)
         avg_coop_tot = torch.mean(torch.stack([cop_val for _, cop_val in avg_coop.items()]))
-        print("avg_rew=", {ag_idx:avg_i/config.b_value for ag_idx, avg_i in avg_rew.items()})
+        print("avg_rew_normalized_per_b=", {ag_idx:avg_i/config.b_value for ag_idx, avg_i in avg_rew.items()})
         print("avg_coop_tot=", avg_coop_tot)
 
         avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
@@ -140,14 +135,6 @@ def objective(args, repo_name, trial=None):
         print("weighted_average_coop_time", weighted_average_coop_time)
 
         avg_rep_list.append(avg_rep)
-
-        if (config.optuna_):
-            trial.report(measure, epoch)
-            
-            if trial.should_prune():
-                print("is time to pruneee")
-                wandb.finish()
-                raise optuna.exceptions.TrialPruned()
 
         if (config.wandb_mode == "online" and float(epoch)%10. == 0.):
             for ag_idx, agent in active_agents.items():
@@ -173,6 +160,75 @@ def objective(args, repo_name, trial=None):
             dff = {
                 "epoch": epoch,
                 "avg_rep": avg_rep,
+                "avg_rew_time": measure,
+                "avg_coop_from_agents": avg_coop_tot,
+                "weighted_average_coop": torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()])), # only on the agents that played, of course
+                "weighted_average_coop_time": weighted_average_coop_time # only on the agents that played, of course
+                }
+            wandb.log(dff,
+                step=epoch, commit=True)
+        #===== end evaluation before
+        
+        interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=False)
+
+        # update agents
+        losses = {}
+        for ag_idx, agent in active_agents.items():
+            losses[ag_idx] = agent.update()
+
+        # evaluation step
+        avg_rew, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=True)
+        avg_coop_tot = torch.mean(torch.stack([cop_val for _, cop_val in avg_coop.items()]))
+        print("avg_rew=", {ag_idx:avg_i/config.b_value for ag_idx, avg_i in avg_rew.items()})
+        print("avg_coop_tot=", avg_coop_tot)
+        avg_loss = torch.mean(torch.stack([losses[ag_idx] for ag_idx, agent in active_agents.items() if (agent.is_dummy == False)]))
+        print("avg loss=", avg_loss)
+
+        avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
+        weighted_average_coop = torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()]))
+        weighted_average_coop_list.append(weighted_average_coop)
+        weighted_average_coop_time = torch.mean(torch.stack(weighted_average_coop_list[-10:]))
+        measure = avg_rep
+
+        print("weighted_average_coop", weighted_average_coop)
+        print("weighted_average_coop_time", weighted_average_coop_time)
+
+        avg_rep_list.append(avg_rep)
+
+        if (config.optuna_):
+            trial.report(measure, epoch)
+            
+            if trial.should_prune():
+                print("is time to pruneee")
+                wandb.finish()
+                raise optuna.exceptions.TrialPruned()
+
+        if (config.wandb_mode == "online" and float(epoch)%10. == 0.):
+            for ag_idx, agent in active_agents.items():
+                if (agent.is_dummy == False):
+                    df_avg_coop = {ag_idx+"avg_coop": avg_coop[ag_idx]}
+                    df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
+                    df_loss = {ag_idx+"loss": losses[ag_idx]}
+                    df_agent = {**{
+                        ag_idx+"_reputation": agent.reputation,
+                        'epoch': epoch}, 
+                        **df_avg_coop, **df_avg_rew, **df_loss
+                        }
+                else:
+                    df_avg_coop = {ag_idx+"dummy_avg_coop": avg_coop[ag_idx]}
+                    df_avg_rew = {ag_idx+"dummy_avg_rew": avg_rew[ag_idx]}
+                    df_agent = {**{
+                        ag_idx+"dummy_reputation": agent.reputation,
+                        'epoch': epoch}, 
+                        **df_avg_coop, **df_avg_rew
+                        }
+                
+                if ('df_agent' in locals() ):
+                    wandb.log(df_agent, step=epoch, commit=False)
+            dff = {
+                "epoch": epoch,
+                "avg_rep": avg_rep,
+                "avg_loss": avg_loss,
                 "avg_rew_time": measure,
                 "avg_coop_from_agents": avg_coop_tot,
                 "weighted_average_coop": torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()])), # only on the agents that played, of course

@@ -20,18 +20,26 @@ Transition = namedtuple('Transition',
 class ExperienceReplayMemory:
     def __init__(self, capacity):
         self.capacity = capacity
-        self.memory = []
+        self.reset()
 
-    def push(self, transition):
+    def reset(self):
+        self._states = torch.empty((self.capacity,1))
+        self._actions = torch.empty((self.capacity,1))
+        self._rewards = torch.empty((self.capacity,1))
+        self._next_states = torch.empty((self.capacity,1))
+        self._dones = torch.empty((self.capacity,1), dtype=torch.bool)
+        self.i = 0
+
+    """def push(self, transition):
         self.memory.append(transition)
         if len(self.memory) > self.capacity:
             del self.memory[0]
 
     def sample(self, batch_size):
-        return random.sample(self.memory, batch_size), None, None
+        return random.sample(self.memory, batch_size), None, None"""
 
     def __len__(self):
-        return len(self.memory)
+        return len(self._states)
 
 
 class DQN(nn.Module):
@@ -40,8 +48,6 @@ class DQN(nn.Module):
 
         for key, val in params.items(): setattr(self, key, val)
 
-        opt_params = []
-
         self.input_act = self.obs_size
 
         self.policy_act = Actor(params=params, input_size=self.input_act, output_size=self.action_size, \
@@ -49,10 +55,8 @@ class DQN(nn.Module):
         self.policy_act_target = copy.deepcopy(self.policy_act).to(device)
         self.policy_act_target.load_state_dict(self.policy_act.state_dict())
 
-        opt_params.append({'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor})
-
         self.optimizer = torch.optim.RMSprop(self.policy_act.parameters())
-        self.memory = ExperienceReplayMemory(10000)
+        self.memory = ExperienceReplayMemory(self.num_game_iterations)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
         self.reputation = torch.Tensor([1.])
@@ -72,7 +76,8 @@ class DQN(nn.Module):
         self.target_net_update_freq = 10
 
     def reset(self):
-        self.memory.memory = []
+        self.memory.reset()
+        self.memory.i = 0
             
     def select_action(self, _eval=False):
         self.state_act = self.state_act.view(-1,1)
@@ -95,73 +100,62 @@ class DQN(nn.Module):
             return out
 
     def append_to_replay(self, s, a, r, s_, d):
-        self.memory.push((s, a, r, s_, d))
+        #self.memory.push((s, a, r, s_, d))
+        self.memory._states[self.memory.i] = s
+        self.memory._actions[self.memory.i] = a
+        self.memory._rewards[self.memory.i] = r
+        self.memory._next_states[self.memory.i] = s_
+        self.memory._dones[self.memory.i] = d
+        self.memory.i += 1
 
     def prep_minibatch(self):
-        # random transition batch is taken from experience replay memory
-        transitions, indices, weights = self.memory.sample(self.batch_size)
+        # random transition batch is taken from experience replay memory (nope, take all memory!)
+        #transitions, indices, weights = self.memory.sample(self.batch_size)
         
-        batch_state, batch_action, batch_reward, batch_next_state, batch_dones = zip(*transitions)
-        #print("batch state=", batch_state, type(batch_state))
-
-        #shape = (-1,)+self.obs_size
-        batch_state = torch.cat(batch_state).view(-1,self.obs_size)
-        #print("batch state=", batch_state)
-        #batch_state = torch.tensor(batch_state, device=self.device, dtype=torch.float).view(-1)
-        #print("batch state=", batch_state)
+        #batch_state, batch_action, batch_reward, batch_next_state, batch_dones = zip(*transitions)
+        #batch_state = torch.cat(batch_state).view(-1,self.obs_size)
+        #print("0 batch state=", batch_state, type(batch_state))
+        #print("0 batch action=", batch_action)
+        batch_state = self.memory._states
+        batch_action = self.memory._actions
+        batch_reward = self.memory._rewards
+        batch_next_state = self.memory._next_states
+        #batch_dones = self.memory._dones
+        
         batch_action = torch.tensor(batch_action, device=self.device, dtype=torch.long).squeeze().view(-1, 1)
-        #print("batch action=", batch_action)
         batch_reward = torch.tensor(batch_reward, device=self.device, dtype=torch.float).squeeze().view(-1, 1)
-        #print("batch_reward=", batch_reward)
-        #print("batch next state BEFORE=", batch_next_state)
-
-        #batch_next_state = torch.cat(batch_next_state).view(-1,self.obs_size)
-        #print("batch next state=", batch_next_state)
         
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch_next_state)), device=self.device, dtype=torch.uint8)
-        #print("non_final_mask=",non_final_mask)
-        #print("[s for s in batch_next_state if s is not None]=",[s for s in batch_next_state if s is not None])
         try: #sometimes all next states are false
             non_final_next_states = torch.tensor([s for s in batch_next_state if s is not None], device=self.device, dtype=torch.float).view(-1,1)
             empty_next_state_values = False
         except:
             non_final_next_states = None
             empty_next_state_values = True
-        #print("non_final_next_states=", non_final_next_states)
 
-        return batch_state, batch_action, batch_reward, non_final_next_states, non_final_mask, empty_next_state_values, indices, weights
+        return batch_state, batch_action, batch_reward, non_final_next_states, non_final_mask, empty_next_state_values
 
     def compute_loss(self, batch_vars):
-        batch_state, batch_action, batch_reward, non_final_next_states, non_final_mask, empty_next_state_values, indices, weights = batch_vars
-        #print("batch_state=",batch_state)
-        #print("batch_action=",batch_action)
-        #print("compute loss")
-        #print("empty_next_state_values=",empty_next_state_values)
-
-        #estimate
-        current_q_values, _, _, dist  = self.policy_act.act(batch_state, greedy=False, get_distrib=True) #.gather(1, batch_action) #state, greedy=False, get_distrib=False):
-        #print("DIST=", dist)
-        #print("dist[batch_actions]_1=",torch.gather(dist, dim=1, index=batch_action))
-        #print("current q vals=", current_q_values)
-        #print("current q shape=", current_q_values.shape)
-        current_q_values = torch.gather(dist, dim=1, index=batch_action)
+        batch_state, batch_action, batch_reward, non_final_next_states, non_final_mask, empty_next_state_values = batch_vars
+    
+        current_q_values = self.policy_act.get_values(batch_state)
+        current_q_values = torch.gather(current_q_values, dim=1, index=batch_action)
+        #print("current_q_values=",torch.mean(current_q_values))
         
         #target
         with torch.no_grad():
             max_next_q_values = torch.zeros(self.batch_size, device=self.device, dtype=torch.float).unsqueeze(dim=1)
-            #print("max_next_q_values=",max_next_q_values)
             if not empty_next_state_values:
                 max_next_action = self.get_max_next_state_action(non_final_next_states)
-                #print("max_next_action=", max_next_action)
                 _, _, _, dist = self.policy_act_target.act(state=non_final_next_states, greedy=False, get_distrib=True)
                 max_next_q_values[non_final_mask] = dist.gather(1, max_next_action)# (non_final_next_states).gather(1, max_next_action)
-                #print("max_next_q_values[non_final_mask]=",max_next_q_values[non_final_mask])
             expected_q_values = batch_reward + self.gamma*max_next_q_values
-            #print("expected_q_values=",expected_q_values)
+            #print("expected_q_values=",torch.mean(expected_q_values))
 
         diff = (expected_q_values - current_q_values)
         loss = self.MSE(diff)
         loss = loss.mean()
+        #print("loss=", loss)
 
         return loss
 
@@ -188,6 +182,8 @@ class DQN(nn.Module):
         #self.save_sigma_param_magnitudes(frame)
 
         self.reset()
+
+        return loss.detach()
 
     def update_target_model(self):
         self.update_count+=1

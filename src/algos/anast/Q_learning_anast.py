@@ -45,6 +45,7 @@ class Q_learning_agent():
         top = torch.Tensor([-10000000])
         ties = []
 
+        #print("q_values=",q_values)
         for i in range(len(q_values)):
             if q_values[i] > top:
                 top = q_values[i]
@@ -68,7 +69,8 @@ class Q_learning_agent():
     def select_action(self, _eval=False):
         
         state_to_act = self.state_act
-        current_q = self.Q[state_to_act.long(),:][0]
+        current_q = self.Q[state_to_act[0].long(),:]#[0]
+        #print("current q=", current_q)
 
         if (_eval == True):
             action = self.argmax(current_q)

@@ -23,7 +23,14 @@ def define_agents(config):
             agents['agent_'+str(idx)] = NormativeAgent(config, idx)
     return agents
 
-def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iterations, social_norm, gamma, _eval=False):
+def introspective_rewards(config, active_agents, parallel_env, rewards, actions):
+    new_rewards = {}
+    for ag_idx, _ in active_agents.items():
+        s = parallel_env.mat[actions[ag_idx], actions[ag_idx]]
+        new_rewards[ag_idx] = config.alpha*rewards[ag_idx] + (1-config.alpha)*s
+    return new_rewards
+
+def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False):
     # By default this is a training loop
 
     _ = parallel_env.reset()
@@ -36,7 +43,7 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
         next_states[idx_agent] = torch.Tensor([other.reputation])
 
     done = False
-    for i in range(n_iterations):
+    for i in range(config.num_game_iterations):
 
         # state
         actions = {}; states = next_states
@@ -50,6 +57,8 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
+        if (config.introspective == True):
+            rewards = introspective_rewards(config, active_agents, parallel_env, rewards, actions)
 
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
@@ -117,14 +126,14 @@ def objective(args, repo_name, trial=None):
 
         parallel_env.set_active_agents(active_agents_idxs)
         
-        interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=False)
+        interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
         for ag_idx, agent in active_agents.items():
             agent.update()
 
         # evaluation step
-        avg_rew, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, config.gamma, _eval=True)
+        avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=True)
         avg_coop_tot = torch.mean(torch.stack([cop_val for _, cop_val in avg_coop.items()]))
         print("avg_rew=", {ag_idx:avg_i/config.b_value for ag_idx, avg_i in avg_rew.items()})
         print("avg_coop_tot=", avg_coop_tot)

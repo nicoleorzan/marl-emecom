@@ -58,7 +58,7 @@ def setup_training_hyperparams(args, trial):
         n_agents = args.n_agents,
         algorithm = args.algorithm,
         wandb_mode = args.wandb_mode,
-        num_game_iterations = args.num_game_iterations,
+        #num_game_iterations = args.num_game_iterations,
         n_epochs = EPOCHS,
         obs_size = args.obs_size,
         action_size = ACTION_SIZE,
@@ -83,14 +83,21 @@ def setup_training_hyperparams(args, trial):
             num_hidden_a = trial.suggest_categorical("n_hidden_act", [1, 2])
             hidden_size_a = trial.suggest_categorical("hidden_size_act", [8, 16, 32, 64])
         else:
-            num_hidden_a = 2
-            hidden_size_a = 16
+            num_hidden_a = 1
+            hidden_size_a = 4
 
         algo_params = dict(
+            obs_size = 1,
+            n_episodes = 1000,
+            num_game_iterations = 200, # K 
+            gamma = 0.99,
+            chi = 0.0001,
+            epsilon = 0.01,
+            #memory_size = 10,
             lr_actor = lr_a,
             n_hidden_act = num_hidden_a,
             hidden_size_act = hidden_size_a,
-            batch_size = 1,
+            #batch_size = 1,
             decayRate = 0.999
         )
     elif (args.algorithm == "PPO"):
@@ -124,26 +131,27 @@ def setup_training_hyperparams(args, trial):
         algo_params = dict(
             obs_size = 1,
             n_episodes = 10000,
-            num_game_iterations = 200, # K 
+            num_game_iterations = 500, # K 
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
             memory_size = 500,
             n_hidden_act = 1,
             hidden_size_act = 4,
-            #batch_size = 5,
-            lr_actor = lr_a,
+            lr_actor = 0.001,
             decayRate = 0.999
         )
     elif (args.algorithm == "q-learning"):
         algo_params = dict(
-            obs_size = 1,
+            obs_size = 2,
             n_episodes = 10000,
             num_game_iterations = 200, # K 
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
-            lr_actor = 0.01
+            lr_actor = 0.01,
+            alpha = 0.1, # introspection level
+            introspective = False
         )
 
     n_dummy = int(args.proportion_dummy_agents*args.n_agents)
