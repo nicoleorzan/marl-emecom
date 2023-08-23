@@ -92,6 +92,38 @@ class DQN(nn.Module):
                 action = torch.randint(0, self.action_size, (1,))[0]
 
             return action, dist
+        
+    def argmax(self, q_values):
+        top = torch.Tensor([-10000000])
+        ties = []
+
+        #print("q_values=",q_values)
+        for i in range(len(q_values)):
+            if q_values[i] > top:
+                top = q_values[i]
+                ties = []
+
+            if q_values[i] == top:
+                ties.append(i)
+
+        return random.choice(ties)
+        
+    def select_action_eps_greedy(self, _eval=False):
+        
+        self.state_act = self.state_act.view(-1,1)
+
+        with torch.no_grad():
+            dist = self.policy_act.get_distribution(state=self.state_act)
+
+        if (_eval == True):
+            action = self.argmax(dist)
+        elif (_eval == False):   
+            if torch.rand(1) < self.epsilon:
+                action = random.choice([i for i in range(self.action_size)])
+            else:
+                action = self.argmax(dist)
+                
+        return torch.Tensor([action]), dist
     
     def get_action_distribution(self, state):
 

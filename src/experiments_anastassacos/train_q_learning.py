@@ -45,7 +45,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         
         # action
         for agent in parallel_env.active_agents:
-            a, d = active_agents[agent].select_action(_eval)
+            a, d = active_agents[agent].select_action_eps_greedy(_eval) #.select_action(_eval)
             actions[agent] = a
 
         # reward
