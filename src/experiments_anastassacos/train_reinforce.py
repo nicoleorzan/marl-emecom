@@ -139,6 +139,11 @@ def objective(args, repo_name, trial=None):
         weighted_average_coop_time = torch.mean(torch.stack(weighted_average_coop_list[-10:]))
         measure = avg_rep
 
+        prob = {}
+        for ag_idx, agent in agents.items():
+            if (agent.is_dummy == False):
+                prob[ag_idx] = agent.read_distrib()
+
         avg_rep_list.append(avg_rep)
 
         if (config.optuna_):
@@ -154,11 +159,12 @@ def objective(args, repo_name, trial=None):
                 if (agent.is_dummy == False):
                     df_avg_coop = {ag_idx+"avg_coop": avg_coop[ag_idx]}
                     df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
+                    df_distrib = {ag_idx+"prob[0,0]": prob[ag_idx][0,0], ag_idx+"prob[0,1]": prob[ag_idx][0,1], ag_idx+"prob[1,0]": prob[ag_idx][1,0], ag_idx+"prob[1,1]": prob[ag_idx][1,1]}
                     df_loss = {ag_idx+"loss": losses[ag_idx]}
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
                         'epoch': epoch}, 
-                        **df_avg_coop, **df_avg_rew, **df_loss
+                        **df_avg_coop, **df_avg_rew, **df_loss, **df_distrib
                         }
                 else:
                     df_avg_coop = {ag_idx+"dummy_avg_coop": avg_coop[ag_idx]}

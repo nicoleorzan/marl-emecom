@@ -91,6 +91,13 @@ class Reinforce():
         self.memory._logprobs[self.memory.i] = l
         self.memory.i += 1
 
+    def read_distrib(self):
+        possible_states = torch.Tensor([[0.], [1.]])
+        dist = torch.full((2, 2),  0.)
+        for state in possible_states:
+            dist[state.long(),:] = self.policy_act.get_distribution(state.view(-1,1))
+        return dist
+
     def update(self):
 
         batch_reward = self.memory._rewards
