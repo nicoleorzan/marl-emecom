@@ -93,9 +93,9 @@ def setup_training_hyperparams(args, trial):
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
-            lr_actor = lr_a,
-            n_hidden_act = num_hidden_a,
-            hidden_size_act = hidden_size_a,
+            lr_actor = 0.01,
+            n_hidden_act = 1,
+            hidden_size_act = 4,
             decayRate = 0.999,
             alpha = 0.1, # introspection level
             introspective = False
