@@ -8,7 +8,7 @@ from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 from src.algos.anast.normativeagent_anast import NormativeAgent
 from src.utils.social_norm import SocialNorm
-from src.utils.utils import pick_agents_idxs
+from src.utils.utils import pick_agents_idxs, introspective_rewards
 from src.experiments_anastassacos.params import setup_training_hyperparams
 
 torch.autograd.set_detect_anomaly(True)
@@ -23,7 +23,7 @@ def define_agents(config):
             agents['agent_'+str(idx)] = NormativeAgent(config, idx)
     return agents
 
-def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iterations, social_norm, _eval=False):
+def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False):
     # By default this is a training loop
 
     _ = parallel_env.reset()
@@ -36,7 +36,7 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
         next_states[idx_agent] = torch.Tensor([other.reputation])
 
     done = False
-    for _ in range(n_iterations):
+    for _ in range(config.num_game_iterations):
 
         # state
         actions = {}; states = next_states; logprobs = {}
@@ -51,10 +51,8 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
-
-        #if (_eval == True):
-        #    print("actions=", actions)
-        #    print("rewards=", rewards)
+        if (config.introspective == True):
+            rewards = introspective_rewards(config, active_agents, parallel_env, rewards, actions)
 
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
@@ -85,7 +83,6 @@ def interaction_loop(parallel_env, active_agents, active_agents_idxs, n_iteratio
             if (_eval == True):
                 avg_reward = {}; avg_coop = {}
                 for ag_idx, agent in active_agents.items():
-                    #print("actions_dict[ag_idx])",torch.stack(actions_dict[ag_idx]).float())
                     avg_coop[ag_idx] = torch.mean(torch.stack(actions_dict[ag_idx]).float())
                     avg_reward[ag_idx] = torch.mean(torch.stack(rewards_dict[ag_idx]))
             break
@@ -114,7 +111,7 @@ def objective(args, repo_name, trial=None):
     weighted_average_coop_list = []
 
     for epoch in range(config.n_episodes):
-        print("\n==========>Epoch=", epoch)
+        #print("\n==========>Epoch=", epoch)
 
         # pick a pair of agents
         active_agents_idxs = pick_agents_idxs(config)
@@ -124,9 +121,7 @@ def objective(args, repo_name, trial=None):
 
         parallel_env.set_active_agents(active_agents_idxs)
 
-        # TRAIN
-        print("TRAIN")        
-        interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, _eval=False)
+        interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
         losses = {}
@@ -134,22 +129,15 @@ def objective(args, repo_name, trial=None):
             losses[ag_idx] = agent.update()
 
         # evaluation step
-        avg_rew, avg_coop = interaction_loop(parallel_env, active_agents, active_agents_idxs, config.num_game_iterations, social_norm, _eval=True)
+        avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=True)
         avg_coop_tot = torch.mean(torch.stack([cop_val for _, cop_val in avg_coop.items()]))
-        print("avg_rew_normalized_per_b=", {ag_idx:avg_i/config.b_value for ag_idx, avg_i in avg_rew.items()})
-        print("avg_coop_tot=", avg_coop_tot)
-        #print("HERE=[losses[ag_idx] for ag_idx, agent in active_agents.items() if (agent.is_dummy == False)]", [losses[ag_idx] for ag_idx, agent in active_agents.items() if (agent.is_dummy == False)])
         avg_loss = torch.mean(torch.stack([losses[ag_idx] for ag_idx, agent in active_agents.items() if (agent.is_dummy == False)]))
-        print("avg loss=", avg_loss)
 
         avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
         weighted_average_coop = torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()]))
         weighted_average_coop_list.append(weighted_average_coop)
         weighted_average_coop_time = torch.mean(torch.stack(weighted_average_coop_list[-10:]))
         measure = avg_rep
-
-        print("weighted_average_coop", weighted_average_coop)
-        print("weighted_average_coop_time", weighted_average_coop_time)
 
         avg_rep_list.append(avg_rep)
 
@@ -196,7 +184,12 @@ def objective(args, repo_name, trial=None):
                 step=epoch, commit=True)
 
         if (epoch%10 == 0):
-            print("Epoch : {} \t Measure: {} ".format(epoch, measure))
+            print("\nEpoch : {} \t Measure: {} ".format(epoch, measure))
+            print("avg_rew formalized per b=", {ag_idx:avg_i/config.b_value for ag_idx, avg_i in avg_rew.items()})
+            print("avg_coop_tot=", avg_coop_tot)
+            print("avg loss=", avg_loss)
+            print("weighted_average_coop", weighted_average_coop)
+            print("weighted_average_coop_time", weighted_average_coop_time)
     
     wandb.finish()
     return measure

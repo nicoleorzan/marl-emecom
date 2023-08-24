@@ -93,12 +93,12 @@ def setup_training_hyperparams(args, trial):
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
-            #memory_size = 10,
             lr_actor = lr_a,
             n_hidden_act = num_hidden_a,
             hidden_size_act = hidden_size_a,
-            #batch_size = 1,
-            decayRate = 0.999
+            decayRate = 0.999,
+            alpha = 0.1, # introspection level
+            introspective = False
         )
     elif (args.algorithm == "PPO"):
         if (args.optuna_ == 1):
@@ -131,14 +131,13 @@ def setup_training_hyperparams(args, trial):
         algo_params = dict(
             obs_size = 1,
             n_episodes = 10000,
-            num_game_iterations = 500, # K 
+            num_game_iterations = 50, # K 
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
-            memory_size = 500,
             n_hidden_act = 1,
             hidden_size_act = 4,
-            lr_actor = 0.001,
+            lr_actor = 0.0001,
             decayRate = 0.999, 
             alpha = 0.1, # introspection level
             introspective = False

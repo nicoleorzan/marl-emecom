@@ -88,21 +88,8 @@ class parallel_env(ParallelEnv):
         self.obs_space_size = 2 # I can observe the amount of money I have, and the multiplicative factor (with uncertaity)
 
         self.current_multiplier = torch.Tensor([0.]).to(device)
-
-        # c is fixed, b can change
-        if hasattr(self, 'b_value'):
-            self.c = torch.Tensor([self.c_value])
-            self.d = torch.Tensor([self.d_value])
-            self.b = torch.Tensor([self.b_value])
-            self.mat = torch.Tensor([[self.c+self.d, self.b+self.c],[self.d, self.b]])
-            print("DD=", self.mat[0,0])
-            print("Dc=", self.mat[0,1])
-            print("Cd=", self.mat[1,0])
-            print("CC=", self.mat[1,1])
-            # Dd, Dc, Cd, Cc
-        else: 
-            print("ELSE")
-            self.mat = torch.Tensor([[self.coins_value, self.coins_value+self.coins_value*config.mult_fact[0]/2.],[self.coins_value*config.mult_fact[0]/2., self.coins_value*config.mult_fact[0]]])
+        
+        self.mat = torch.Tensor([[self.coins_value, self.coins_value+self.coins_value*config.mult_fact[0]/2.],[self.coins_value*config.mult_fact[0]/2., self.coins_value*config.mult_fact[0]]])
 
         self.mv = torch.max(self.mat)
         print("mv=", self.mv)
@@ -266,7 +253,7 @@ class parallel_env(ParallelEnv):
         #self.dones = {agent: self.num_moves >= self.num_game_iterations for agent in self.active_agents}
 
         if (env_done):
-            observations = {agent: torch.Tensor([0.]) for agent in self.active_agents}
+            self.observations = {agent: torch.Tensor([0.]) for agent in self.active_agents}
             #print("next obs=", observations)
         #observations = {}
 
@@ -280,4 +267,4 @@ class parallel_env(ParallelEnv):
         if env_done:
             self.agents = []
 
-        return observations, rewards, env_done, self.infos
+        return self.observations, rewards, env_done, self.infos
