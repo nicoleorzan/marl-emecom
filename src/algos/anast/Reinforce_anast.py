@@ -71,8 +71,8 @@ class Reinforce():
             greedy = True
             with torch.no_grad():
                 action, logprob, _, _ = self.policy_act.act(state=self.state_act, greedy=greedy, get_distrib=True)
-                if torch.rand(1) < self.epsilon:
-                    action = torch.randint(0, self.action_size, (1,))[0]
+                #if torch.rand(1) < self.epsilon:
+                #    action = torch.randint(0, self.action_size, (1,))[0]
         else:
             action, logprob, _, _ = self.policy_act.act(state=self.state_act, greedy=greedy, get_distrib=True)
             if torch.rand(1) < self.epsilon:
@@ -98,7 +98,7 @@ class Reinforce():
             dist[state.long(),:] = self.policy_act.get_distribution(state.view(-1,1))
         return dist
 
-    def update(self):
+    def update1(self):
 
         batch_reward = self.memory._rewards
         #print("batch_reward=", batch_reward)
@@ -119,6 +119,27 @@ class Reinforce():
 
         for log_prob, R in zip(self.memory._logprobs, returns):
             val = -log_prob * R
+            policy_loss.append(val.reshape(1))
+
+        self.optimizer.zero_grad()
+        policy_loss = torch.cat(policy_loss).sum()
+        policy_loss.backward()
+        self.optimizer.step()
+
+        self.reset()
+
+        return policy_loss.detach()
+    
+    def update(self):
+
+        batch_reward = self.memory._rewards
+
+        policy_loss = []
+
+        if (len(batch_reward) > 1):
+            batch_reward = (batch_reward - batch_reward.min()) / (batch_reward.max() - batch_reward.min())
+        for log_prob, rew in zip(self.memory._logprobs, batch_reward):
+            val = -log_prob * rew
             policy_loss.append(val.reshape(1))
 
         self.optimizer.zero_grad()
