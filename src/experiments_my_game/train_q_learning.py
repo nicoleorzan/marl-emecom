@@ -141,14 +141,7 @@ def objective(args, repo_name, trial=None):
             avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
             measure = avg_rep
             coop_agents_mf[mf_input] = avg_coop
-            #print("coop_agents_mf[mf_input]=",coop_agents_mf[mf_input])
-            #print("mf=", mf_input, "[i for i in coop_agents_mf[mf_input]]=", [ag_coop for ag_idx, ag_coop in coop_agents_mf[mf_input].items()])
-            #print("torch.stack([i for i in coop_agents_mf[mf_input]])=", torch.stack([ag_coop for ag_idx, ag_coop in coop_agents_mf[mf_input].items()]))
-            #print("torch.mean=", torch.mean(torch.stack([ag_coop for ag_idx, ag_coop in coop_agents_mf[mf_input].items()])))
-        #print("coop_agents_mf=",coop_agents_mf)
-        #for mf in config.mult_fact:
-        #    print("mf=", mf)
-        #    print("torch.stack([ag_coop for _, ag_coop in coop_agents_mf[mf_input].items()]))=", torch.stack([ag_coop for _, ag_coop in coop_agents_mf[mf].items()]))
+        
         dff_coop_per_mf = dict(("avg_coop_mf"+str(mf), torch.mean(torch.stack([ag_coop for _, ag_coop in coop_agents_mf[mf].items()]))) for mf in config.mult_fact)
 
         if (config.optuna_):
@@ -164,11 +157,15 @@ def objective(args, repo_name, trial=None):
                 if (agent.is_dummy == False):
                     df_avg_coop = dict((ag_idx+"avg_coop_mf"+str(mf), coop_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)
                     df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
-                    df_Q = {ag_idx+"Q[0,0]": agent.Q[0,0], ag_idx+"Q[0,1]": agent.Q[0,1], ag_idx+"Q[1,0]": agent.Q[1,0], ag_idx+"Q[1,1]": agent.Q[1,1]}
+                    df_Q1 = dict((ag_idx+"Q["+str(mf)+",0,0]", agent.Q[imf,0,0] ) for imf, mf in enumerate(config.mult_fact))
+                    df_Q2 = dict((ag_idx+"Q["+str(mf)+",0,1]", agent.Q[imf,0,1] ) for imf, mf in enumerate(config.mult_fact))
+                    df_Q3 = dict((ag_idx+"Q["+str(mf)+",1,0]", agent.Q[imf,1,0] ) for imf, mf in enumerate(config.mult_fact))
+                    df_Q4 = dict((ag_idx+"Q["+str(mf)+",1,1]", agent.Q[imf,1,1] ) for imf, mf in enumerate(config.mult_fact))
+                    #df_Q = {ag_idx+"Q[0,0]": agent.Q[0,0], ag_idx+"Q[0,1]": agent.Q[0,1], ag_idx+"Q[1,0]": agent.Q[1,0], ag_idx+"Q[1,1]": agent.Q[1,1]}
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
                         'epoch': epoch}, 
-                        **df_avg_coop, **df_avg_rew, **df_Q
+                        **df_avg_coop, **df_avg_rew, **df_Q1, **df_Q2, **df_Q3, **df_Q4
                         }
                 else:
                     df_avg_coop = {ag_idx+"dummy_avg_coop": avg_coop[ag_idx]}
