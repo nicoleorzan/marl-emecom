@@ -88,13 +88,6 @@ class parallel_env(ParallelEnv):
         self.obs_space_size = 2 # I can observe the amount of money I have, and the multiplicative factor (with uncertaity)
 
         self.current_multiplier = torch.Tensor([0.]).to(device)
-        
-        self.mat = torch.Tensor([[self.coins_value, self.coins_value+self.coins_value*config.mult_fact[0]/2.],[self.coins_value*config.mult_fact[0]/2., self.coins_value*config.mult_fact[0]]])
-
-        self.mv = torch.max(self.mat)
-        print("mv=", self.mv)
-        print("mat=", self.mat)
-        print("norm mat=", self.mat/self.mv)
 
     def set_active_agents(self, idxs):
         self.active_agents = ["agent_" + str(r) for r in idxs]
@@ -180,49 +173,6 @@ class parallel_env(ParallelEnv):
 
     def get_coins(self):
         return self.coins
-    
-    def step1(self, actions):
-        if not actions:
-            self.agents = []
-            return {}, {}, {}, {}
-
-        rewards = {}
-    
-        ag0 = self.active_agents[0]
-        ag1 = self.active_agents[1]
-
-        #print("actions=", actions)
-        if (actions[ag0] == 0 and actions[ag1] == 0):
-            rewards[ag0] = self.mat[0,0]
-            rewards[ag1] = self.mat[0,0]
-        elif (actions[ag0] == 0 and actions[ag1] == 1):
-            rewards[ag0] = self.mat[0,1]
-            rewards[ag1] = self.mat[1,0] 
-        elif (actions[ag0] == 1 and actions[ag1] == 0):
-            rewards[ag0] = self.mat[1,0]
-            rewards[ag1] = self.mat[0,1]
-        elif (actions[ag0] == 1 and actions[ag1] == 1):
-            rewards[ag0] = self.mat[1,1]
-            rewards[ag1] = self.mat[1,1]
-        #print("rewards=", rewards)
-
-        self.num_moves += 1
-        env_done = self.num_moves >= self.num_game_iterations
-
-        #if (env_done):
-        observations = {agent: torch.Tensor([0.]) for agent in self.active_agents}
-
-        if (self.num_game_iterations > 1):
-
-            # assign new amount of coins for next round
-            self.assign_coins_fixed()
-
-            self.observe()
-
-        if env_done:
-            self.agents = []
-
-        return observations, rewards, env_done, self.infos
          
     def step(self, actions):
         '''
