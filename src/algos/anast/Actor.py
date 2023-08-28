@@ -37,13 +37,9 @@ class Actor(nn.Module):
             )
 
     def act(self, state, greedy=False, get_distrib=False):
-        #print("act")
-        #print("state=", state)
         out = self.actor(state)
-        #print("out=", out)
         out = self.softmax(out)
         dist = Categorical(out)
-        #print("dist=", dist)
 
         if (self.random_baseline == True): 
             act = torch.randint(0, self.action_size, (1,))[0]

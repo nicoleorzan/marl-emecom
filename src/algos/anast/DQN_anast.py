@@ -74,21 +74,7 @@ class DQN():
     def reset(self):
         self.memory.reset()
         self.memory.i = 0
-            
-    def select_action(self, _eval=False):
-        self.state_act = self.state_act.view(-1,1)
 
-        greedy = False
-        if (_eval == True):
-            greedy = True
-
-        with torch.no_grad():
-            action, _, _, dist = self.policy_act.act(state=self.state_act, greedy=greedy, get_distrib=True)
-            if torch.rand(1) < self.epsilon:
-                action = torch.randint(0, self.action_size, (1,))[0]
-
-            return action, dist
-        
     def argmax(self, q_values):
         top = torch.Tensor([-10000000])
         ties = []
@@ -103,22 +89,18 @@ class DQN():
 
         return random.choice(ties)
         
-    def select_action_eps_greedy(self, _eval=False):
-        
+    def select_action(self, _eval=False):
         self.state_act = self.state_act.view(-1,1)
 
-        with torch.no_grad():
-            dist = self.policy_act.get_distribution(state=self.state_act)
-
         if (_eval == True):
-            action = self.argmax(dist)
+            action = self.argmax(self.policy_act.get_values(state=self.state_act))
         elif (_eval == False):   
             if torch.rand(1) < self.epsilon:
                 action = random.choice([i for i in range(self.action_size)])
             else:
-                action = self.argmax(dist)
+                action = self.argmax(self.policy_act.get_values(state=self.state_act))
                 
-        return torch.Tensor([action]), dist
+        return torch.Tensor([action])
     
     def get_action_distribution(self, state):
 
