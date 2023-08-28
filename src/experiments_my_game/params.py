@@ -61,6 +61,12 @@ def setup_training_hyperparams(args, trial):
         algorithm = args.algorithm,
         coins_value = args.coins_value,
         wandb_mode = args.wandb_mode,
+        gmm_ = args.gmm_,
+        communicating_agents = args.communicating_agents,
+        listening_agents = args.listening_agents,
+        get_index = False,
+        get_opponent_is_uncertain = False,
+        opponent_selection = args.opponent_selection,
         #num_game_iterations = args.num_game_iterations,
         n_epochs = EPOCHS,
         obs_size = args.obs_size,
@@ -90,16 +96,18 @@ def setup_training_hyperparams(args, trial):
             hidden_size_a = 4
 
         algo_params = dict(
-            obs_size = 1,
+            obs_size = 2,
             n_episodes = 1000,
-            num_game_iterations = 200, # K 
+            num_game_iterations = 100, # K 
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
             lr_actor = lr_a,
             n_hidden_act = num_hidden_a,
             hidden_size_act = hidden_size_a,
-            decayRate = 0.999
+            decayRate = 0.999,
+            alpha = 0.1, # introspection level
+            introspective = False
         )
     elif (args.algorithm == "PPO"):
         if (args.optuna_ == 1):

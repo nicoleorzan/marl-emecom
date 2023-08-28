@@ -40,6 +40,7 @@ class Agent():
     def select_action(self, _eval=False):
         
         state_to_act = self.state_act
+        print("state_to_act=",state_to_act)
     
         if (_eval == True):
             with torch.no_grad():

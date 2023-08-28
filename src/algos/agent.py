@@ -240,21 +240,23 @@ class Agent():
     def get_message(self, message_in):
         self.message_in = message_in
 
-    def select_action(self, epsilon = 0., m_val=None, _eval=False):            
+    def select_action(self, epsilon = 0., m_val=None, _eval=False):         
+        print("qui")   
         
         state_to_act = self.state_act
-        #print("agent=", self.idx, "is selecting action")
+        print("agent=", self.idx, "is selecting action")
         if (self.is_listening and self.n_communicating_agents != 0):
             state_to_act = torch.cat((self.state_act, self.message_in)).to(device)
-        #print("state_act=", state_to_act)
+        print("state_act=", state_to_act)
             
         if (_eval == True):
             with torch.no_grad():
                 action, action_logprob, entropy = self.policy_act.act(state=state_to_act)
 
         elif (_eval == False):
+            print("eval false")
             action, action_logprob, entropy, distrib = self.policy_act.act(state=state_to_act, greedy=False, get_distrib=True)
-            #print('action=', action, "distrib=", distrib)
+            print('action=', action, "distrib=", distrib)
             if (self.is_listening == True and self.n_communicating_agents != 0.):
                 #print("self.state_act=", self.state_act)
                 state_empty_mex = torch.cat((self.state_act.detach(), torch.zeros_like(self.message_in))).to(device)
@@ -274,8 +276,8 @@ class Agent():
 
             self.buffer.act_logprobs.append(action_logprob)
             self.buffer.act_entropy.append(entropy)
-        
-        return action
+        print("return")
+        return action, action_logprob
     
     def get_action_distribution(self):
 

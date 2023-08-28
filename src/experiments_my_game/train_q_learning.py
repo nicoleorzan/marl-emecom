@@ -42,7 +42,6 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     for idx_agent, agent in active_agents.items():
         other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
         next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
-        next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
 
     done = False
     for _ in range(config.num_game_iterations):
@@ -56,6 +55,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         for agent in parallel_env.active_agents:
             a, d = active_agents[agent].select_action(_eval)
             actions[agent] = a
+
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
@@ -91,7 +91,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
             if (_eval == True):
                 avg_reward = {}; avg_coop = {}
                 for ag_idx, agent in active_agents.items():
-                    avg_coop[ag_idx] = torch.mean(torch.stack(actions_dict[ag_idx]))
+                    avg_coop[ag_idx] = torch.mean(torch.stack(actions_dict[ag_idx]).float())
                     avg_reward[ag_idx] = torch.mean(torch.stack(rewards_dict[ag_idx]))
             break
 
@@ -127,6 +127,7 @@ def objective(args, repo_name, trial=None):
 
         parallel_env.set_active_agents(active_agents_idxs)
         
+        # TRAIN
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents

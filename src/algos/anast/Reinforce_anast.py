@@ -3,7 +3,6 @@ from src.algos.anast.Actor import Actor
 import torch
 from collections import deque
 import numpy as np
-import random
 
 class ExperienceReplayMemory:
     def __init__(self, capacity):
@@ -18,14 +17,6 @@ class ExperienceReplayMemory:
         self._next_states = torch.empty((self.capacity,1))
         self._dones = torch.empty((self.capacity,1), dtype=torch.bool)
         self.i = 0
-
-    """def push(self, transition):
-        self.memory.append(transition)
-        if len(self.memory) > self.capacity:
-            del self.memory[0]
-
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size), None, None"""
 
     def __len__(self):
         return len(self._states)
@@ -64,7 +55,10 @@ class Reinforce():
         self.memory.i = 0
             
     def select_action(self, _eval=False):
-        self.state_act = self.state_act.view(-1,1)
+        #print("before self.state_act=",self.state_act)
+        #if (self.state_act.shape == torch.Size([1])):
+        self.state_act = self.state_act.view(-1,self.input_act)
+        #print("after self.state_act=",self.state_act)
 
         greedy = False
         if (_eval == True):

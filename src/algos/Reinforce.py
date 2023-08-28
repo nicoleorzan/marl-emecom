@@ -5,11 +5,23 @@ import torch
 import torch.autograd as autograd
 import numpy as np
 
-# set device to cpu or cuda
-device = torch.device('cpu')
-if(torch.cuda.is_available()): 
-    device = torch.device('cuda:0') 
-    torch.cuda.empty_cache()
+class ExperienceReplayMemory:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.reset()
+        
+    def reset(self):
+        self._states = torch.empty((self.capacity,1))
+        self._actions = torch.empty((self.capacity,1))
+        self._rewards = torch.empty((self.capacity,1))
+        self._logprobs = torch.empty((self.capacity,1))
+        self._next_states = torch.empty((self.capacity,1))
+        self._dones = torch.empty((self.capacity,1), dtype=torch.bool)
+        self.i = 0
+
+    def __len__(self):
+        return len(self._states)
+
 
 class Reinforce(Agent):
 
@@ -43,6 +55,11 @@ class Reinforce(Agent):
         self.htarget = np.log(self.action_size)/2.
         self.n_update = 0.
         self.baseline = 0.
+
+    def append_to_replay(self, s, a, r, s_, l, d):
+        self.memory._rewards[self.memory.i] = r
+        self.memory._logprobs[self.memory.i] = l
+        self.memory.i += 1
 
     def embed_opponent_idx_act(self, idx):
         out = self.policy_act.embed_opponent_index(idx).t()[0]
