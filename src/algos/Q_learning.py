@@ -31,8 +31,10 @@ class Q_learning_agent():
         # Action Policy
         self.max_value = max(self.mult_fact)*2*self.coins_value
 
-        print("hasattr=",hasattr(self, "mult_fact"))
-        input_Q = (len(self.mult_fact), self.obs_size, self.action_size)
+        if (len(self.mult_fact) == 1):
+            input_Q = (self.obs_size, self.action_size)
+        else:
+            input_Q = (len(self.mult_fact), self.obs_size, self.action_size)
         self.Q = torch.full(input_Q, self.max_value, dtype=float)
         print("self.Q=", self.Q)
     
@@ -55,7 +57,7 @@ class Q_learning_agent():
             if q_values[i] == top:
                 ties.append(i)
 
-        return random.choice(ties) #self.rand_generator.choice(ties)
+        return random.choice(ties)
 
     def reset(self):
         self.previous_action = torch.Tensor([1.])
@@ -94,17 +96,19 @@ class Q_learning_agent():
         
         for i in range(self.num_game_iterations):
             state, action, reward, next_state, done = self.memory.memory[i]
-            #print("state, action, reward, next_state, done=",state, action, reward, next_state, done)
             state = state.long()
             action = action.long()
             next_state = next_state.long()
             if (done):
-                self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
+                if (len(self.mult_fact) == 1): 
+                    self.Q[state[0], action] += self.lr_actor*(reward - self.Q[state[0], action])
+                else:
+                    self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
             else:
-                #self.Q[state, action] += self.lr_actor*(reward + self.gamma*self.argmax(self.Q[next_state,:][0]) - self.Q[state, action])
-                self.Q[state, action] += self.lr_actor*(reward + self.gamma*self.argmax(torch.take(self.Q, next_state.long())) - self.Q[state, action])
-
-        #print("self.Q=",self.Q)
+                if (len(self.mult_fact) == 1): 
+                    self.Q[state[0], action] += self.lr_actor*(reward + self.gamma*self.argmax(self.Q[next_state,:][0])  - self.Q[state[0], action])
+                else:
+                    self.Q[state, action] += self.lr_actor*(reward + self.gamma*self.argmax(torch.take(self.Q, next_state)) - self.Q[state, action])
 
         self.memory.memory = []
         self.reset()

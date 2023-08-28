@@ -157,10 +157,16 @@ def objective(args, repo_name, trial=None):
                 if (agent.is_dummy == False):
                     df_avg_coop = dict((ag_idx+"avg_coop_mf"+str(mf), coop_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)
                     df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
-                    df_Q1 = dict((ag_idx+"Q["+str(mf)+",0,0]", agent.Q[imf,0,0] ) for imf, mf in enumerate(config.mult_fact))
-                    df_Q2 = dict((ag_idx+"Q["+str(mf)+",0,1]", agent.Q[imf,0,1] ) for imf, mf in enumerate(config.mult_fact))
-                    df_Q3 = dict((ag_idx+"Q["+str(mf)+",1,0]", agent.Q[imf,1,0] ) for imf, mf in enumerate(config.mult_fact))
-                    df_Q4 = dict((ag_idx+"Q["+str(mf)+",1,1]", agent.Q[imf,1,1] ) for imf, mf in enumerate(config.mult_fact))
+                    if (len(config.mult_fact) == 1):
+                        df_Q1 = dict((ag_idx+"Q["+str(mf)+",0,0]", agent.Q[0,0] ) for _, mf in enumerate(config.mult_fact))
+                        df_Q2 = dict((ag_idx+"Q["+str(mf)+",0,1]", agent.Q[0,1] ) for _, mf in enumerate(config.mult_fact))
+                        df_Q3 = dict((ag_idx+"Q["+str(mf)+",1,0]", agent.Q[1,0] ) for _, mf in enumerate(config.mult_fact))
+                        df_Q4 = dict((ag_idx+"Q["+str(mf)+",1,1]", agent.Q[1,1] ) for _, mf in enumerate(config.mult_fact))
+                    else:  
+                        df_Q1 = dict((ag_idx+"Q["+str(mf)+",0,0]", agent.Q[imf,0,0] ) for imf, mf in enumerate(config.mult_fact))
+                        df_Q2 = dict((ag_idx+"Q["+str(mf)+",0,1]", agent.Q[imf,0,1] ) for imf, mf in enumerate(config.mult_fact))
+                        df_Q3 = dict((ag_idx+"Q["+str(mf)+",1,0]", agent.Q[imf,1,0] ) for imf, mf in enumerate(config.mult_fact))
+                        df_Q4 = dict((ag_idx+"Q["+str(mf)+",1,1]", agent.Q[imf,1,1] ) for imf, mf in enumerate(config.mult_fact))
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
                         'epoch': epoch}, 

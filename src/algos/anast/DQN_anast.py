@@ -70,7 +70,6 @@ class DQN():
         self.action_log_frequency = 1.
 
         self.update_count = 0
-        self.target_net_update_freq = 30
 
     def reset(self):
         self.memory.reset()
