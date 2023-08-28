@@ -189,6 +189,13 @@ def objective(args, repo_name, trial=None):
                 "weighted_average_coop": torch.mean(torch.stack([avg_i/config.b_value for _, avg_i in avg_rew.items()])), # only on the agents that played, of course
                 "weighted_average_coop_time": weighted_average_coop_time # only on the agents that played, of course
                 }
+            if (config.non_dummy_idxs != []): 
+                dff = {**dff, **{
+                    "mean_p00": torch.mean(torch.stack([prob[ag_idx][0,0] for ag_idx, agent in agents.items() if agent.is_dummy == False])),
+                    "mean_p01": torch.mean(torch.stack([prob[ag_idx][0,1] for ag_idx, agent in agents.items() if agent.is_dummy == False])),
+                    "mean_p10": torch.mean(torch.stack([prob[ag_idx][1,0] for ag_idx, agent in agents.items() if agent.is_dummy == False])),
+                    "mean_p11": torch.mean(torch.stack([prob[ag_idx][1,1] for ag_idx, agent in agents.items() if agent.is_dummy == False])),
+                }}
             wandb.log(dff,
                 step=epoch, commit=True)
 
