@@ -212,7 +212,7 @@ def train_q_learning(args):
         unc_string = "unc_"
 
     repo_name = "PGG_"+ str(args.n_agents) + "agents_" + \
-        unc_string + args.algorithm + "_dummy_population_"# + str(args.proportion_dummy_agents)
+        unc_string + args.algorithm# + "_dummy_population_"# + str(args.proportion_dummy_agents)
     
     if (args.addition != ""):
         repo_name += "_"+ str(args.addition)
