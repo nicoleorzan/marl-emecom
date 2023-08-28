@@ -55,23 +55,19 @@ class Reinforce():
         self.memory.i = 0
             
     def select_action(self, _eval=False):
-        #print("before self.state_act=",self.state_act)
-        #if (self.state_act.shape == torch.Size([1])):
         self.state_act = self.state_act.view(-1,self.input_act)
-        #print("after self.state_act=",self.state_act)
 
         greedy = False
         if (_eval == True):
             greedy = True
             with torch.no_grad():
                 action, logprob, _, _ = self.policy_act.act(state=self.state_act, greedy=greedy, get_distrib=True)
-                #if torch.rand(1) < self.epsilon:
-                #    action = torch.randint(0, self.action_size, (1,))[0]
         else:
             action, logprob, _, _ = self.policy_act.act(state=self.state_act, greedy=greedy, get_distrib=True)
             if torch.rand(1) < self.epsilon:
                 action = torch.randint(0, self.action_size, (1,))[0]
 
+        #print("action, logprob=",action, logprob)
         return action, logprob
     
     def get_action_distribution(self, state):

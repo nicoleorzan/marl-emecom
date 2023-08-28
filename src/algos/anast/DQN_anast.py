@@ -18,25 +18,19 @@ Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
 class ExperienceReplayMemory:
-    def __init__(self, capacity):
-        self.capacity = capacity
+    def __init__(self, params):
+
+        for key, val in params.items(): setattr(self, key, val)
+        self.capacity = self.num_game_iterations
         self.reset()
 
     def reset(self):
-        self._states = torch.empty((self.capacity,1))
+        self._states = torch.empty((self.capacity,self.obs_size))
         self._actions = torch.empty((self.capacity,1))
         self._rewards = torch.empty((self.capacity,1))
-        self._next_states = torch.empty((self.capacity,1))
+        self._next_states = torch.empty((self.capacity,self.obs_size))
         self._dones = torch.empty((self.capacity,1), dtype=torch.bool)
         self.i = 0
-
-    """def push(self, transition):
-        self.memory.append(transition)
-        if len(self.memory) > self.capacity:
-            del self.memory[0]
-
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size), None, None"""
 
     def __len__(self):
         return len(self._states)
@@ -55,7 +49,7 @@ class DQN():
         self.policy_act_target.load_state_dict(self.policy_act.state_dict())
 
         self.optimizer = torch.optim.RMSprop(self.policy_act.parameters())
-        self.memory = ExperienceReplayMemory(self.num_game_iterations)
+        self.memory = ExperienceReplayMemory(params)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
         self.reputation = torch.Tensor([1.])
@@ -91,11 +85,13 @@ class DQN():
         return random.choice(ties)
         
     def select_action(self, _eval=False):
-        self.state_act = self.state_act.view(-1,1)
+        self.state_act = self.state_act.view(-1,self.input_act)
 
         if (_eval == True):
+            print("action selected with argmax bc EVAL=TRUE")
             action = self.argmax(self.policy_act.get_values(state=self.state_act)[0])
-        elif (_eval == False):   
+            
+        elif (_eval == False):
             if torch.rand(1) < self.epsilon:
                 action = random.choice([i for i in range(self.action_size)])
             else:

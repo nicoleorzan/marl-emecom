@@ -83,8 +83,8 @@ class Q_learning_agent():
                 action = random.choice([i for i in range(self.action_size)])
             else:
                 action = self.argmax(current_q)
-                
-        return torch.Tensor([action]), current_q
+        
+        return torch.Tensor([action])
     
     def get_action_distribution(self):
         return self.Q[self.state_act.long(),:]

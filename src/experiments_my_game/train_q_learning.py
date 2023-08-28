@@ -53,9 +53,8 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         
         # action
         for agent in parallel_env.active_agents:
-            a, d = active_agents[agent].select_action(_eval)
+            a = active_agents[agent].select_action(_eval)
             actions[agent] = a
-
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
@@ -126,7 +125,7 @@ def objective(args, repo_name, trial=None):
         [agent.reset() for _, agent in active_agents.items()]
 
         parallel_env.set_active_agents(active_agents_idxs)
-        
+
         # TRAIN
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
@@ -181,7 +180,6 @@ def objective(args, repo_name, trial=None):
                         'epoch': epoch}, 
                         **df_avg_coop, **df_avg_rew
                         }
-                
                 if ('df_agent' in locals() ):
                     wandb.log(df_agent, step=epoch, commit=False)
             dff = {
@@ -200,7 +198,7 @@ def objective(args, repo_name, trial=None):
             print("\nEpoch : {} \t Measure: {} ".format(epoch, measure))
             print("avg_rew=", {ag_idx:avg_i for ag_idx, avg_i in avg_rew.items()})
             #print("avg_coop_tot=", avg_coop_tot)
-            #print("coop_agents_mf=",coop_agents_mf)
+            print("coop_agents_mf=",coop_agents_mf)
             print("dff_coop_per_mf=",dff_coop_per_mf)
     
     wandb.finish()
@@ -214,7 +212,7 @@ def train_q_learning(args):
         unc_string = "unc_"
 
     repo_name = "PGG_"+ str(args.n_agents) + "agents_" + \
-        unc_string + args.algorithm + "_dummy_population_" + str(args.proportion_dummy_agents)
+        unc_string + args.algorithm + "_dummy_population_"# + str(args.proportion_dummy_agents)
     
     if (args.addition != ""):
         repo_name += "_"+ str(args.addition)

@@ -43,6 +43,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         actions = {}; states = next_states
         for idx_agent, agent in active_agents.items():
             agent.state_act = states[idx_agent]
+        #print("states=", states)
         
         # action
         for agent in parallel_env.active_agents:
@@ -121,14 +122,14 @@ def objective(args, repo_name, trial=None):
         [agent.reset() for _, agent in active_agents.items()]
 
         parallel_env.set_active_agents(active_agents_idxs)
-        
+        print("train")
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
         losses = {}
         for ag_idx, agent in active_agents.items():
             losses[ag_idx] = agent.update()
-
+        print("eval")
         # evaluation step
         avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=True)
         avg_coop_tot = torch.mean(torch.stack([cop_val for _, cop_val in avg_coop.items()]))
@@ -208,7 +209,7 @@ def train_dqn(args):
         unc_string = "unc_"
 
     repo_name = "ANAST_"+ str(args.n_agents) + "agents_" + \
-        unc_string + args.algorithm + "_dummy_population_" + str(args.proportion_dummy_agents)
+        unc_string + args.algorithm + "_dummy_population_"# + str(args.proportion_dummy_agents)
     
     if (args.addition != ""):
         repo_name += "_"+ str(args.addition)

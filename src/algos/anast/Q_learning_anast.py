@@ -70,30 +70,18 @@ class Q_learning_agent():
         
         state_to_act = self.state_act
         current_q = self.Q[state_to_act[0].long(),:]
-        assert(current_q.shape == torch.Size([self.action_size])
-)
-        print(current_q.shape)
-        #current_q = torch.take(self.Q, state_to_act.long())
-        #print("current_q1=", current_q1)
-        #print("current_q=", current_q)
-        #print(torch.equal(current_q1,current_q))
+        assert(current_q.shape == torch.Size([self.action_size]))
 
         if (_eval == True):
             action = self.argmax(current_q)
-            #assert(action == self.argmax(current_q1))
         elif (_eval == False):   
 
             if torch.rand(1) < self.epsilon:
                 action = random.choice([i for i in range(self.action_size)])
             else:
                 action = self.argmax(current_q)
-                #print("action=", action, type(action))
-                #a1 = self.argmax(current_q1)
-                #print("self.argmax(current_q1)=", a1, type(a1))
-                #print(action, a1)
-                #assert(action == a1)
                 
-        return torch.Tensor([action]), current_q
+        return torch.Tensor([action])
     
     def get_action_distribution(self):
         return self.Q[self.state_act.long(),:]

@@ -45,7 +45,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         
         # action
         for agent in parallel_env.active_agents:
-            a, d = active_agents[agent].select_action(_eval)
+            a = active_agents[agent].select_action(_eval)
             actions[agent] = a
 
         # reward
@@ -203,7 +203,7 @@ def train_q_learning(args):
         unc_string = "unc_"
 
     repo_name = "ANAST_"+ str(args.n_agents) + "agents_" + \
-        unc_string + args.algorithm + "_dummy_population_" + str(args.proportion_dummy_agents)
+        unc_string + args.algorithm + "_dummy_population_"# + str(args.proportion_dummy_agents)
     
     if (args.addition != ""):
         repo_name += "_"+ str(args.addition)

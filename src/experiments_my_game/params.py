@@ -149,6 +149,7 @@ def setup_training_hyperparams(args, trial):
             hidden_size_act = 4,
             lr_actor = 0.0001,
             decayRate = 0.999, 
+            target_net_update_freq = 30,
             alpha = 0.1, # introspection level
             introspective = False
         )

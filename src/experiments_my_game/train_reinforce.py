@@ -127,7 +127,7 @@ def objective(args, repo_name, trial=None):
 
         parallel_env.set_active_agents(active_agents_idxs)
 
-        # TRAIN  
+        # TRAIN
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
@@ -174,7 +174,6 @@ def objective(args, repo_name, trial=None):
                         'epoch': epoch}, 
                         **df_avg_coop, **df_avg_rew
                         }
-                
                 if ('df_agent' in locals() ):
                     wandb.log(df_agent, step=epoch, commit=False)
             dff = {
@@ -207,7 +206,7 @@ def train_reinforce(args):
         unc_string = "unc_"
 
     repo_name = "PGG_"+ str(args.n_agents) + "agents_" + \
-        unc_string + args.algorithm + "_dummy_population_" + str(args.proportion_dummy_agents)
+        unc_string + args.algorithm + "_dummy_population_"# + str(args.proportion_dummy_agents)
     
     if (args.addition != ""):
         repo_name += "_"+ str(args.addition)

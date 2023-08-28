@@ -45,7 +45,10 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         
         # action
         for agent in parallel_env.active_agents:
-            a, logp = active_agents[agent].select_action(_eval)
+            if (active_agents[agent].is_dummy == True): 
+                a = active_agents[agent].select_action(_eval)
+            else:
+                a, logp = active_agents[agent].select_action(_eval)
             actions[agent] = a
             logprobs[agent] = logp
 
@@ -208,7 +211,7 @@ def train_reinforce(args):
         unc_string = "unc_"
 
     repo_name = "ANAST_"+ str(args.n_agents) + "agents_" + \
-        unc_string + args.algorithm + "_dummy_population_" + str(args.proportion_dummy_agents)
+        unc_string + args.algorithm + "_dummy_population_"# + str(args.proportion_dummy_agents)
     
     if (args.addition != ""):
         repo_name += "_"+ str(args.addition)
