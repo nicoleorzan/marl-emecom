@@ -34,6 +34,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     for idx_agent, agent in active_agents.items():
         other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
         next_states[idx_agent] = torch.Tensor([other.reputation])
+    #print("next_states=",next_states)
 
     done = False
     for _ in range(config.num_game_iterations):
@@ -47,6 +48,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         for agent in parallel_env.active_agents:
             a = active_agents[agent].select_action(_eval)
             actions[agent] = a
+        #print("actions=", actions)
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)

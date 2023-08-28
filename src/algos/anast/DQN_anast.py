@@ -76,6 +76,7 @@ class DQN():
         self.memory.i = 0
 
     def argmax(self, q_values):
+        #print("qvals=", q_values)
         top = torch.Tensor([-10000000])
         ties = []
 
@@ -93,12 +94,12 @@ class DQN():
         self.state_act = self.state_act.view(-1,1)
 
         if (_eval == True):
-            action = self.argmax(self.policy_act.get_values(state=self.state_act))
+            action = self.argmax(self.policy_act.get_values(state=self.state_act)[0])
         elif (_eval == False):   
             if torch.rand(1) < self.epsilon:
                 action = random.choice([i for i in range(self.action_size)])
             else:
-                action = self.argmax(self.policy_act.get_values(state=self.state_act))
+                action = self.argmax(self.policy_act.get_values(state=self.state_act)[0])
                 
         return torch.Tensor([action])
     
