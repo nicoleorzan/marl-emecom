@@ -88,7 +88,7 @@ class DQN():
         self.state_act = self.state_act.view(-1,self.input_act)
 
         if (_eval == True):
-            print("action selected with argmax bc EVAL=TRUE")
+            #print("action selected with argmax bc EVAL=TRUE")
             action = self.argmax(self.policy_act.get_values(state=self.state_act)[0])
             
         elif (_eval == False):

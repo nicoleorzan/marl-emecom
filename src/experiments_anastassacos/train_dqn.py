@@ -122,14 +122,14 @@ def objective(args, repo_name, trial=None):
         [agent.reset() for _, agent in active_agents.items()]
 
         parallel_env.set_active_agents(active_agents_idxs)
-        print("train")
+        #print("train")
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
         losses = {}
         for ag_idx, agent in active_agents.items():
             losses[ag_idx] = agent.update()
-        print("eval")
+        #print("eval")
         # evaluation step
         avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=True)
         avg_coop_tot = torch.mean(torch.stack([cop_val for _, cop_val in avg_coop.items()]))
