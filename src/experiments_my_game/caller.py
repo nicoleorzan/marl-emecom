@@ -1,6 +1,7 @@
 import argparse
 import ast
 from src.experiments_my_game.train_reinforce import train_reinforce
+from src.experiments_my_game.train_reinforce_no_reputation import train_reinforce_no_reputation
 from src.experiments_my_game.train_q_learning import train_q_learning
 from src.experiments_my_game.train_q_learning_no_reputation import train_q_learning_no_reputation
 from src.experiments_my_game.train_dqn import train_dqn
@@ -61,7 +62,10 @@ if __name__ == '__main__':
     if args.algorithm == "dqn":
         train_dqn(args)
     elif args.algorithm == "reinforce":
-        train_reinforce(args)
+        if args.reputation_enabled == 0:
+            train_reinforce_no_reputation(args)
+        else:
+            train_reinforce(args)
     elif args.algorithm == "q-learning":
         if args.reputation_enabled == 0:
             train_q_learning_no_reputation(args)

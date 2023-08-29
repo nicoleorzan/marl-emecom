@@ -95,9 +95,11 @@ def setup_training_hyperparams(args, trial):
         else:
             num_hidden_a = 1
             hidden_size_a = 4
-
+        obs_size = 2
+        if (args.reputation_enabled == 0):
+            obs_size = 1
         algo_params = dict(
-            obs_size = 2,
+            obs_size = obs_size,
             n_episodes = 1000,
             num_game_iterations = 100, # K 
             gamma = 0.99,
