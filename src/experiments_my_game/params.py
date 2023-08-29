@@ -61,6 +61,7 @@ def setup_training_hyperparams(args, trial):
         algorithm = args.algorithm,
         coins_value = args.coins_value,
         wandb_mode = args.wandb_mode,
+        proportion_dummy_agents = args.proportion_dummy_agents,
         gmm_ = args.gmm_,
         communicating_agents = args.communicating_agents,
         listening_agents = args.listening_agents,
