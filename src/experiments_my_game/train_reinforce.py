@@ -146,6 +146,20 @@ def objective(args, repo_name, trial=None):
 
         dff_coop_per_mf = dict(("avg_coop_mf"+str(mf), torch.mean(torch.stack([ag_coop for _, ag_coop in coop_agents_mf[mf].items()]))) for mf in config.mult_fact)
 
+        """prob = {}
+        possible_reputations = [0., 1.]
+        for rep in possible_reputations:
+            possible_states = torch.stack([torch.Tensor([i, rep]) for i, _ in enumerate(config.mult_fact)])
+            print("possible_states=",possible_states)
+            for ag_idx, agent in agents.items():
+                if (agent.is_dummy == False):
+                    if ag_idx not in prob:
+                        prob[ag_idx] = torch.zeros(2)
+                        print("empty=", prob[ag_idx])
+                    print("agent.read_distrib(possible_states,len(config.mult_fact))=",agent.read_distrib(possible_states,len(config.mult_fact)))
+                    prob[ag_idx][rep] = agent.read_distrib(possible_states,len(config.mult_fact))
+        print("prob=", prob)"""
+
         if (config.optuna_):
             trial.report(measure, epoch)
             
@@ -159,7 +173,7 @@ def objective(args, repo_name, trial=None):
                 if (agent.is_dummy == False):
                     df_avg_coop = {ag_idx+"avg_coop": avg_coop[ag_idx]}
                     df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
-                    #df_distrib = {ag_idx+"prob[0,0]": prob[ag_idx][0,0], ag_idx+"prob[0,1]": prob[ag_idx][0,1], ag_idx+"prob[1,0]": prob[ag_idx][1,0], ag_idx+"prob[1,1]": prob[ag_idx][1,1]}
+                    df_distrib = {ag_idx+"prob[0,0]": prob[ag_idx][0,0], ag_idx+"prob[0,1]": prob[ag_idx][0,1], ag_idx+"prob[1,0]": prob[ag_idx][1,0], ag_idx+"prob[1,1]": prob[ag_idx][1,1]}
                     df_loss = {ag_idx+"loss": losses[ag_idx]}
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,

@@ -143,9 +143,11 @@ def objective(args, repo_name, trial=None):
         measure = avg_rep
 
         prob = {}
+        possible_states = torch.Tensor([[0.], [1.]])
         for ag_idx, agent in agents.items():
             if (agent.is_dummy == False):
-                prob[ag_idx] = agent.read_distrib()
+                prob[ag_idx] = agent.read_distrib(possible_states,2)
+        #print("prob=", prob)
 
         avg_rep_list.append(avg_rep)
 

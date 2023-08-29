@@ -2,6 +2,7 @@
 from src.algos.anast.Actor import Actor
 import torch
 from collections import deque
+from torch.distributions import Categorical
 import numpy as np
 
 class ExperienceReplayMemory:
@@ -53,23 +54,26 @@ class Reinforce():
     def reset(self):
         self.memory.reset()
         self.memory.i = 0
+
+    def temperature_scaled_softmax(logits, temperature=1.0):
+        logits = logits / temperature
+        return torch.softmax(logits, dim=0)
             
     def select_action(self, _eval=False):
+
         self.state_act = self.state_act.view(-1,self.input_act)
 
-        greedy = False
-        if (_eval == True):
-            greedy = True
-            with torch.no_grad():
-                action, logprob, _, _ = self.policy_act.act(state=self.state_act, greedy=greedy, get_distrib=True)
-        else:
-            action, logprob, _, _ = self.policy_act.act(state=self.state_act, greedy=greedy, get_distrib=True)
-            if torch.rand(1) < self.epsilon:
-                action = torch.randint(0, self.action_size, (1,))[0]
+        out = self.policy_act.get_distribution(state=self.state_act)
+        dist = Categorical(out)
 
-        #print("action, logprob=",action, logprob)
-        return action, logprob
-    
+        if (_eval == True):
+            act = torch.argmax(out).detach()
+        else:
+            act = dist.sample().detach()
+        logprob = dist.log_prob(act) # negativi
+        
+        return act, logprob
+
     def get_action_distribution(self, state):
 
         with torch.no_grad():
@@ -81,14 +85,13 @@ class Reinforce():
         self.memory._logprobs[self.memory.i] = l
         self.memory.i += 1
 
-    def read_distrib(self):
-        possible_states = torch.Tensor([[0.], [1.]])
-        dist = torch.full((2, 2),  0.)
+    def read_distrib(self, possible_states, n_possible_states):
+        dist = torch.full((n_possible_states, 2),  0.)
         for state in possible_states:
-            dist[state.long(),:] = self.policy_act.get_distribution(state.view(-1,1))
+            dist[state.long(),:] = self.policy_act.get_distribution(state.view(-1,self.input_act))
         return dist
 
-    def update1(self):
+    def update(self):
 
         batch_reward = self.memory._rewards
         #print("batch_reward=", batch_reward)
@@ -120,7 +123,7 @@ class Reinforce():
 
         return policy_loss.detach()
     
-    def update(self):
+    def cccupdate1(self):
 
         batch_reward = self.memory._rewards
 

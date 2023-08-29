@@ -63,6 +63,7 @@ class Actor(nn.Module):
         return dist.entropy()
 
     def get_distribution(self, state):
+        #print("state1=", state)
         out = self.actor(state)
         out = self.softmax(out)
         return out
