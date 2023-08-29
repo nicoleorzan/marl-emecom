@@ -103,10 +103,11 @@ def setup_training_hyperparams(args, trial):
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
-            lr_actor = lr_a,
+            lr_actor = 0.01,
             n_hidden_act = num_hidden_a,
             hidden_size_act = hidden_size_a,
             decayRate = 0.999,
+            reputation_enabled = args.reputation_enabled,
             alpha = 0.1, # introspection level
             introspective = False
         )
@@ -132,6 +133,7 @@ def setup_training_hyperparams(args, trial):
             K_epochs = 40,
             eps_clip = 0.2,
             gamma = 0.99,
+            reputation_enabled = args.reputation_enabled,
             c1 = c_1,
             c2 = c_2,
             c3 = 0, #trial.suggest_float("c3", 0.01, 0.5, log=True),
@@ -149,20 +151,25 @@ def setup_training_hyperparams(args, trial):
             n_hidden_act = 1,
             hidden_size_act = 4,
             lr_actor = 0.0001,
-            decayRate = 0.999, 
+            decayRate = 0.999,
+            reputation_enabled = args.reputation_enabled,
             target_net_update_freq = 30,
             alpha = 0.1, # introspection level
             introspective = False
         )
     elif (args.algorithm == "q-learning"):
+        obs_size = 2
+        if (args.reputation_enabled == 0):
+            obs_size = 1
         algo_params = dict(
-            obs_size = 2, # num of multiplications factor possible plus the reputation of opponent
+            obs_size = obs_size, # num of multiplications factor possible plus the reputation of opponent
             n_episodes = 10000,
             num_game_iterations = 200, # K 
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
             lr_actor = 0.01,
+            reputation_enabled = args.reputation_enabled,
             alpha = 0.1, # introspection level
             introspective = False
         )

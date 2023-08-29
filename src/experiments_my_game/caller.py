@@ -2,6 +2,7 @@ import argparse
 import ast
 from src.experiments_my_game.train_reinforce import train_reinforce
 from src.experiments_my_game.train_q_learning import train_q_learning
+from src.experiments_my_game.train_q_learning_no_reputation import train_q_learning_no_reputation
 from src.experiments_my_game.train_dqn import train_dqn
 
 if __name__ == '__main__':
@@ -30,6 +31,7 @@ if __name__ == '__main__':
         
     parser.add_argument('--gmm_', type=int, default=0)
     parser.add_argument('--optuna_', type=int, default=0)
+    parser.add_argument('--reputation_enabled', type=int, default=0)
     parser.add_argument('--num_game_iterations', type=int, default=1)
     parser.add_argument('--reputation_in_reward', type=int, default=0)
     parser.add_argument('--obs_size', type=int, default=4)
@@ -61,4 +63,7 @@ if __name__ == '__main__':
     elif args.algorithm == "reinforce":
         train_reinforce(args)
     elif args.algorithm == "q-learning":
-        train_q_learning(args)
+        if args.reputation_enabled == 0:
+            train_q_learning_no_reputation(args)
+        else:
+            train_q_learning(args)

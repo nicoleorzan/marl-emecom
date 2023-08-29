@@ -62,8 +62,10 @@ class Reinforce():
     def select_action(self, _eval=False):
 
         self.state_act = self.state_act.view(-1,self.input_act)
+        #print("self.state_act=", self.state_act)
 
         out = self.policy_act.get_distribution(state=self.state_act)
+        #print("out=", out)
         dist = Categorical(out)
 
         if (_eval == True):
@@ -71,6 +73,7 @@ class Reinforce():
         else:
             act = dist.sample().detach()
         logprob = dist.log_prob(act) # negativi
+        #print("act=", act, "logprob=", logprob)
         
         return act, logprob
 
