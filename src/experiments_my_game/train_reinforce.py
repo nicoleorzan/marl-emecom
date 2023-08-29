@@ -146,19 +146,27 @@ def objective(args, repo_name, trial=None):
 
         dff_coop_per_mf = dict(("avg_coop_mf"+str(mf), torch.mean(torch.stack([ag_coop for _, ag_coop in coop_agents_mf[mf].items()]))) for mf in config.mult_fact)
 
-        """prob = {}
+        prob = {}
         possible_reputations = [0., 1.]
-        for rep in possible_reputations:
-            possible_states = torch.stack([torch.Tensor([i, rep]) for i, _ in enumerate(config.mult_fact)])
-            print("possible_states=",possible_states)
-            for ag_idx, agent in agents.items():
-                if (agent.is_dummy == False):
-                    if ag_idx not in prob:
-                        prob[ag_idx] = torch.zeros(2)
-                        print("empty=", prob[ag_idx])
-                    print("agent.read_distrib(possible_states,len(config.mult_fact))=",agent.read_distrib(possible_states,len(config.mult_fact)))
-                    prob[ag_idx][rep] = agent.read_distrib(possible_states,len(config.mult_fact))
-        print("prob=", prob)"""
+        for ag_idx, agent in agents.items():
+            #print("\nag_idx=", ag_idx)
+            if (agent.is_dummy == False):
+                if ag_idx not in prob:
+                    prob[ag_idx] = torch.zeros(len(config.mult_fact), 2, 2) # mult fact, poss rep, poss actions
+                    #print("prob[ag_idx]=", prob[ag_idx])
+                for rep in possible_reputations:
+                    #print("reputation=", rep)
+                    possible_states = torch.stack([torch.Tensor([i, rep]) for i, _ in enumerate(config.mult_fact)])
+                    #print("possible_states=",possible_states)
+                    #print("agent.read_distrib(possible_states,len(config.mult_fact))=",agent.read_distrib(possible_states,len(config.mult_fact)))
+                    #print("ag_idx=",ag_idx, "rep=", rep)
+                    #print("prob[ag_idx][:,int(rep),:]=",prob[ag_idx][:,int(rep),:])
+                    prob[ag_idx][:,int(rep),:] = agent.read_distrib(possible_states,len(config.mult_fact)).detach()
+        #print("prob=", prob)
+        stacked = torch.stack([val for ag_idx, val in prob.items()])
+        #print("stacked=", stacked, stacked.shape)
+        avg_distrib = torch.mean(stacked, dim=0)
+        #print("avg_distrib=", avg_distrib)
 
         if (config.optuna_):
             trial.report(measure, epoch)
@@ -173,7 +181,6 @@ def objective(args, repo_name, trial=None):
                 if (agent.is_dummy == False):
                     df_avg_coop = {ag_idx+"avg_coop": avg_coop[ag_idx]}
                     df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
-                    df_distrib = {ag_idx+"prob[0,0]": prob[ag_idx][0,0], ag_idx+"prob[0,1]": prob[ag_idx][0,1], ag_idx+"prob[1,0]": prob[ag_idx][1,0], ag_idx+"prob[1,1]": prob[ag_idx][1,1]}
                     df_loss = {ag_idx+"loss": losses[ag_idx]}
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
@@ -190,6 +197,10 @@ def objective(args, repo_name, trial=None):
                         }
                 if ('df_agent' in locals() ):
                     wandb.log(df_agent, step=epoch, commit=False)
+            dff_prob00 = {"avg_prob["+str(mf)+",0,0]": avg_distrib[idx_m,0,0] for idx_m, mf in enumerate(config.mult_fact) }
+            dff_prob01 = {"avg_prob["+str(mf)+",0,1]": avg_distrib[idx_m,0,0] for idx_m, mf in enumerate(config.mult_fact) }
+            dff_prob10 = {"avg_prob["+str(mf)+",1,0]": avg_distrib[idx_m,0,0] for idx_m, mf in enumerate(config.mult_fact) }
+            dff_prob11 = {"avg_prob["+str(mf)+",1,1]": avg_distrib[idx_m,0,0] for idx_m, mf in enumerate(config.mult_fact) }
             dff = {
                 "epoch": epoch,
                 "avg_rep": avg_rep,
@@ -198,7 +209,7 @@ def objective(args, repo_name, trial=None):
                 "weighted_average_coop": torch.mean(torch.stack([avg_i for _, avg_i in avg_rew.items()])) # only on the agents that played, of course
                 }
             if (config.non_dummy_idxs != []): 
-                dff = {**dff, **dff_coop_per_mf}
+                dff = {**dff, **dff_coop_per_mf, **dff_prob00, **dff_prob01, **dff_prob10, **dff_prob11}
             wandb.log(dff,
                 step=epoch, commit=True)
 
