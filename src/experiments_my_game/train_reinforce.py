@@ -201,9 +201,9 @@ def objective(args, repo_name, trial=None):
                 if ('df_agent' in locals() ):
                     wandb.log(df_agent, step=epoch, commit=False)
             dff_prob00 = {"avg_prob["+str(mf)+",0,0]": avg_distrib[idx_m,0,0] for idx_m, mf in enumerate(config.mult_fact) }
-            dff_prob01 = {"avg_prob["+str(mf)+",0,1]": avg_distrib[idx_m,0,0] for idx_m, mf in enumerate(config.mult_fact) }
-            dff_prob10 = {"avg_prob["+str(mf)+",1,0]": avg_distrib[idx_m,0,0] for idx_m, mf in enumerate(config.mult_fact) }
-            dff_prob11 = {"avg_prob["+str(mf)+",1,1]": avg_distrib[idx_m,0,0] for idx_m, mf in enumerate(config.mult_fact) }
+            dff_prob01 = {"avg_prob["+str(mf)+",0,1]": avg_distrib[idx_m,0,1] for idx_m, mf in enumerate(config.mult_fact) }
+            dff_prob10 = {"avg_prob["+str(mf)+",1,0]": avg_distrib[idx_m,1,0] for idx_m, mf in enumerate(config.mult_fact) }
+            dff_prob11 = {"avg_prob["+str(mf)+",1,1]": avg_distrib[idx_m,1,1] for idx_m, mf in enumerate(config.mult_fact) }
             dff = {
                 "epoch": epoch,
                 "avg_rep": avg_rep,

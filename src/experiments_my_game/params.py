@@ -142,10 +142,13 @@ def setup_training_hyperparams(args, trial):
             c4 = 0  #trial.suggest_float("c4", 0.0001, 0.1, log=True),
         )
     elif (args.algorithm == "dqn"):
+        obs_size = 2
+        if (args.reputation_enabled == 0):
+            obs_size = 1
         algo_params = dict(
-            obs_size = 2, # mult factor and reputation of opponent
+            obs_size = obs_size, # mult factor and reputation of opponent
             n_episodes = 10000,
-            num_game_iterations = 500, # K 
+            num_game_iterations = 200, # K 
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,

@@ -104,6 +104,12 @@ class DQN():
         with torch.no_grad():
             out = self.policy_act.get_distribution(state)
             return out
+        
+    def get_action_values(self, state):
+
+        with torch.no_grad():
+            out = self.policy_act.get_values(state)
+            return out
 
     def append_to_replay(self, s, a, r, s_, d):
         self.memory._states[self.memory.i] = s
