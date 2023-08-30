@@ -94,7 +94,7 @@ class Reinforce():
             dist[state.long(),:] = self.policy_act.get_distribution(state.view(-1,self.input_act))
         return dist
 
-    def update(self):
+    def update1(self):
 
         batch_reward = self.memory._rewards
         #print("batch_reward=", batch_reward)
@@ -126,7 +126,7 @@ class Reinforce():
 
         return policy_loss.detach()
     
-    def cccupdate1(self):
+    def update(self):
 
         batch_reward = self.memory._rewards
 

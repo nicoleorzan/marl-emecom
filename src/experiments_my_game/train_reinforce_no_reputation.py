@@ -61,7 +61,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
             actions[agent] = a
 
         # reward
-        _, rewards, done, _ = parallel_env.step(actions)
+        _, rewards, done, _ = parallel_env.step1(actions)
         if (config.introspective == True):
             rewards = introspective_rewards(config, active_agents, parallel_env, rewards, actions)
 
@@ -162,7 +162,7 @@ def objective(args, repo_name, trial=None):
                     #print("ag_idx=",ag_idx, "rep=", rep)
                     #print("prob[ag_idx][:,int(rep),:]=",prob[ag_idx][:,int(rep),:])
                     prob[ag_idx] = agent.read_distrib(possible_states,len(config.mult_fact)).detach()
-        #print("prob=", prob)
+        print("prob=", prob)
         stacked = torch.stack([val for ag_idx, val in prob.items()])
         #print("stacked=", stacked, stacked.shape)
         avg_distrib = torch.mean(stacked, dim=0)
