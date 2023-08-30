@@ -51,6 +51,8 @@ class Reinforce():
 
         self.eps = np.finfo(np.float32).eps.item()
 
+        self.eps_batch = 0.00001
+
     def reset(self):
         self.memory.reset()
         self.memory.i = 0
@@ -129,13 +131,15 @@ class Reinforce():
     def update(self):
 
         batch_reward = self.memory._rewards
+        #print("batch_rew=", batch_reward)
 
         policy_loss = []
 
         if (len(batch_reward) > 1):
-            batch_reward = (batch_reward - batch_reward.min()) / (batch_reward.max() - batch_reward.min())
+            batch_reward = (batch_reward - batch_reward.min()) / (batch_reward.max() - batch_reward.min() + self.eps_batch)
+            #print("batch_rew=", batch_reward)
         for log_prob, rew in zip(self.memory._logprobs, batch_reward):
-            print("-logprob=", -log_prob, ", rew=", rew)
+            #print("-logprob=", -log_prob, ", rew=", rew)
             val = -log_prob * rew
             policy_loss.append(val.reshape(1))
 
