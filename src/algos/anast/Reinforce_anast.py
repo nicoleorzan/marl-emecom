@@ -135,6 +135,7 @@ class Reinforce():
         if (len(batch_reward) > 1):
             batch_reward = (batch_reward - batch_reward.min()) / (batch_reward.max() - batch_reward.min())
         for log_prob, rew in zip(self.memory._logprobs, batch_reward):
+            print("-logprob=", -log_prob, ", rew=", rew)
             val = -log_prob * rew
             policy_loss.append(val.reshape(1))
 
