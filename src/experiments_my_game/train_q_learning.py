@@ -154,7 +154,9 @@ def objective(args, repo_name, trial=None):
 
         if (config.wandb_mode == "online" and float(epoch)%10. == 0.):
             for ag_idx, agent in active_agents.items():
+                #print("Agent=",ag_idx)
                 if (agent.is_dummy == False):
+                    #print("agent.Q=",agent.Q)
                     df_avg_coop = dict((ag_idx+"avg_coop_mf"+str(mf), coop_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)
                     df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
                     if (len(config.mult_fact) == 1):
@@ -167,6 +169,12 @@ def objective(args, repo_name, trial=None):
                         df_Q2 = dict((ag_idx+"Q["+str(mf)+",0,1]", agent.Q[imf,0,1] ) for imf, mf in enumerate(config.mult_fact))
                         df_Q3 = dict((ag_idx+"Q["+str(mf)+",1,0]", agent.Q[imf,1,0] ) for imf, mf in enumerate(config.mult_fact))
                         df_Q4 = dict((ag_idx+"Q["+str(mf)+",1,1]", agent.Q[imf,1,1] ) for imf, mf in enumerate(config.mult_fact))
+                    #print("df_Q1=",df_Q1)
+                    #print("df_Q2=",df_Q2)
+                    #print("df_Q3=",df_Q3)
+                    #print("df_Q4=",df_Q4)
+                    #print("df_Q1['agent_Q[0.5,0,0]']=",df_Q1[str(ag_idx)+"Q[0.5,0,0]"])
+                    #print("df_Q2['agent_Q[0.5,0,1]']=",df_Q2[str(ag_idx)+"Q[0.5,0,1]"])
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
                         'epoch': epoch}, 
