@@ -111,7 +111,7 @@ class Reinforce():
 
         returns = torch.tensor(returns)
         if (len(returns) > 1):
-            returns = (returns - returns.min()) / (returns.max() - returns.min())
+            returns = (returns - returns.min()) / (returns.max() - returns.min() + self.eps_batch )
             #returns = (returns - returns.mean()) / (returns.std() + self.epsilon)
         #print("norm returns=", returns)
 

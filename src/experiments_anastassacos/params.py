@@ -132,7 +132,7 @@ def setup_training_hyperparams(args, trial):
     elif (args.algorithm == "dqn"):
         algo_params = dict(
             obs_size = 1,
-            n_episodes = 10000,
+            n_episodes = 6000,
             num_game_iterations = 500, # K 
             gamma = 0.99,
             chi = 0.0001,

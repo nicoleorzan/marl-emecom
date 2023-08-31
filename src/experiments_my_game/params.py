@@ -147,7 +147,7 @@ def setup_training_hyperparams(args, trial):
             obs_size = 1
         algo_params = dict(
             obs_size = obs_size, # mult factor and reputation of opponent
-            n_episodes = 10000,
+            n_episodes = 6000,
             num_game_iterations = 200, # K 
             gamma = 0.99,
             chi = 0.0001,
