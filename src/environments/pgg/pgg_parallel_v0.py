@@ -126,6 +126,7 @@ class parallel_env(ParallelEnv):
         
     def observe(self):
 
+        #print("uncertainties_dict",self.uncertainties_dict)
         self.observations = {}
         for agent in self.active_agents:
             d = normal.Normal(torch.Tensor([self.current_multiplier]), torch.Tensor([self.uncertainties_dict[agent]+self.uncertainty_eps])) # is not var, is std. wrong name I put
@@ -143,6 +144,9 @@ class parallel_env(ParallelEnv):
 
     def get_multiplier(self):
         return round(torch.Tensor([self.current_multiplier]).item(),2)
+    
+    def set_multiplier(self, mf_input):
+        self.current_multiplier = mf_input
            
     def reset(self, mult_in=None):
         """
