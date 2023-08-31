@@ -162,7 +162,7 @@ def objective(args, repo_name, trial=None):
                 wandb.finish()
                 raise optuna.exceptions.TrialPruned()
 
-        if (config.wandb_mode == "online" and float(epoch)%10. == 0.):
+        if (config.wandb_mode == "online" and float(epoch)%30. == 0.):
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
                     df_avg_coop = dict((ag_idx+"avg_coop_mf"+str(mf), coop_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)

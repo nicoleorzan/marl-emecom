@@ -152,7 +152,7 @@ def objective(args, repo_name, trial=None):
                 wandb.finish()
                 raise optuna.exceptions.TrialPruned()
 
-        if (config.wandb_mode == "online" and float(epoch)%10. == 0.):
+        if (config.wandb_mode == "online" and float(epoch)%30. == 0.):
             for ag_idx, agent in active_agents.items():
                 #print("Agent=",ag_idx)
                 if (agent.is_dummy == False):

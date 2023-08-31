@@ -26,10 +26,13 @@ def define_agents(config):
 def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False, mf_input=None):
     # By default this is a training loop
 
+    _ = parallel_env.reset()
+    mf = parallel_env.current_multiplier
+
     if (_eval == True):
-        observations = parallel_env.reset(mf_input)
+        observations = {ag_idx: torch.Tensor([config.mult_fact.index(mf_input)]) for ag_idx, _ in active_agents.items()}
     else:
-        observations = parallel_env.reset()
+        observations = {ag_idx: torch.Tensor([config.mult_fact.index(mf)]) for ag_idx, _ in active_agents.items()}
 
     #print("observations=",observations)
     rewards_dict = {}
@@ -149,7 +152,7 @@ def objective(args, repo_name, trial=None):
                 wandb.finish()
                 raise optuna.exceptions.TrialPruned()
 
-        if (config.wandb_mode == "online" and float(epoch)%10. == 0.):
+        if (config.wandb_mode == "online" and float(epoch)%30. == 0.):
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
                     df_avg_coop = dict((ag_idx+"avg_coop_mf"+str(mf), coop_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)
