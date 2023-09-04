@@ -50,6 +50,8 @@ class SocialNorm():
         # agent that cooperates with good agents, and does not cooperate with bad ones is good
         for ag_idx in active_agents_idxs:
             #print("agent=", ag_idx)
+            #if (agents["agent_"+str(ag_idx)].is_dummy == True):
+            #    #print("agent is dummy")
             agent = self.agents["agent_"+str(ag_idx)]
             
             #print("reputation before=", agent.reputation)
@@ -72,22 +74,72 @@ class SocialNorm():
                         agent.reputation = torch.Tensor([0.0])
                     else: 
                         agent.reputation = torch.Tensor([1.0])
-
-                var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
-                if (var == 1):
-                    if (agent.reputation == torch.Tensor([1.0])):
-                        agent.reputation = torch.Tensor([0.0])
-                    elif (agent.reputation == torch.Tensor([0.0])):
-                        agent.reputation = torch.Tensor([1.0])
+                
+                if (agents["agent_"+str(ag_idx)].is_dummy == False):
+                    var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
+                    if (var == 1):
+                        if (agent.reputation == torch.Tensor([1.0])):
+                            agent.reputation = torch.Tensor([0.0])
+                        elif (agent.reputation == torch.Tensor([0.0])):
+                            agent.reputation = torch.Tensor([1.0])
 
             #print("new reputation=", agent.reputation)
 
-        for ag_idx in active_agents_idxs:       
+        #print("UPDATING ALL REPUTATIONS")
+        for ag_idx in active_agents_idxs:     
             agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
+            if (agents["agent_"+str(ag_idx)].is_dummy == True):
+                assert(agents["agent_"+str(ag_idx)].reputation == torch.Tensor([1.0]))
 
         self.reset_saved_actions()
-        if (agent.is_dummy == True):
-            assert(agent.reputation == torch.Tensor([1.0]))
+
+    def rule09_binary_pgg(self, agents, active_agents_idxs, mf):
+        # agent that cooperates with good agents, and does not cooperate with bad ones is good
+        for ag_idx in active_agents_idxs:
+            #print("agent=", ag_idx)
+            #if (agents["agent_"+str(ag_idx)].is_dummy == True):
+            #    #print("agent is dummy")
+            agent = self.agents["agent_"+str(ag_idx)]
+            
+            #print("reputation before=", agent.reputation)
+            agent.old_reputation = agent.reputation
+            if (self.saved_actions[ag_idx] != []):
+                other_idx = list(set(active_agents_idxs) - set([agent.idx]))[0]
+                other = self.agents["agent_"+str(other_idx)]
+                #print("other.reputation=", other.old_reputation)
+                #print("self.saved_actions[ag_idx]=",self.saved_actions[ag_idx])
+                avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
+                #print("my_cooperation_level=",avg_cooperation_level)
+
+                if (mf > 1.):
+                    if (avg_cooperation_level >= self.cooperation_threshold):
+                        if (other.old_reputation == 1.):
+                            agent.reputation = torch.Tensor([1.0])
+                        else: 
+                            agent.reputation = torch.Tensor([0.0])
+                    else: 
+                        if (other.old_reputation == 1.):
+                            agent.reputation = torch.Tensor([0.0])
+                        else: 
+                            agent.reputation = torch.Tensor([1.0])
+                
+                if (agents["agent_"+str(ag_idx)].is_dummy == False):
+                    var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
+                    if (var == 1):
+                        if (agent.reputation == torch.Tensor([1.0])):
+                            agent.reputation = torch.Tensor([0.0])
+                        elif (agent.reputation == torch.Tensor([0.0])):
+                            agent.reputation = torch.Tensor([1.0])
+
+            #print("new reputation=", agent.reputation)
+
+        #print("UPDATING ALL REPUTATIONS")
+        for ag_idx in active_agents_idxs:     
+            agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
+            if (agents["agent_"+str(ag_idx)].is_dummy == True):
+                assert(agents["agent_"+str(ag_idx)].reputation == torch.Tensor([1.0]))
+
+        self.reset_saved_actions()
 
     def rule00_binary(self, agents, active_agents_idxs):
         # agent that never cooperates (baseline)

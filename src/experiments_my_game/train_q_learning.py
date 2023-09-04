@@ -71,7 +71,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
                     actions_dict["agent_"+str(ag_idx)].append(actions["agent_"+str(ag_idx)])
 
         social_norm.save_actions(actions, active_agents_idxs)
-        social_norm.rule09_binary(active_agents, active_agents_idxs)
+        social_norm.rule09_binary_pgg(active_agents, active_agents_idxs, parallel_env.current_multiplier)
 
         # next state
         next_states = {}

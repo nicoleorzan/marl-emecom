@@ -44,7 +44,7 @@ class NormativeAgent():
     def select_opponent(self, reputations):
         return random.randint(0, self.n_agents-1)
 
-    def select_action(self,_eval=False):
+    def select_action(self, _eval=False):
         
         if (hasattr(self, 'state_act')):
             self.opponent_reputation = self.state_act[0]

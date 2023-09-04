@@ -33,7 +33,7 @@ if __name__ == '__main__':
         
     parser.add_argument('--gmm_', type=int, default=0)
     parser.add_argument('--optuna_', type=int, default=0)
-    parser.add_argument('--reputation_enabled', type=int, default=0)
+    parser.add_argument('--reputation_enabled', type=int, default=1)
     parser.add_argument('--num_game_iterations', type=int, default=1)
     parser.add_argument('--reputation_in_reward', type=int, default=0)
     parser.add_argument('--obs_size', type=int, default=4)
