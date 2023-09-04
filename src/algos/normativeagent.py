@@ -59,7 +59,7 @@ class NormativeAgent():
 
         return action
         
-    def update(self):
+    def update(self, _iter=None):
         pass
 
     def update1(self):
