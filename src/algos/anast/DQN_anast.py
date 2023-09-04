@@ -70,7 +70,6 @@ class DQN():
         self.memory.i = 0
 
     def argmax(self, q_values):
-        #print("qvals=", q_values)
         top = torch.Tensor([-10000000])
         ties = []
 

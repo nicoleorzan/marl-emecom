@@ -44,7 +44,8 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         next_states[idx_agent] = observations[idx_agent]
 
     done = False
-    for _ in range(config.num_game_iterations):
+    for i in range(config.num_game_iterations):
+        #print("i=", i)
 
         # state
         actions = {}; states = next_states

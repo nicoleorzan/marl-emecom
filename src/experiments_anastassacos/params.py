@@ -136,7 +136,7 @@ def setup_training_hyperparams(args, trial):
             num_game_iterations = 500, # K 
             gamma = 0.99,
             chi = 0.0001,
-            epsilon = 0.01,
+            epsilon = 0.01, # 0.1 + decay, geometric decay
             n_hidden_act = 1,
             hidden_size_act = 4,
             lr_actor = 0.001,
