@@ -121,7 +121,7 @@ class Q_learning_agent():
                     self.Q[state[0], action] += self.lr_actor*(reward - self.Q[state[0], action])
                 else:
                     #print("mfs more than 1")
-                    self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
+                    self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
             else:
                 if (len(self.mult_fact) == 1 or self.obs_size == 1):
                     #print("here") 
@@ -129,7 +129,7 @@ class Q_learning_agent():
                 else:
                     #print("self.Q=",self.Q)
                     #print("self.Q[state[0], state[1], action]=",self.Q[state[0], state[1], action])
-                    #print("torch.max(torch.take(self.Q, next_state))=",torch.max(torch.take(self.Q, next_state)))
+                    #print("self.Q[state[0], state[1], action]=",self.Q[state[0], state[1], action])
                     self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
                     #self.Q[state[0], state[1], action] += self.lr_actor*(reward + self.gamma*torch.max(torch.take(self.Q, next_state)) - self.Q[state[0], state[1], action])
 

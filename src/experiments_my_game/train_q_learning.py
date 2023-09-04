@@ -124,12 +124,14 @@ def objective(args, repo_name, trial=None):
         parallel_env.set_active_agents(active_agents_idxs)
 
         # TRAIN
+        #print("train")
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
         for ag_idx, agent in active_agents.items():
             agent.update()
 
+        #print("eval")
         # evaluation step
         for mf_input in config.mult_fact:
             avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, True, mf_input)
@@ -153,7 +155,7 @@ def objective(args, repo_name, trial=None):
             for ag_idx, agent in active_agents.items():
                 #print("Agent=",ag_idx)
                 if (agent.is_dummy == False):
-                    #print("agent.Q=",agent.Q)
+                    print("agent.Q=",agent.Q)
                     df_avg_coop = dict((ag_idx+"avg_coop_mf"+str(mf), coop_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)
                     df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
                     if (len(config.mult_fact) == 1):

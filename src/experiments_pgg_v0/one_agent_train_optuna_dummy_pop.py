@@ -1,6 +1,6 @@
 from src.environments import pgg_parallel_v0
 from src.algos.Reinforce import Reinforce
-from src.algos.DQN import DQN
+from src.algos.DQN_old import DQN
 from src.algos.PPO import PPO
 import numpy as np
 import optuna
