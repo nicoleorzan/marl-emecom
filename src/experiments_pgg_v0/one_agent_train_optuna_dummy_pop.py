@@ -12,7 +12,7 @@ from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
 import src.analysis.utils as U
 from src.experiments_pgg_v0.utils_train_reinforce import eval, find_max_min, apply_norm
-from src.algos.normativeagent import NormativeAgent
+from src.algos.normativeagent_old import NormativeAgent
 from social_norm import SocialNorm
 from params import setup_training_hyperparams
 

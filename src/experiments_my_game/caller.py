@@ -1,11 +1,8 @@
 import argparse
 import ast
 from src.experiments_my_game.train_reinforce import train_reinforce
-from src.experiments_my_game.train_reinforce_no_reputation import train_reinforce_no_reputation
 from src.experiments_my_game.train_q_learning import train_q_learning
-from src.experiments_my_game.train_q_learning_no_reputation import train_q_learning_no_reputation
 from src.experiments_my_game.train_dqn import train_dqn
-from src.experiments_my_game.train_dqn_no_reputation import train_dqn_no_reputation
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -33,7 +30,6 @@ if __name__ == '__main__':
         
     parser.add_argument('--gmm_', type=int, default=0)
     parser.add_argument('--optuna_', type=int, default=0)
-    parser.add_argument('--reputation_enabled', type=int, default=1)
     parser.add_argument('--num_game_iterations', type=int, default=1)
     parser.add_argument('--reputation_in_reward', type=int, default=0)
     parser.add_argument('--obs_size', type=int, default=4)
@@ -61,19 +57,8 @@ if __name__ == '__main__':
     assert(len(args.listening_agents) == args.n_agents)
 
     if args.algorithm == "dqn":
-        if args.reputation_enabled == 0:
-            train_dqn_no_reputation(args)
-        else:
-            train_dqn(args)
-
+        train_dqn(args)
     elif args.algorithm == "reinforce":
-        if args.reputation_enabled == 0:
-            train_reinforce_no_reputation(args)
-        else:
-            train_reinforce(args)
-            
+        train_reinforce(args)    
     elif args.algorithm == "q-learning":
-        if args.reputation_enabled == 0:
-            train_q_learning_no_reputation(args)
-        else:
-            train_q_learning(args)
+        train_q_learning(args)

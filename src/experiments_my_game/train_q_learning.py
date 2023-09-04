@@ -6,7 +6,7 @@ from optuna.trial import TrialState
 import torch
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
-from src.algos.anast.normativeagent_anast import NormativeAgent
+from src.algos.normativeagent import NormativeAgent
 from src.utils.social_norm import SocialNorm
 from src.utils.utils import pick_agents_idxs, introspective_rewards
 from src.experiments_my_game.params import setup_training_hyperparams
@@ -26,13 +26,10 @@ def define_agents(config):
 def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False, mf_input=None):
     # By default this is a training loop
 
-    _ = parallel_env.reset()
-    mf = parallel_env.current_multiplier
-
     if (_eval == True):
-        observations = {ag_idx: torch.Tensor([config.mult_fact.index(mf_input)]) for ag_idx, _ in active_agents.items()}
+        observations = parallel_env.reset(mf_input)
     else:
-        observations = {ag_idx: torch.Tensor([config.mult_fact.index(mf)]) for ag_idx, _ in active_agents.items()}
+        observations = parallel_env.reset()
 
     #print("observations=",observations)
     rewards_dict = {}

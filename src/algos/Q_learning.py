@@ -30,12 +30,9 @@ class Q_learning_agent():
 
         # Action Policy
         self.max_value = max(self.mult_fact)*self.coins_value/(1.-self.gamma)
-        print("self.reputation_enabled=",self.reputation_enabled)
         if (len(self.mult_fact) == 1):
             input_Q = (self.obs_size, self.action_size)
-        if (self.reputation_enabled == 0):
-            input_Q = (len(self.mult_fact), self.action_size)
-        else:
+        else: 
             input_Q = (len(self.mult_fact), self.obs_size, self.action_size)
         self.Q = torch.full(input_Q, self.max_value, dtype=float)
         print("self.Q=", self.Q)
@@ -132,11 +129,9 @@ class Q_learning_agent():
                 else:
                     #print("self.Q=",self.Q)
                     #print("self.Q[state[0], state[1], action]=",self.Q[state[0], state[1], action])
-                    #print("self.Q[state, action]=",self.Q[state, action])
                     #print("torch.max(torch.take(self.Q, next_state))=",torch.max(torch.take(self.Q, next_state)))
-                    self.Q[state[0], state[1], action] += self.lr_actor*(reward  + self.gamma*torch.max(torch.take(self.Q, next_state)) - self.Q[state[0], state[1], action])
-                    #self.Q[state, action] += self.lr_actor*(reward + self.gamma*torch.max(torch.take(self.Q, next_state)) - self.Q[state, action])
+                    self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
+                    #self.Q[state[0], state[1], action] += self.lr_actor*(reward + self.gamma*torch.max(torch.take(self.Q, next_state)) - self.Q[state[0], state[1], action])
 
         self.memory.memory = []
         self.reset()
-        #print("agent=", self.idx, "Q=", self.Q)

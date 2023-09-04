@@ -6,7 +6,7 @@ from optuna.trial import TrialState
 import torch
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
-from src.algos.anast.normativeagent_anast import NormativeAgent
+from src.algos.normativeagent import NormativeAgent
 from src.utils.social_norm import SocialNorm
 from src.utils.utils import pick_agents_idxs, introspective_rewards
 from src.experiments_my_game.params import setup_training_hyperparams
@@ -38,10 +38,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     states = {}; next_states = {}
     for idx_agent, agent in active_agents.items():
         other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
-        if (agent.is_dummy == True):
-            next_states[idx_agent] = other.reputation
-        else:
-            next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
+        next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
 
     done = False
     for _ in range(config.num_game_iterations):
@@ -79,10 +76,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         next_states = {}
         for idx_agent, agent in active_agents.items():
             other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
-            if (agent.is_dummy == True):
-                next_states[idx_agent] = other.reputation
-            else:
-                next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
+            next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
 
         if (_eval == False):
             # save iteration            
