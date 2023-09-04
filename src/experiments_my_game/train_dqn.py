@@ -131,7 +131,7 @@ def objective(args, repo_name, trial=None):
         # update agents
         losses = {}
         for ag_idx, agent in active_agents.items():
-            losses[ag_idx] = agent.update()
+            losses[ag_idx] = agent.update(epoch)
 
         # evaluation step
         for mf_input in config.mult_fact:
