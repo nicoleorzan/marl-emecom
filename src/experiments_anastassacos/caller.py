@@ -33,7 +33,6 @@ if __name__ == '__main__':
     parser.add_argument('--d_value', type=float, default=0.)
     parser.add_argument('--coins_value', type=float, default=4.)
     parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
-    parser.add_argument('--alternative', type=float, default=0.)
     parser.add_argument('--binary_reputation', type=int, default=1) # 1 yes 0 no
     parser.add_argument('--wandb_mode', type=str, choices = ["online", "offline"], default="offline")
     parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn", "q-learning"], default="reinforce")

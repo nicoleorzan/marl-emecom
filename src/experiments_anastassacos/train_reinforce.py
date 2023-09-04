@@ -129,10 +129,7 @@ def objective(args, repo_name, trial=None):
         # update agents
         losses = {}
         for ag_idx, agent in active_agents.items():
-            if (config.alternative == 1):
-                losses[ag_idx] = agent.update1()
-            else: 
-                losses[ag_idx] = agent.update()
+            losses[ag_idx] = agent.update1()
 
         # evaluation step
         avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=True)
