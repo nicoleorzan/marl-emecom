@@ -1,10 +1,9 @@
-
-from src.algos.agent import Agent
-from src.algos.buffer import DQNBuffer
-from src.nets.Actor import Actor
+from src.algos.anast.Actor import Actor
 import copy
 import torch
+import random
 import torch.nn as nn
+from collections import namedtuple
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -15,118 +14,191 @@ if(torch.cuda.is_available()):
 else:
     print("Device set to : cpu")
 
+Transition = namedtuple('Transition',
+                        ('state', 'action', 'next_state', 'reward'))
 
-class DQN(Agent):
+class ExperienceReplayMemory:
+    def __init__(self, params):
 
+        for key, val in params.items(): setattr(self, key, val)
+        self.capacity = self.num_game_iterations
+        self.reset()
+
+    def reset(self):
+        self._states = torch.empty((self.capacity,self.obs_size))
+        self._actions = torch.empty((self.capacity,1))
+        self._rewards = torch.empty((self.capacity,1))
+        self._next_states = torch.empty((self.capacity,self.obs_size))
+        self._dones = torch.empty((self.capacity,1), dtype=torch.bool)
+        self.i = 0
+
+    def __len__(self):
+        return len(self._states)
+
+
+class DQN():
     def __init__(self, params, idx=0):
-        Agent.__init__(self, params, idx)
 
-        opt_params = []
+        for key, val in params.items(): setattr(self, key, val)
+
+        self.input_act = self.obs_size
 
         self.policy_act = Actor(params=params, input_size=self.input_act, output_size=self.action_size, \
-            n_hidden=self.n_hidden_act, hidden_size=self.hidden_size_act, gmm=self.gmm_).to(device)
+            n_hidden=self.n_hidden_act, hidden_size=self.hidden_size_act).to(device)
         self.policy_act_target = copy.deepcopy(self.policy_act).to(device)
         self.policy_act_target.load_state_dict(self.policy_act.state_dict())
 
-        opt_params.append({'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor})
-
-        if (self.is_communicating):
-            self.policy_comm = Actor(params=params, input_size=self.input_comm, output_size=self.mex_size, \
-                n_hidden=self.n_hidden_comm, hidden_size=self.hidden_size_comm, gmm=self.gmm_).to(device)
-            self.policy_comm_target = copy.deepcopy(self.policy_comm).to(device)
-            self.policy_comm_target.load_state_dict(self.policy_comm.state_dict())
-            
-            opt_params.append({'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm})
-
-        self.buffer = DQNBuffer(self.memory_size)
-
-        self.optimizer = torch.optim.Adam(opt_params)
+        self.optimizer = torch.optim.RMSprop(self.policy_act.parameters())
+        self.memory = ExperienceReplayMemory(params)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
-    def update(self):
-        #print("update")
+        self.reputation = torch.Tensor([1.])
+        self.old_reputation = self.reputation
+        self.previous_action = torch.Tensor([1.])
 
-        if self.buffer.len_() < self.batch_size:
-            return
+        self.is_dummy = False
+        self.idx = idx
+        self.batch_size = self.num_game_iterations
+
+        self.action_selections = [0 for _ in range(self.action_size)]
+        self.action_log_frequency = 1.
+
+        self.update_count = 0
+        self.eps0 = self.epsilon
+        print("self.epsilon=", self.epsilon)
+        self.r = 0.99
+
+    def reset(self):
+        self.memory.reset()
+        self.memory.i = 0
+
+    def argmax(self, q_values):
+        top = torch.Tensor([-10000000])
+        ties = []
+
+        for i in range(len(q_values)):
+            if q_values[i] > top:
+                top = q_values[i]
+                ties = []
+
+            if q_values[i] == top:
+                ties.append(i)
+
+        return random.choice(ties)
+        
+    def select_action(self, _eval=False):
+        self.state_act = self.state_act.view(-1,self.input_act)
+
+        if (_eval == True):
+            #print("action selected with argmax bc EVAL=TRUE")
+            action = self.argmax(self.policy_act.get_values(state=self.state_act)[0])
+            
+        elif (_eval == False):
+            if torch.rand(1) < self.epsilon:
+                action = random.choice([i for i in range(self.action_size)])
+            else:
+                action = self.argmax(self.policy_act.get_values(state=self.state_act)[0])
+                
+        return torch.Tensor([action])
     
-        transitions = self.buffer.sample(self.batch_size)
-        #state_batch, action_batch, reward_batch, next_state_batch, is_terminal = transitions
-        state_batch, action_batch, reward_batch, next_state_batch = transitions
+    def get_action_distribution(self, state):
 
-        # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
-        # detailed explanation). This converts batch-array of Transitions
-        # to Transition of batch-arrays.
-        #batch = Transition(*zip(*transitions))
+        with torch.no_grad():
+            out = self.policy_act.get_distribution(state)
+            return out
+        
+    def get_action_values(self, state):
 
-        # Compute a mask of non-final states and concatenate the batch elements
-        # (a final state would've been the one after which simulation ended)
-        #non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-        #                                        next_state_batch)), device=device, dtype=torch.bool)
-        #non_final_next_states = torch.cat([s for s in next_state_batch
-        #                                            if s is not None])
-        #print("before state_batch=", state_batch)
-        #state_batch = torch.Tensor(state_batch)
-        #print("after cat=", state_batch)
+        with torch.no_grad():
+            out = self.policy_act.get_values(state)
+            return out
 
-        #b = torch.Tensor(len(state_batch), 3, 1)
-        #torch.cat(state_batch, out=b)
-        #print("b=", b )
+    def append_to_replay(self, s, a, r, s_, d):
+        self.memory._states[self.memory.i] = s
+        self.memory._actions[self.memory.i] = a
+        self.memory._rewards[self.memory.i] = r
+        self.memory._next_states[self.memory.i] = s_
+        self.memory._dones[self.memory.i] = d
+        self.memory.i += 1
 
-        state_batch = torch.stack(state_batch) #torch.cat(state_batch.unsqueeze(0))
-        #print("\nstate_batch=", state_batch, state_batch.shape)
-        next_state_batch = torch.stack(next_state_batch) #torch.cat(next_state_batch).unsqueeze(1)
-        #print("next_state_batch=", next_state_batch, next_state_batch.shape)
-        action_batch = torch.stack(action_batch)
-        #print("action_batch", action_batch, action_batch.shape)
-        #print("before reward_batch=", reward_batch)
-        #reward_batch = torch.cat(reward_batch)
-        # Normalizing the rewards
-        reward_batch = torch.tensor(reward_batch, dtype=torch.float32).to(device)
-        reward_batch = (reward_batch - reward_batch.mean()) / (reward_batch.std() + 1e-7)
-        #print("after reward_batch=", reward_batch, reward_batch.shape)
+    def prep_minibatch(self):
+        batch_state = self.memory._states
+        batch_action = self.memory._actions.long()
+        batch_reward = self.memory._rewards
+        batch_next_state = self.memory._next_states
+        
+        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch_next_state)), device=self.device, dtype=torch.uint8)
+        try: #sometimes all next states are false
+            non_final_next_states = torch.tensor([s for s in batch_next_state if s is not None], device=self.device, dtype=torch.float).view(-1,1)
+            empty_next_state_values = False
+        except:
+            non_final_next_states = None
+            empty_next_state_values = True
 
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
-        # columns of actions taken. These are the actions which would've been taken
-        # for each batch state according to policy_net
-        state_action_values = self.policy_act.get_values(state_batch).gather(1, action_batch.unsqueeze(1))
-        #print("intermed state act val=", state_action_values, state_action_values.shape)
-        #state_action_values = state_action_values.gather(1, action_batch.unsqueeze(1))
-        #print("state act val=", state_action_values, state_action_values.shape)
+        return batch_state, batch_action, batch_reward, non_final_next_states, non_final_mask, empty_next_state_values
+    
+    def read_q_matrix(self):
+        possible_states = torch.Tensor([[0.], [1.]])
+        Q = torch.full((2, 2),  0.)
+        for state in possible_states:
+            Q[state.long(),:] = self.policy_act.get_values(state.view(-1,1))
+        return Q
 
-        # Compute V(s_{t+1}) for all next states.
-        # Expected values of actions for non_final_next_states are computed based
-        # on the "older" target_net; selecting their best reward with max(1)[0].
-        # This is merged based on the mask, such that we'll have either the expected
-        # state value or 0 in case the state was final.
-        #next_state_values = torch.zeros(self.batch_size, device=device)
-        #with torch.no_grad():
-        #    next_state_values = self.policy_act_target.get_values(next_state_batch).max(1)[0]
-        # Compute the expected Q values
-        #print("next_state_values=",next_state_values)
-        #next_state_values = torch.zeros(next_state_values.shape)
-        #print("next_state_values=",next_state_values)
-        expected_state_action_values = reward_batch # = (next_state_values * self.gamma) + reward_batch
-        #print("expected_state_action_values=",expected_state_action_values)
+    def compute_loss(self, batch_vars):
+        batch_state, batch_action, batch_reward, non_final_next_states, non_final_mask, empty_next_state_values = batch_vars
+    
+        current_q_values = self.policy_act.get_values(batch_state)
+        current_q_values = torch.gather(current_q_values, dim=1, index=batch_action)
+        
+        #compute target
+        with torch.no_grad():
+            max_next_q_values = torch.zeros(self.batch_size, device=self.device, dtype=torch.float).unsqueeze(dim=1)
+            if not empty_next_state_values:
+                max_next_action = self.get_max_next_state_action(non_final_next_states)
+                dist = self.policy_act_target.get_distribution(state=non_final_next_states) #.act(state=non_final_next_states, greedy=False, get_distrib=True)
+                max_next_q_values[non_final_mask] = dist.gather(1, max_next_action)
+            expected_q_values = batch_reward# + self.gamma*max_next_q_values
 
-        # Compute Huber loss
-        criterion = nn.SmoothL1Loss()
-        loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-        self.saved_losses.append(torch.mean(loss.detach()))
+        diff = (expected_q_values - current_q_values)
+        loss = self.MSE(diff)
+        loss = loss.mean()
 
-        # Optimize the model
+        return loss
+
+    def update(self, _iter):
+
+        batch_vars = self.prep_minibatch()
+
+        loss = self.compute_loss(batch_vars)
+
         self.optimizer.zero_grad()
         loss.backward()
-        # In-place gradient clipping
-        torch.nn.utils.clip_grad_value_(self.policy_act.parameters(), 100)
         self.optimizer.step()
 
-        target_net_state_dict = self.policy_act_target.state_dict()
-        policy_net_state_dict = self.policy_act.state_dict()
-        #for key in policy_net_state_dict:
-        #    target_net_state_dict[key] = policy_net_state_dict[key]*self.tau + target_net_state_dict[key]*(1-self.tau)
-        self.policy_act_target.load_state_dict(target_net_state_dict)
+        self.update_target_model()
 
+        self.reset()
         self.scheduler.step()
-        #print(self.scheduler.get_lr())
+        #print("LR=",self.scheduler.get_last_lr())
 
-        #self.reset()
+        #modif exploration
+        if (self.epsilon >= 0.01):
+            self.epsilon = self.eps0*self.r**(_iter-1.)
+        #print("self.epsilon=",self.epsilon)
+
+        return loss.detach()
+
+    def update_target_model(self):
+        self.update_count += 1
+        self.update_count = self.update_count % self.target_net_update_freq
+        if self.update_count == 0:
+            print("updating target model")
+            self.policy_act_target.load_state_dict(self.policy_act.state_dict())
+
+    def get_max_next_state_action(self, next_states):
+        dist = self.policy_act_target.get_distribution(state=next_states) ##.act(state=next_states, greedy=False, get_distrib=True)
+        max_vals = dist.max(dim=1)[1].view(-1, 1)
+        return max_vals
+    
+    def MSE(self, x):
+        return 0.5 * x.pow(2)

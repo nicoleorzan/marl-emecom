@@ -1,5 +1,5 @@
 from src.environments import pgg_parallel_v0
-from src.algos.anast.DQN_anast import DQN
+from src.algos.DQN import DQN
 import numpy as np
 import optuna
 from optuna.trial import TrialState
