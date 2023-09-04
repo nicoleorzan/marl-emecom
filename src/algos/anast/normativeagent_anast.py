@@ -58,7 +58,7 @@ class NormativeAgent():
 
         return action
         
-    def update(self):
+    def update(self, epoch=None):
         pass
 
     def update1(self):

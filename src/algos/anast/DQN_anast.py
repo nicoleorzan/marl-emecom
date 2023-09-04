@@ -64,6 +64,9 @@ class DQN():
         self.action_log_frequency = 1.
 
         self.update_count = 0
+        self.eps0 = self.epsilon
+        print("self.epsilon=", self.epsilon)
+        self.r = 0.99
 
     def reset(self):
         self.memory.reset()
@@ -162,7 +165,7 @@ class DQN():
 
         return loss
 
-    def update(self):
+    def update(self, _iter):
 
         batch_vars = self.prep_minibatch()
 
@@ -175,6 +178,13 @@ class DQN():
         self.update_target_model()
 
         self.reset()
+        self.scheduler.step()
+        #print("LR=",self.scheduler.get_last_lr())
+
+        #modif exploration
+        if (self.epsilon >= 0.01):
+            self.epsilon = self.eps0*self.r**(_iter-1.)
+        #print("self.epsilon=",self.epsilon)
 
         return loss.detach()
 
