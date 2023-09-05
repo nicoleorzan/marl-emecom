@@ -75,21 +75,21 @@ class SocialNorm():
                     else: 
                         agent.reputation = torch.Tensor([1.0])
                 
-                if (agents["agent_"+str(ag_idx)].is_dummy == False):
-                    var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
-                    if (var == 1):
-                        if (agent.reputation == torch.Tensor([1.0])):
-                            agent.reputation = torch.Tensor([0.0])
-                        elif (agent.reputation == torch.Tensor([0.0])):
-                            agent.reputation = torch.Tensor([1.0])
+                #if (agents["agent_"+str(ag_idx)].is_dummy == False):
+                var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
+                if (var == 1):
+                    if (agent.reputation == torch.Tensor([1.0])):
+                        agent.reputation = torch.Tensor([0.0])
+                    elif (agent.reputation == torch.Tensor([0.0])):
+                        agent.reputation = torch.Tensor([1.0])
 
             #print("new reputation=", agent.reputation)
 
         #print("UPDATING ALL REPUTATIONS")
         for ag_idx in active_agents_idxs:     
             agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
-            if (agents["agent_"+str(ag_idx)].is_dummy == True):
-                assert(agents["agent_"+str(ag_idx)].reputation == torch.Tensor([1.0]))
+            #if (agents["agent_"+str(ag_idx)].is_dummy == True):
+            #    assert(agents["agent_"+str(ag_idx)].reputation == torch.Tensor([1.0]))
 
         self.reset_saved_actions()
 
