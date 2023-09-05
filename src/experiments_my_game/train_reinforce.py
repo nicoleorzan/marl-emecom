@@ -141,7 +141,13 @@ def objective(args, repo_name, trial=None):
         # update agents
         losses = {}
         for ag_idx, agent in active_agents.items():
-            losses[ag_idx] = agent.update()
+            if (agent.is_dummy == True): 
+                losses[ag_idx] = agent.update()
+            else:
+                if (config.use_return == 1):
+                    losses[ag_idx] = agent.update_return()
+                else:
+                    losses[ag_idx] = agent.update_reward()
 
         # evaluation step
         #print("eval")

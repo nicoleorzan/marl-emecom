@@ -96,7 +96,7 @@ class Reinforce():
             dist[state.long(),:] = self.policy_act.get_distribution(state.view(-1,self.input_act))
         return dist
 
-    def update1(self):
+    def update_return(self):
 
         batch_reward = self.memory._rewards
         #print("batch_reward=", batch_reward)
@@ -128,7 +128,7 @@ class Reinforce():
 
         return policy_loss.detach()
     
-    def update(self):
+    def update_reward(self):
 
         batch_reward = self.memory._rewards
         #print("batch_rew=", batch_reward)
@@ -136,7 +136,7 @@ class Reinforce():
         policy_loss = []
 
         if (len(batch_reward) > 1):
-            batch_reward1 = (batch_reward - batch_reward.min()) / (batch_reward.max() - batch_reward.min() + self.eps_batch)
+            #batch_reward1 = (batch_reward - batch_reward.min()) / (batch_reward.max() - batch_reward.min() + self.eps_batch)
             #print("batch_rew=", batch_reward1)
             batch_reward = (batch_reward - batch_reward.min()) / (batch_reward.std() + self.eps_batch)
             #print("or batch_rew=", batch_reward)
