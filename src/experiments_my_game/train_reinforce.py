@@ -58,6 +58,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
                 logprobs[agent] = logp
             actions[agent] = a
         #print("actions=", actions)
+        #print("logprobs=",logprobs)
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)

@@ -136,8 +136,11 @@ class Reinforce():
         policy_loss = []
 
         if (len(batch_reward) > 1):
-            batch_reward = (batch_reward - batch_reward.min()) / (batch_reward.max() - batch_reward.min() + self.eps_batch)
-            #print("batch_rew=", batch_reward)
+            batch_reward1 = (batch_reward - batch_reward.min()) / (batch_reward.max() - batch_reward.min() + self.eps_batch)
+            #print("batch_rew=", batch_reward1)
+            batch_reward = (batch_reward - batch_reward.min()) / (batch_reward.std() + self.eps_batch)
+            #print("or batch_rew=", batch_reward)
+            #print("logprobs=",self.memory._logprobs)
         for log_prob, rew in zip(self.memory._logprobs, batch_reward):
             #print("-logprob=", -log_prob, ", rew=", rew)
             val = -log_prob * rew
