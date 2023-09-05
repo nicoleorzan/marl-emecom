@@ -140,9 +140,12 @@ class Q_learning_agent():
             #print("Q=", self.Q)
             #print("self.Q[state[0], state[1], action]=", self.Q[state[0], state[1], action])
             #print("next_state=", next_state)
-            if (done):
-                self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
-            else:
+            if (self.use_return == 1):
+                if (done):
+                    self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
+                else:
+                    self.Q[state[0], state[1], action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state[0], next_state[1], :]) - self.Q[state[0], state[1], action])
+            else: 
                 self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
 
         self.memory.memory = []

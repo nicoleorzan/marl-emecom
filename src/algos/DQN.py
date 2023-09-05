@@ -157,7 +157,10 @@ class DQN():
                 max_next_action = self.get_max_next_state_action(non_final_next_states)
                 dist = self.policy_act_target.get_distribution(state=non_final_next_states) #.act(state=non_final_next_states, greedy=False, get_distrib=True)
                 max_next_q_values[non_final_mask] = dist.gather(1, max_next_action)
-            expected_q_values = batch_reward# + self.gamma*max_next_q_values
+            if (self.use_return == 1):
+                expected_q_values = batch_reward + self.gamma*max_next_q_values
+            else:
+                expected_q_values = batch_reward# + self.gamma*max_next_q_values
 
         diff = (expected_q_values - current_q_values)
         loss = self.MSE(diff)
