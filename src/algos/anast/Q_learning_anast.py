@@ -30,6 +30,7 @@ class Q_learning_agent():
 
         # Action Policy
         self.max_value = (self.b_value)/(1.-self.gamma)
+        print("self.max_value=", self.max_value)
 
         input_Q = (self.obs_size, self.action_size)
         self.Q = torch.full(input_Q, self.max_value, dtype=float)
@@ -67,9 +68,12 @@ class Q_learning_agent():
         self.state_act = torch.Tensor([opponent_reputation])
 
     def select_action(self, _eval=False):
-        
+        #print("SELECT ACTION")
         state_to_act = self.state_act
+        #print("state=", state_to_act)
+        #print("Q=", self.Q)
         current_q = self.Q[state_to_act[0].long(),:]
+        #print("current_q=", current_q)
         assert(current_q.shape == torch.Size([self.action_size]))
 
         if (_eval == True):
@@ -90,17 +94,24 @@ class Q_learning_agent():
         pass
     
     def update(self):
+        #print("\nIN UPDATE")
         
         for i in range(self.num_game_iterations):
             state, action, reward, next_state, done = self.memory.memory[i]
             state = state.long()
             action = action.long()
             next_state = next_state.long()
+            #print("state=", state)
+            #print("action=", action)
+            #print("next_state=", next_state)
+            #print("Q=", self.Q)
+            #print("self.Q[state, action]=", self.Q[state, action])
+            #print("self.Q[next_state,:]=",self.Q[next_state,:])
+            #print("torch.max(self.Q[next_state,:][0])=", torch.max(self.Q[next_state,:][0]))
             if (done):
                 self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
             else:
                 self.Q[state, action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state,:][0]) - self.Q[state, action])
-                #self.Q[state, action] += self.lr_actor*(reward + self.gamma*self.argmax(self.Q[next_state,:][0]) - self.Q[state, action])
 
         self.memory.memory = []
         self.reset()
