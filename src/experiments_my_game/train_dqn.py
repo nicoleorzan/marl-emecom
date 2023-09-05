@@ -39,6 +39,8 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     for idx_agent, agent in active_agents.items():
         other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
         next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
+        if (agent.is_dummy == True): 
+            next_states[idx_agent] = torch.cat((torch.Tensor([parallel_env.current_multiplier]), other.reputation))
 
     done = False
     for _ in range(config.num_game_iterations):
@@ -77,6 +79,8 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         for idx_agent, agent in active_agents.items():
             other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
             next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
+            if (agent.is_dummy == True): 
+                next_states[idx_agent] = torch.cat((torch.Tensor([parallel_env.current_multiplier]), other.reputation))
 
         if (_eval == False):
             # save iteration            
