@@ -65,16 +65,19 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         actions = {}; states = next_states
         for idx_agent, agent in active_agents.items():
             agent.state_act = states[idx_agent]
+        #print("states=", states)
         
         # action
         for agent in parallel_env.active_agents:
             a = active_agents[agent].select_action(_eval)
             actions[agent] = a
+        #print("actions=", actions)
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
         if (config.introspective == True):
             rewards = introspective_rewards(config, active_agents, parallel_env, rewards, actions)
+        #print("rewards=", rewards)
 
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
