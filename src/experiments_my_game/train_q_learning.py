@@ -23,6 +23,19 @@ def define_agents(config):
             agents['agent_'+str(idx)] = NormativeAgent(config, idx)
     return agents
 
+def to_idx(mult_fact, val):
+    return mult_fact.index(val)
+
+
+def modif_obs_qlearning(mult_fact, observations, agents):
+    observations1 = {}
+    for ag_idx, _ in agents.items():
+        obs = np.round(observations[ag_idx].numpy(),2)
+        observations1[ag_idx] = torch.Tensor([to_idx(mult_fact, obs)])
+    return observations1
+
+
+
 def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False, mf_input=None):
     # By default this is a training loop
 
@@ -30,8 +43,11 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         observations = parallel_env.reset(mf_input)
     else:
         observations = parallel_env.reset()
+    #print("observations before=",observations)
+    #print("config.mult_fact=",config.mult_fact)
+    observations = modif_obs_qlearning(config.mult_fact, observations, active_agents)
 
-    #print("observations=",observations)
+    #print("observations after=",observations)
     rewards_dict = {}
     actions_dict = {}
         
@@ -41,7 +57,9 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
 
     done = False
-    for _ in range(config.num_game_iterations):
+    for i in range(config.num_game_iterations):
+        #if (i%2 == 0):
+        #    print("i=", i)
 
         # state
         actions = {}; states = next_states
@@ -124,14 +142,15 @@ def objective(args, repo_name, trial=None):
         parallel_env.set_active_agents(active_agents_idxs)
 
         # TRAIN
-        #print("train")
+        #print("\nTRAIN")
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
+        #print("UPDATE")
         for ag_idx, agent in active_agents.items():
             agent.update()
 
-        #print("eval")
+        #print("\nEVAL")
         # evaluation step
         for mf_input in config.mult_fact:
             avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, True, mf_input)
@@ -168,12 +187,7 @@ def objective(args, repo_name, trial=None):
                         df_Q2 = dict((ag_idx+"Q["+str(mf)+",0,1]", agent.Q[imf,0,1] ) for imf, mf in enumerate(config.mult_fact))
                         df_Q3 = dict((ag_idx+"Q["+str(mf)+",1,0]", agent.Q[imf,1,0] ) for imf, mf in enumerate(config.mult_fact))
                         df_Q4 = dict((ag_idx+"Q["+str(mf)+",1,1]", agent.Q[imf,1,1] ) for imf, mf in enumerate(config.mult_fact))
-                    #print("df_Q1=",df_Q1)
-                    #print("df_Q2=",df_Q2)
-                    #print("df_Q3=",df_Q3)
-                    #print("df_Q4=",df_Q4)
-                    #print("df_Q1['agent_Q[0.5,0,0]']=",df_Q1[str(ag_idx)+"Q[0.5,0,0]"])
-                    #print("df_Q2['agent_Q[0.5,0,1]']=",df_Q2[str(ag_idx)+"Q[0.5,0,1]"])
+
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
                         'epoch': epoch}, 

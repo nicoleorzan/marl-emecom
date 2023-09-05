@@ -72,6 +72,7 @@ class Q_learning_agent():
         
         state_to_act = self.state_act
         #print("self.state_act=",self.state_act)
+        #print("Q=", self.Q)
         if (self.obs_size == 1):
             current_q = self.Q[state_to_act[0].long(),:]
         else:
@@ -115,23 +116,18 @@ class Q_learning_agent():
             #print("action=", action)
             #print("next_state=", next_state)
             if (done):
-                #print("done")
-                if (len(self.mult_fact) == 1 or self.obs_size == 1): 
-                    #print("mfs 1")
-                    self.Q[state[0], action] += self.lr_actor*(reward - self.Q[state[0], action])
-                else:
-                    #print("mfs more than 1")
-                    self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
+                #if (len(self.mult_fact) == 1 or self.obs_size == 1): 
+                #    #print("mfs 1")
+                #    self.Q[state[0], action] += self.lr_actor*(reward - self.Q[state[0], action])
+                #else:
+                #    #print("mfs more than 1")
+                self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
             else:
-                if (len(self.mult_fact) == 1 or self.obs_size == 1):
-                    #print("here") 
-                    self.Q[state[0], action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state,:][0])  - self.Q[state[0], action])
-                else:
-                    #print("self.Q=",self.Q)
-                    #print("self.Q[state[0], state[1], action]=",self.Q[state[0], state[1], action])
-                    #print("self.Q[state[0], state[1], action]=",self.Q[state[0], state[1], action])
-                    self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
-                    #self.Q[state[0], state[1], action] += self.lr_actor*(reward + self.gamma*torch.max(torch.take(self.Q, next_state)) - self.Q[state[0], state[1], action])
+                #if (len(self.mult_fact) == 1 or self.obs_size == 1):
+                #    #print("here") 
+                #    self.Q[state[0], action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state,:][0])  - self.Q[state[0], action])
+                #else:
+                self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
 
         self.memory.memory = []
         self.reset()
