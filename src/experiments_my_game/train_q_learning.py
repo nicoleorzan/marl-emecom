@@ -55,12 +55,13 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     for idx_agent, agent in active_agents.items():
         other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
         if (config.reputation_enabled == 1):
-            if (len(config.mult_fact)>1):
-                next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
+            if (len(config.mult_fact) >1 ):
+                next_states[idx_agent] = torch.cat((other.reputation, observations[idx_agent]))
             else: 
                 next_states[idx_agent] = other.reputation
         else: 
-            next_states[idx_agent] = observations[idx_agent]
+            if (len(config.mult_fact) > 1 ):
+                next_states[idx_agent] = observations[idx_agent]
 
     done = False
     for i in range(config.num_game_iterations):
@@ -101,11 +102,12 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
             other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
             if (config.reputation_enabled == 1):
                 if (len(config.mult_fact)>1):
-                    next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
+                    next_states[idx_agent] = torch.cat((other.reputation, observations[idx_agent]))
                 else: 
                     next_states[idx_agent] = other.reputation
             else: 
-                next_states[idx_agent] = observations[idx_agent]
+                if (len(config.mult_fact) > 1 ):
+                    next_states[idx_agent] = observations[idx_agent]
 
         if (_eval == False):
             # save iteration            
@@ -208,10 +210,10 @@ def objective(args, repo_name, trial=None):
                             df_Q3 = dict(())
                             df_Q4 = dict(())
                         else: 
-                            df_Q1 = dict((ag_idx+"Q["+str(mf)+",0,0]", agent.Q[imf,0,0] ) for imf, mf in enumerate(config.mult_fact))
-                            df_Q2 = dict((ag_idx+"Q["+str(mf)+",0,1]", agent.Q[imf,0,1] ) for imf, mf in enumerate(config.mult_fact))
-                            df_Q3 = dict((ag_idx+"Q["+str(mf)+",1,0]", agent.Q[imf,1,0] ) for imf, mf in enumerate(config.mult_fact))
-                            df_Q4 = dict((ag_idx+"Q["+str(mf)+",1,1]", agent.Q[imf,1,1] ) for imf, mf in enumerate(config.mult_fact))
+                            df_Q1 = dict((ag_idx+"Q[0,"+str(mf)+",0]", agent.Q[0,imf,0] ) for imf, mf in enumerate(config.mult_fact))
+                            df_Q2 = dict((ag_idx+"Q[0,"+str(mf)+",1]", agent.Q[0,imf,1] ) for imf, mf in enumerate(config.mult_fact))
+                            df_Q3 = dict((ag_idx+"Q[1,"+str(mf)+",0]", agent.Q[1,imf,0] ) for imf, mf in enumerate(config.mult_fact))
+                            df_Q4 = dict((ag_idx+"Q[1,"+str(mf)+",1]", agent.Q[1,imf,1] ) for imf, mf in enumerate(config.mult_fact))
 
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,

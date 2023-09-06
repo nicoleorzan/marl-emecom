@@ -82,7 +82,7 @@ class Q_learning_agent():
             if (len(self.mult_fact) == 1):
                 current_q = self.Q[:]
             else: 
-                current_q = self.Q[self.state_act[0].long(),:] #conly m factor
+                current_q = self.Q[self.state_act[0].long(),:] # Only m factor
         else:
             if (len(self.mult_fact) == 1):
                 current_q = self.Q[self.state_act[0].long(), :] # only reputation
