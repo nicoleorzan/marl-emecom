@@ -29,7 +29,7 @@ class Q_learning_agent():
         print("\nAgent", self.idx)
 
         # Action Policy
-        self.max_value = max(self.mult_fact)*self.coins_value/(1.-self.gamma)
+        self.max_value = max(self.mult_fact)/(1.-self.gamma)
 
         if (self.reputation_enabled == 0): 
             if (len(self.mult_fact) == 1):
