@@ -76,8 +76,8 @@ class Q_learning_agent():
         self.state_act = torch.Tensor([opponent_reputation])
     
     def select_current_q(self):
-        print("self.state_act=",self.state_act)
-        print("Q=", self.Q)
+        #print("self.state_act=",self.state_act)
+        #print("Q=", self.Q)
         if (self.reputation_enabled == 0): 
             if (len(self.mult_fact) == 1):
                 current_q = self.Q[:]
@@ -88,7 +88,7 @@ class Q_learning_agent():
                 current_q = self.Q[self.state_act[0].long(), :] # only reputation
             else: 
                 current_q = self.Q[self.state_act[0].long(), self.state_act[1].long(), :] 
-        print("current_q=", current_q)
+        #print("current_q=", current_q)
         return current_q
 
     
@@ -155,12 +155,5 @@ class Q_learning_agent():
                     else:
                         self.Q[state[0], state[1], action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state[0], next_state[1], :]) - self.Q[state[0], state[1], action])
 
-
-
-            """if (done):
-                self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
-            else:
-                self.Q[state[0], state[1], action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state[0], next_state[1], :]) - self.Q[state[0], state[1], action])
-            """
         self.memory.memory = []
         self.reset()

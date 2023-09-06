@@ -43,8 +43,8 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     else:
         observations = parallel_env.reset()
     
-    print("config.mult_fact=",config.mult_fact)
-    print("observations before=",observations)
+    #print("config.mult_fact=",config.mult_fact)
+    #print("observations before=",observations)
     observations = modif_obs_qlearning(config.mult_fact, observations, active_agents)
 
     #print("observations after=",observations)
@@ -69,19 +69,19 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         actions = {}; states = next_states
         for idx_agent, agent in active_agents.items():
             agent.state_act = states[idx_agent]
-        print("states=", states)
+        #print("states=", states)
         
         # action
         for agent in parallel_env.active_agents:
             a = active_agents[agent].select_action(_eval)
             actions[agent] = a
-        print("actions=", actions)
+        #print("actions=", actions)
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
         if (config.introspective == True):
             rewards = introspective_rewards(config, active_agents, parallel_env, rewards, actions)
-        print("rewards=", rewards)
+        #print("rewards=", rewards)
 
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
@@ -155,15 +155,15 @@ def objective(args, repo_name, trial=None):
         parallel_env.set_active_agents(active_agents_idxs)
 
         # TRAIN
-        print("\nTRAIN")
+        #print("\nTRAIN")
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
-        print("UPDATE")
+        #print("UPDATE")
         for ag_idx, agent in active_agents.items():
             agent.update()
 
-        print("\nEVAL")
+        #print("\nEVAL")
         # evaluation step
         for mf_input in config.mult_fact:
             avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, True, mf_input)
@@ -187,7 +187,7 @@ def objective(args, repo_name, trial=None):
             for ag_idx, agent in active_agents.items():
                 #print("Agent=",ag_idx)
                 if (agent.is_dummy == False):
-                    print("agent.Q=",agent.Q)
+                    #print("agent.Q=",agent.Q)
                     df_avg_coop = dict((ag_idx+"avg_coop_mf"+str(mf), coop_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)
                     df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
                     if (len(config.mult_fact) == 1):
