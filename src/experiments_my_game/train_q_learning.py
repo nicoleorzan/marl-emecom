@@ -60,14 +60,15 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
             else: 
                 next_states[idx_agent] = other.reputation
         else: 
-            if (len(config.mult_fact) > 1 ):
-                next_states[idx_agent] = observations[idx_agent]
+            next_states[idx_agent] = observations[idx_agent]
+    #print("nextst=", next_states)
 
     done = False
     for i in range(config.num_game_iterations):
 
         # state
         actions = {}; states = next_states
+        #print("states=", states)
         for idx_agent, agent in active_agents.items():
             agent.state_act = states[idx_agent]
         #print("states=", states)
@@ -106,8 +107,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
                 else: 
                     next_states[idx_agent] = other.reputation
             else: 
-                if (len(config.mult_fact) > 1 ):
-                    next_states[idx_agent] = observations[idx_agent]
+                next_states[idx_agent] = observations[idx_agent]
 
         if (_eval == False):
             # save iteration            
