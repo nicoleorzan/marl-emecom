@@ -32,9 +32,9 @@ if __name__ == '__main__':
     parser.add_argument('--optuna_', type=int, default=0)
     parser.add_argument('--num_game_iterations', type=int, default=1)
     parser.add_argument('--reputation_in_reward', type=int, default=0)
+    parser.add_argument('--reputation_enabled', type=int, default=0)
     parser.add_argument('--obs_size', type=int, default=4)
     parser.add_argument('--coins_value', type=float, default=4.)
-    parser.add_argument('--use_return', type=float, default=0)
     parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
     parser.add_argument('--binary_reputation', type=int, default=1) # 1 yes 0 no
     parser.add_argument('--wandb_mode', type=str, choices = ["online", "offline"], default="offline")
@@ -56,6 +56,8 @@ if __name__ == '__main__':
     assert(len(args.uncertainties) == args.n_agents)
     assert(len(args.communicating_agents) == args.n_agents)
     assert(len(args.listening_agents) == args.n_agents)
+    if (args.reputation_enabled == 0):
+        assert(args.proportion_dummy_agents == 0)
 
     if args.algorithm == "dqn":
         train_dqn(args)

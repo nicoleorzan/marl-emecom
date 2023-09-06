@@ -98,7 +98,6 @@ def setup_training_hyperparams(args, trial):
         obs_size = 2 # m factor and reputation
         algo_params = dict(
             obs_size = obs_size,
-            use_return = args.use_return,
             n_episodes = 10000,
             num_game_iterations = 100, # K 
             gamma = 0.99,
@@ -109,6 +108,7 @@ def setup_training_hyperparams(args, trial):
             hidden_size_act = hidden_size_a,
             decayRate = 0.999,
             alpha = 0.1, # introspection level
+            reputation_enabled = args.reputation_enabled,
             introspective = False
         )
     elif (args.algorithm == "PPO"):
@@ -143,7 +143,6 @@ def setup_training_hyperparams(args, trial):
         algo_params = dict(
             obs_size = obs_size, # mult factor and reputation of opponent
             n_episodes = 6000,
-            use_return = args.use_return,
             num_game_iterations = 200, # K 
             gamma = 0.99,
             chi = 0.0001,
@@ -154,6 +153,7 @@ def setup_training_hyperparams(args, trial):
             lr_actor = 0.0001,
             decayRate = 0.999,
             target_net_update_freq = 30,
+            reputation_enabled = args.reputation_enabled,
             alpha = 0.1, # introspection level
             introspective = False
         )
@@ -161,14 +161,14 @@ def setup_training_hyperparams(args, trial):
         obs_size = 2  # m factor and reputation
         algo_params = dict(
             obs_size = obs_size,
-            use_return = args.use_return,
             n_episodes = 10000,
-            num_game_iterations = 200, # K 
+            num_game_iterations = 10, # K 
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
             lr_actor = 0.01,
             alpha = 0.1, # introspection level
+            reputation_enabled = args.reputation_enabled,
             introspective = False
         )
 

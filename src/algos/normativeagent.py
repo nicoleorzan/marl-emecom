@@ -45,10 +45,13 @@ class NormativeAgent():
         return random.randint(0, self.n_agents-1)
 
     def select_action(self, _eval=False):
+        if (self.reputation_enabled == 0):
+            print("CANNOT USE DUMMY AGENTS, THERE IS NO REPUTATION")
+            return
         
         if (hasattr(self, 'state_act')):
             self.mf = self.state_act[0]
-            self.opponent_reputation = self.state_act[1]
+            self.opponent_reputation = self.state_act[0]
         action = torch.Tensor([0.])
         
         #print("self.opponent_reputation=", self.opponent_reputation)

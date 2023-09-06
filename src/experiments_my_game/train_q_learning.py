@@ -35,7 +35,6 @@ def modif_obs_qlearning(mult_fact, observations, agents):
     return observations1
 
 
-
 def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False, mf_input=None):
     # By default this is a training loop
 
@@ -43,8 +42,9 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         observations = parallel_env.reset(mf_input)
     else:
         observations = parallel_env.reset()
-    #print("observations before=",observations)
-    #print("config.mult_fact=",config.mult_fact)
+    
+    print("config.mult_fact=",config.mult_fact)
+    print("observations before=",observations)
     observations = modif_obs_qlearning(config.mult_fact, observations, active_agents)
 
     #print("observations after=",observations)
@@ -54,30 +54,34 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     states = {}; next_states = {}
     for idx_agent, agent in active_agents.items():
         other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
-        next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
+        if (config.reputation_enabled == 1):
+            if (len(config.mult_fact)>1):
+                next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
+            else: 
+                next_states[idx_agent] = other.reputation
+        else: 
+            next_states[idx_agent] = observations[idx_agent]
 
     done = False
     for i in range(config.num_game_iterations):
-        #if (i%2 == 0):
-        #    print("i=", i)
 
         # state
         actions = {}; states = next_states
         for idx_agent, agent in active_agents.items():
             agent.state_act = states[idx_agent]
-        #print("states=", states)
+        print("states=", states)
         
         # action
         for agent in parallel_env.active_agents:
             a = active_agents[agent].select_action(_eval)
             actions[agent] = a
-        #print("actions=", actions)
+        print("actions=", actions)
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
         if (config.introspective == True):
             rewards = introspective_rewards(config, active_agents, parallel_env, rewards, actions)
-        #print("rewards=", rewards)
+        print("rewards=", rewards)
 
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
@@ -95,7 +99,13 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         next_states = {}
         for idx_agent, agent in active_agents.items():
             other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
-            next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
+            if (config.reputation_enabled == 1):
+                if (len(config.mult_fact)>1):
+                    next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
+                else: 
+                    next_states[idx_agent] = other.reputation
+            else: 
+                next_states[idx_agent] = observations[idx_agent]
 
         if (_eval == False):
             # save iteration            
@@ -145,15 +155,15 @@ def objective(args, repo_name, trial=None):
         parallel_env.set_active_agents(active_agents_idxs)
 
         # TRAIN
-        #print("\nTRAIN")
+        print("\nTRAIN")
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
-        #print("UPDATE")
+        print("UPDATE")
         for ag_idx, agent in active_agents.items():
             agent.update()
 
-        #print("\nEVAL")
+        print("\nEVAL")
         # evaluation step
         for mf_input in config.mult_fact:
             avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, True, mf_input)
