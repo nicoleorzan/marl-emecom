@@ -49,6 +49,7 @@ class SocialNorm():
     def rule09_binary_anast(self, agents, active_agents_idxs):
         # agent that cooperates with good agents, and does not cooperate with bad ones is good
         for ag_idx in active_agents_idxs:
+            #print("agent=", ag_idx)
             agent = self.agents["agent_"+str(ag_idx)]
             
             #print("reputation before=", agent.reputation)
@@ -56,6 +57,7 @@ class SocialNorm():
             if (self.saved_actions[ag_idx] != []):
                 other_idx = list(set(active_agents_idxs) - set([agent.idx]))[0]
                 other = self.agents["agent_"+str(other_idx)]
+                #print("other.reputation=", other.old_reputation)
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
                 #print("my_cooperation_level=",avg_cooperation_level)
 
@@ -70,12 +72,13 @@ class SocialNorm():
                     else: 
                         agent.reputation = torch.Tensor([1.0])
                 
-                var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
-                if (var == 1):
-                    if (agent.reputation == torch.Tensor([1.0])):
-                        agent.reputation = torch.Tensor([0.0])
-                    elif (agent.reputation == torch.Tensor([0.0])):
-                        agent.reputation = torch.Tensor([1.0])
+                if (agent.is_dummy == False):
+                    var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
+                    if (var == 1):
+                        if (agent.reputation == torch.Tensor([1.0])):
+                            agent.reputation = torch.Tensor([0.0])
+                        elif (agent.reputation == torch.Tensor([0.0])):
+                            agent.reputation = torch.Tensor([1.0])
 
             #print("new reputation=", agent.reputation)
 
