@@ -89,11 +89,11 @@ def setup_training_hyperparams(args, trial):
 
         algo_params = dict(
             obs_size = 1,
-            n_episodes = 1000,
+            n_episodes = 10000,
             num_game_iterations = 200, # K 
             gamma = 0.99,
             chi = 0.0001,
-            epsilon = 0.05,
+            epsilon = 0.01,
             lr_actor = 0.01,
             n_hidden_act = 1,
             hidden_size_act = 4,
