@@ -37,6 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--wandb_mode', type=str, choices = ["online", "offline"], default="offline")
     parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn", "q-learning"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
+    parser.add_argument('--optimistic_initial_values', type=int, default=0)
     parser.add_argument('--optimize', type=int, default=0) # 1 for true 0 for false
     parser.add_argument('--addition', type=str, default="")
 

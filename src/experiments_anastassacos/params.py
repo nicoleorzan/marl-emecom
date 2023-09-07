@@ -154,7 +154,8 @@ def setup_training_hyperparams(args, trial):
             epsilon = 0.01,
             lr_actor = 0.01,
             alpha = 0.1, # introspection level
-            introspective = False
+            introspective = False,
+            optimistic_initial_values = args.optimistic_initial_values
         )
 
     n_dummy = int(args.proportion_dummy_agents*args.n_agents)

@@ -29,7 +29,9 @@ class Q_learning_agent():
         print("\nAgent", self.idx)
 
         # Action Policy
-        self.max_value = 0. #(self.b_value)/(1.-self.gamma)
+        self.max_value = 0.
+        if (self.optimistic_initial_values == 1):
+            self.max_value = (self.b_value)/(1.-self.gamma)
         print("self.max_value=", self.max_value)
 
         input_Q = (self.obs_size, self.action_size)
