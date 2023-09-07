@@ -110,13 +110,10 @@ class Reinforce():
         #print("returns=", returns)
 
         returns = torch.tensor(returns)
-        if (len(returns) > 1):
-            returns = (returns - returns.min()) / (returns.max() - returns.min() + self.eps_batch )
-            #returns = (returns - returns.mean()) / (returns.std() + self.epsilon)
-        #print("norm returns=", returns)
-
+        baseline = torch.mean(returns)
+        
         for log_prob, R in zip(self.memory._logprobs, returns):
-            val = -log_prob * R
+            val = -log_prob * (R - baseline)
             policy_loss.append(val.reshape(1))
 
         self.optimizer.zero_grad()
@@ -135,15 +132,10 @@ class Reinforce():
 
         policy_loss = []
 
-        if (len(batch_reward) > 1):
-            #batch_reward1 = (batch_reward - batch_reward.min()) / (batch_reward.max() - batch_reward.min() + self.eps_batch)
-            #print("batch_rew=", batch_reward1)
-            batch_reward = (batch_reward - batch_reward.min()) / (batch_reward.std() + self.eps_batch)
-            #print("or batch_rew=", batch_reward)
-            #print("logprobs=",self.memory._logprobs)
+        baseline = torch.mean(batch_reward)
         for log_prob, rew in zip(self.memory._logprobs, batch_reward):
             #print("-logprob=", -log_prob, ", rew=", rew)
-            val = -log_prob * rew
+            val = -log_prob * (rew - baseline)
             policy_loss.append(val.reshape(1))
 
         self.optimizer.zero_grad()
