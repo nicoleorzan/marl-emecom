@@ -40,7 +40,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
         #next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
         if (agent.is_dummy == True): 
-            next_states[idx_agent] = torch.cat((torch.Tensor([other.reputation, parallel_env.current_multiplier])))
+            next_states[idx_agent] = torch.cat((other.reputation, torch.Tensor([parallel_env.current_multiplier])))
         else: 
             if (config.reputation_enabled == 1):
                 next_states[idx_agent] = torch.cat((other.reputation, observations[idx_agent]))
@@ -90,7 +90,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         for idx_agent, agent in active_agents.items():
             other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
             if (agent.is_dummy == True): 
-                next_states[idx_agent] = torch.cat((torch.Tensor([other.reputation, parallel_env.current_multiplier])))
+                next_states[idx_agent] = torch.cat((other.reputation, torch.Tensor([parallel_env.current_multiplier])))
             else: 
                 if (config.reputation_enabled == 1):
                     next_states[idx_agent] = torch.cat((other.reputation, observations[idx_agent]))

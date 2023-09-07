@@ -18,17 +18,18 @@ Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
 class ExperienceReplayMemory:
-    def __init__(self, params):
+    def __init__(self, params, input_state):
 
         for key, val in params.items(): setattr(self, key, val)
         self.capacity = self.num_game_iterations
+        self.input_state = input_state
         self.reset()
 
     def reset(self):
-        self._states = torch.empty((self.capacity,self.obs_size))
+        self._states = torch.empty((self.capacity,self.input_state))
         self._actions = torch.empty((self.capacity,1))
         self._rewards = torch.empty((self.capacity,1))
-        self._next_states = torch.empty((self.capacity,self.obs_size))
+        self._next_states = torch.empty((self.capacity,self.input_state))
         self._dones = torch.empty((self.capacity,1), dtype=torch.bool)
         self.i = 0
 
@@ -41,7 +42,12 @@ class DQN():
 
         for key, val in params.items(): setattr(self, key, val)
 
-        self.input_act = self.obs_size
+        #self.input_act = self.obs_size
+        if (self.reputation_enabled == 0):
+            self.input_act = 1
+        else: 
+            self.input_act = 2
+        print("input_act=",self.input_act)
 
         self.policy_act = Actor(params=params, input_size=self.input_act, output_size=self.action_size, \
             n_hidden=self.n_hidden_act, hidden_size=self.hidden_size_act).to(device)
@@ -49,7 +55,7 @@ class DQN():
         self.policy_act_target.load_state_dict(self.policy_act.state_dict())
 
         self.optimizer = torch.optim.RMSprop(self.policy_act.parameters())
-        self.memory = ExperienceReplayMemory(params)
+        self.memory = ExperienceReplayMemory(params, self.input_act)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
         self.reputation = torch.Tensor([1.])
@@ -65,7 +71,7 @@ class DQN():
 
         self.update_count = 0
         self.eps0 = self.epsilon
-        print("self.epsilon=", self.epsilon)
+        #print("self.epsilon=", self.epsilon)
         self.r = 0.99
 
     def reset(self):
@@ -87,7 +93,10 @@ class DQN():
         return random.choice(ties)
         
     def select_action(self, _eval=False):
+        #print(" self.state_act=", self.state_act)
+        #print("self.state_act before=", self.state_act.shape)
         self.state_act = self.state_act.view(-1,self.input_act)
+        #print("self.state_act=", self.state_act.shape)
 
         if (_eval == True):
             #print("action selected with argmax bc EVAL=TRUE")
@@ -146,6 +155,7 @@ class DQN():
 
     def compute_loss(self, batch_vars):
         batch_state, batch_action, batch_reward, non_final_next_states, non_final_mask, empty_next_state_values = batch_vars
+        #print("batch_state=",batch_state)
     
         current_q_values = self.policy_act.get_values(batch_state)
         current_q_values = torch.gather(current_q_values, dim=1, index=batch_action)
@@ -157,10 +167,7 @@ class DQN():
                 max_next_action = self.get_max_next_state_action(non_final_next_states)
                 dist = self.policy_act_target.get_distribution(state=non_final_next_states) #.act(state=non_final_next_states, greedy=False, get_distrib=True)
                 max_next_q_values[non_final_mask] = dist.gather(1, max_next_action)
-            if (self.use_return == 1):
-                expected_q_values = batch_reward + self.gamma*max_next_q_values
-            else:
-                expected_q_values = batch_reward# + self.gamma*max_next_q_values
+            expected_q_values = batch_reward + self.gamma*max_next_q_values
 
         diff = (expected_q_values - current_q_values)
         loss = self.MSE(diff)
