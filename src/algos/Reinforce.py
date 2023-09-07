@@ -68,6 +68,7 @@ class Reinforce():
             
     def select_action(self, _eval=False):
 
+        print(" self.state_act", self.state_act)
         self.state_act = self.state_act.view(-1,self.input_act)
         #print("self.state_act=", self.state_act)
 

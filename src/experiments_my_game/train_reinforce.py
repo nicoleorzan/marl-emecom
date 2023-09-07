@@ -43,14 +43,9 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
             next_states[idx_agent] = torch.cat((torch.Tensor([other.reputation, parallel_env.current_multiplier])))
         else: 
             if (config.reputation_enabled == 1):
-                if (len(config.mult_fact) > 1 ):
-                    next_states[idx_agent] = torch.cat((other.reputation, observations[idx_agent]))
-                else: 
-                    next_states[idx_agent] = other.reputation
+                next_states[idx_agent] = torch.cat((other.reputation, observations[idx_agent]))
             else: 
                 next_states[idx_agent] = observations[idx_agent]
-
-
 
     done = False
     for _ in range(config.num_game_iterations):
@@ -98,10 +93,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
                 next_states[idx_agent] = torch.cat((torch.Tensor([other.reputation, parallel_env.current_multiplier])))
             else: 
                 if (config.reputation_enabled == 1):
-                    if (len(config.mult_fact) >1 ):
-                        next_states[idx_agent] = torch.cat((other.reputation, observations[idx_agent]))
-                    else: 
-                        next_states[idx_agent] = other.reputation
+                    next_states[idx_agent] = torch.cat((other.reputation, observations[idx_agent]))
                 else: 
                     next_states[idx_agent] = observations[idx_agent]
            
