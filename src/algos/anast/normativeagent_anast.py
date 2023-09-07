@@ -61,5 +61,8 @@ class NormativeAgent():
     def update1(self):
         pass
 
+    def update_return(self):
+        pass
+
     def get_action_distribution(self):
         return self.reputation
