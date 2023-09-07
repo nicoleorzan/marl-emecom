@@ -68,7 +68,7 @@ class Reinforce():
             
     def select_action(self, _eval=False):
 
-        print(" self.state_act", self.state_act)
+        #print(" self.state_act", self.state_act)
         self.state_act = self.state_act.view(-1,self.input_act)
         #print("self.state_act=", self.state_act)
 
@@ -101,7 +101,7 @@ class Reinforce():
         dist = torch.full((n_possible_states,2),  0.)
         #print("dist=", dist)
         for idx_s, state in enumerate(possible_states):
-            #print("state.long()=",state)
+            #print("state=",state)
             #print("dist[idx_s]=",dist[idx_s])
             #print("state.view(-1,self.input_act)=",state.view(-1,self.input_act))
             #print("self.policy_act.get_distribution(state.view(-1,self.input_act))",self.policy_act.get_distribution(state.view(-1,self.input_act)))
@@ -110,8 +110,8 @@ class Reinforce():
 
     def read_distrib(self, possible_states, n_possible_states):
         dist = torch.full((n_possible_states, 2),  0.)
-        for state in possible_states:
-            dist[state.long(),:] = self.policy_act.get_distribution(state.view(-1,self.input_act))
+        for idx_s, state in enumerate(possible_states):
+            dist[idx_s,:] = self.policy_act.get_distribution(state.view(-1,self.input_act))
         return dist
 
     def update_return(self):

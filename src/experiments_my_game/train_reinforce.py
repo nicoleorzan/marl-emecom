@@ -185,14 +185,17 @@ def objective(args, repo_name, trial=None):
                 #print("\nag_idx=", ag_idx)
                 if (agent.is_dummy == False):
                     if ag_idx not in prob:
-                        prob[ag_idx] = torch.zeros(len(config.mult_fact), 2, 2) # mult fact, poss rep, poss actions
+                        prob[ag_idx] = torch.zeros(2, len(config.mult_fact), 2) # mult fact, poss rep, poss actions
                         #print("prob[ag_idx]=", prob[ag_idx])
                     for rep in possible_reputations:
                         #print("reputation=", rep)
-                        possible_states = torch.stack([torch.Tensor([i, rep]) for i, _ in enumerate(config.mult_fact)])
-                        prob[ag_idx][:,int(rep),:] = agent.read_distrib(possible_states,len(config.mult_fact)).detach()
+                        possible_states = torch.stack([torch.Tensor([rep, mf]) for _, mf in enumerate(config.mult_fact)])
+                        #print("possible_states=", possible_states)
+                        #print("prob[ag_idx][:,int(rep),:]",prob[ag_idx][:,int(rep),:])
+                        #print("agent.read_distrib(possible_states,len(config.mult_fact)).detach()=",agent.read_distrib(possible_states,len(config.mult_fact)).detach())
+                        prob[ag_idx][int(rep),:,:] = agent.read_distrib(possible_states,len(config.mult_fact)).detach()
             #print("prob=", prob)
-            stacked = torch.stack([val for ag_idx, val in prob.items()])
+            stacked = torch.stack([val for _, val in prob.items()])
             #print("stacked=", stacked, stacked.shape)
             avg_distrib = torch.mean(stacked, dim=0)
             #print("avg_distrib=", avg_distrib)
@@ -234,10 +237,10 @@ def objective(args, repo_name, trial=None):
                 dff_prob10 = dict(())
                 dff_prob11 = dict(())
             else:
-                dff_prob00 = {"avg_prob["+str(mf)+",0,0]": avg_distrib[idx_m,0,0] for idx_m, mf in enumerate(config.mult_fact) }
-                dff_prob01 = {"avg_prob["+str(mf)+",0,1]": avg_distrib[idx_m,0,1] for idx_m, mf in enumerate(config.mult_fact) }
-                dff_prob10 = {"avg_prob["+str(mf)+",1,0]": avg_distrib[idx_m,1,0] for idx_m, mf in enumerate(config.mult_fact) }
-                dff_prob11 = {"avg_prob["+str(mf)+",1,1]": avg_distrib[idx_m,1,1] for idx_m, mf in enumerate(config.mult_fact) }
+                dff_prob00 = {"avg_prob[0,"+str(mf)+",0]": avg_distrib[0,idx_m,0] for idx_m, mf in enumerate(config.mult_fact) }
+                dff_prob01 = {"avg_prob[0,"+str(mf)+",1]": avg_distrib[0,idx_m,1] for idx_m, mf in enumerate(config.mult_fact) }
+                dff_prob10 = {"avg_prob[1,"+str(mf)+",0]": avg_distrib[1,idx_m,0] for idx_m, mf in enumerate(config.mult_fact) }
+                dff_prob11 = {"avg_prob[1,"+str(mf)+",1]": avg_distrib[1,idx_m,1] for idx_m, mf in enumerate(config.mult_fact) }
             dff = {
                 "epoch": epoch,
                 "avg_rep": avg_rep,
