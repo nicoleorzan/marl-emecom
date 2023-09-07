@@ -46,6 +46,45 @@ class SocialNorm():
 
         self.reset_saved_actions()
 
+    def rule09_binary_anast(self, agents, active_agents_idxs):
+        # agent that cooperates with good agents, and does not cooperate with bad ones is good
+        for ag_idx in active_agents_idxs:
+            agent = self.agents["agent_"+str(ag_idx)]
+            
+            #print("reputation before=", agent.reputation)
+            agent.old_reputation = agent.reputation
+            if (self.saved_actions[ag_idx] != []):
+                other_idx = list(set(active_agents_idxs) - set([agent.idx]))[0]
+                other = self.agents["agent_"+str(other_idx)]
+                avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
+                #print("my_cooperation_level=",avg_cooperation_level)
+
+                if (avg_cooperation_level == torch.Tensor([1.0])):
+                    if (other.old_reputation == 1.):
+                        agent.reputation = torch.Tensor([1.0])
+                    else: 
+                        agent.reputation = torch.Tensor([0.0])
+                else: 
+                    if (other.old_reputation == 1.):
+                        agent.reputation = torch.Tensor([0.0])
+                    else: 
+                        agent.reputation = torch.Tensor([1.0])
+                
+                var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
+                if (var == 1):
+                    if (agent.reputation == torch.Tensor([1.0])):
+                        agent.reputation = torch.Tensor([0.0])
+                    elif (agent.reputation == torch.Tensor([0.0])):
+                        agent.reputation = torch.Tensor([1.0])
+
+            #print("new reputation=", agent.reputation)
+
+        #print("UPDATING ALL REPUTATIONS")
+        for ag_idx in active_agents_idxs:     
+            agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
+
+        self.reset_saved_actions()
+
     def rule09_binary(self, agents, active_agents_idxs):
         # agent that cooperates with good agents, and does not cooperate with bad ones is good
         for ag_idx in active_agents_idxs:
@@ -88,8 +127,6 @@ class SocialNorm():
         #print("UPDATING ALL REPUTATIONS")
         for ag_idx in active_agents_idxs:     
             agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
-            #if (agents["agent_"+str(ag_idx)].is_dummy == True):
-            #    assert(agents["agent_"+str(ag_idx)].reputation == torch.Tensor([1.0]))
 
         self.reset_saved_actions()
 

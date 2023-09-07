@@ -21,7 +21,7 @@ class Q_learning_agent():
 
         for key, val in params.items(): setattr(self, key, val)
 
-        self.reputation = torch.Tensor([1.0])
+        self.reputation = torch.bernoulli(torch.Tensor([0.5])) #torch.Tensor([1.0])
         self.old_reputation = self.reputation
 
         self.is_dummy = False
@@ -29,7 +29,7 @@ class Q_learning_agent():
         print("\nAgent", self.idx)
 
         # Action Policy
-        self.max_value = (self.b_value)/(1.-self.gamma)
+        self.max_value = 0. #(self.b_value)/(1.-self.gamma)
         print("self.max_value=", self.max_value)
 
         input_Q = (self.obs_size, self.action_size)
@@ -75,6 +75,7 @@ class Q_learning_agent():
         current_q = self.Q[state_to_act[0].long(),:]
         #print("current_q=", current_q)
         assert(current_q.shape == torch.Size([self.action_size]))
+        #print("self.argmax(current_q)=",self.argmax(current_q))
 
         if (_eval == True):
             action = self.argmax(current_q)
@@ -108,10 +109,10 @@ class Q_learning_agent():
             #print("self.Q[state, action]=", self.Q[state, action])
             #print("self.Q[next_state,:]=",self.Q[next_state,:])
             #print("torch.max(self.Q[next_state,:][0])=", torch.max(self.Q[next_state,:][0]))
-            if (done):
-                self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
-            else:
-                self.Q[state, action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state,:][0]) - self.Q[state, action])
+            #if (done):
+            #    self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
+            #else:
+            self.Q[state, action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state,:][0]) - self.Q[state, action])
 
         self.memory.memory = []
         self.reset()

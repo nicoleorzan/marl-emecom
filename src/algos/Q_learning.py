@@ -101,7 +101,6 @@ class Q_learning_agent():
         if (_eval == True):
             action = self.argmax(current_q)
         elif (_eval == False):  
-
             if torch.rand(1) < self.epsilon:
                 #print("RANDOM")
                 action = random.choice([i for i in range(self.action_size)])

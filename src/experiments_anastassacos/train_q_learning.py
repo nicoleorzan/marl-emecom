@@ -34,6 +34,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     for idx_agent, agent in active_agents.items():
         other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
         next_states[idx_agent] = torch.Tensor([other.reputation])
+    #print("nextst=", next_states)
 
     done = False
     for i in range(config.num_game_iterations):
@@ -54,6 +55,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         _, rewards, done, _ = parallel_env.step(actions)
         if (config.introspective == True):
             rewards = introspective_rewards(config, active_agents, parallel_env, rewards, actions)
+        #print("rewards=", rewards)
 
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
@@ -65,7 +67,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
                     actions_dict["agent_"+str(ag_idx)].append(actions["agent_"+str(ag_idx)])
 
         social_norm.save_actions(actions, active_agents_idxs)
-        social_norm.rule09_binary(active_agents, active_agents_idxs)
+        social_norm.rule09_binary_anast(active_agents, active_agents_idxs)
 
         # next state
         next_states = {}
@@ -121,6 +123,7 @@ def objective(args, repo_name, trial=None):
 
         parallel_env.set_active_agents(active_agents_idxs)
         
+        # TRAIN
         #print("\nTRAIN")
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
@@ -129,8 +132,8 @@ def objective(args, repo_name, trial=None):
         for ag_idx, agent in active_agents.items():
             agent.update()
 
-        # evaluation step
         #print("\nEVAL")
+        # evaluation step
         avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=True)
         avg_coop_tot = torch.mean(torch.stack([cop_val for _, cop_val in avg_coop.items()]))
 

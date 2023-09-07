@@ -245,7 +245,7 @@ def objective(args, repo_name, trial=None):
         if (epoch%10 == 0):
             print("\nEpoch : {} \t Measure: {} ".format(epoch, measure))
             print("avg_rew=", {ag_idx:avg_i for ag_idx, avg_i in avg_rew.items()})
-            #print("avg_coop_tot=", avg_coop_tot)
+            print("avg_coop_tot=", avg_coop_tot)
             print("coop_agents_mf=",coop_agents_mf)
             print("dff_coop_per_mf=",dff_coop_per_mf)
     
