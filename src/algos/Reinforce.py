@@ -1,8 +1,8 @@
 
-from src.algos.agent import Agent
-from src.nets.Actor import Actor
+from src.algos.anast.Actor import Actor
 import torch
-import torch.autograd as autograd
+from collections import deque
+from torch.distributions import Categorical
 import numpy as np
 
 class ExperienceReplayMemory:
@@ -22,110 +22,144 @@ class ExperienceReplayMemory:
     def __len__(self):
         return len(self._states)
 
-
-class Reinforce(Agent):
+    
+class Reinforce():
 
     def __init__(self, params, idx=0):
-        Agent.__init__(self, params, idx)
 
-        #opt_params = []
+        for key, val in params.items(): setattr(self, key, val)
+
+        #self.input_act = self.obs_size
+        if (self.reputation_enabled == 0):
+            self.input_act = 1
+        else: 
+            self.input_act = 2
+        print("input_act=",self.input_act)
+
         self.policy_act = Actor(params=params, input_size=self.input_act, output_size=self.action_size, \
-            n_hidden=self.n_hidden_act, hidden_size=self.hidden_size_act, gmm=self.gmm_).to(device)
+            n_hidden=self.n_hidden_act, hidden_size=self.hidden_size_act).to(params.device)
     
-        #opt_params_act = {'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor}
-        #opt_params.append(opt_params_act)
-        self.opt_act = torch.optim.Adam(self.policy_act.parameters(), lr=self.lr_actor)
-        self.scheduler_act = torch.optim.lr_scheduler.ExponentialLR(self.opt_act, gamma=self.decayRate)
+        self.optimizer = torch.optim.Adam(self.policy_act.parameters(), lr=self.lr_actor)
+        self.memory = ExperienceReplayMemory(self.num_game_iterations)
+        self.scheduler_act = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
 
-        if (self.is_communicating):
-            self.policy_comm = Actor(params=params, input_size=self.input_comm, output_size=self.mex_size, \
-                n_hidden=self.n_hidden_comm, hidden_size=self.hidden_size_comm, gmm=self.gmm_).to(device)
-            #opt_params_comm = {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm}
-            #opt_params.append(opt_params_comm)
-            self.opt_comm = torch.optim.Adam(self.policy_comm.parameters(), lr=self.lr_actor_comm)
-            self.scheduler_comm = torch.optim.lr_scheduler.ExponentialLR(self.opt_comm, gamma=self.decayRate)
-        
-        if (self.opponent_selection):
-            self.policy_opponent_selection = Actor(params=params, input_size=self.n_agents, output_size=self.n_agents, \
-                n_hidden=2, hidden_size=self.n_agents, gmm=False).to(device)
-            self.opt_opponent = torch.optim.Adam(self.policy_opponent_selection.parameters(), lr=self.lr_opponent)
-
-        #self.optimizer = torch.optim.Adam(opt_params)
-
-        self.htarget = np.log(self.action_size)/2.
         self.n_update = 0.
         self.baseline = 0.
+
+        self.reputation = torch.Tensor([1.])
+        self.old_reputation = self.reputation
+        self.previous_action = torch.Tensor([1.])
+
+        self.is_dummy = False
+        self.idx = idx
+        self.batch_size = self.num_game_iterations
+
+        self.eps = np.finfo(np.float32).eps.item()
+
+        self.eps_batch = 0.00001
+
+    def reset(self):
+        self.memory.reset()
+        self.memory.i = 0
+
+    def temperature_scaled_softmax(logits, temperature=1.0):
+        logits = logits / temperature
+        return torch.softmax(logits, dim=0)
+            
+    def select_action(self, _eval=False):
+
+        self.state_act = self.state_act.view(-1,self.input_act)
+        #print("self.state_act=", self.state_act)
+
+        out = self.policy_act.get_distribution(state=self.state_act)
+        #print("out=", out)
+        dist = Categorical(out)
+
+        if (_eval == True):
+            act = torch.argmax(out).detach()
+        else:
+            act = dist.sample().detach()
+        logprob = dist.log_prob(act) # negativi
+        #print("act=", act, "logprob=", logprob)
+        
+        return act, logprob
+
+    def get_action_distribution(self, state):
+
+        with torch.no_grad():
+            out = self.policy_act.get_distribution(state)
+            return out
 
     def append_to_replay(self, s, a, r, s_, l, d):
         self.memory._rewards[self.memory.i] = r
         self.memory._logprobs[self.memory.i] = l
         self.memory.i += 1
 
-    def embed_opponent_idx_act(self, idx):
-        out = self.policy_act.embed_opponent_index(idx).t()[0]
-        return out
-    
-    def embed_opponent_idx_comm(self, idx):
-        out = self.policy_comm.embed_opponent_index(idx).t()[0]
-        return out
+    def read_distrib_no_reputation(self, possible_states, n_possible_states):
+        #print("possible_states=",possible_states)
+        dist = torch.full((n_possible_states,2),  0.)
+        #print("dist=", dist)
+        for idx_s, state in enumerate(possible_states):
+            #print("state.long()=",state)
+            #print("dist[idx_s]=",dist[idx_s])
+            #print("state.view(-1,self.input_act)=",state.view(-1,self.input_act))
+            #print("self.policy_act.get_distribution(state.view(-1,self.input_act))",self.policy_act.get_distribution(state.view(-1,self.input_act)))
+            dist[idx_s,:] = self.policy_act.get_distribution(state.view(-1,self.input_act))
+        return dist
 
-    def update(self):
-      
-        rew_norm = self.buffer.rewards_norm # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
-        act_logprobs = self.buffer.act_logprobs
-        comm_logprobs = self.buffer.comm_logprobs
-        opponent_logprobs = self.buffer.opponent_logprobs 
+    def read_distrib(self, possible_states, n_possible_states):
+        dist = torch.full((n_possible_states, 2),  0.)
+        for state in possible_states:
+            dist[state.long(),:] = self.policy_act.get_distribution(state.view(-1,self.input_act))
+        return dist
 
-        loss_act = [] #torch.zeros_like(act_logprobs)
-        loss_comm = [] #torch.zeros_like(comm_logprobs)
-        loss_opponent_choice = []
+    def update_return(self):
 
-        entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
-        self.entropy = entropy
-        hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
-        
-        if (self.opponent_selection):
-            for i in range(len(opponent_logprobs)):
-                loss_opponent_choice.append(-opponent_logprobs[i] * (rew_norm[i] - self.baseline))
-        for i in range(len(act_logprobs)):
-            if (self.is_communicating):
-                loss_comm.append(-comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i])
-            if (self.is_listening and self.n_communicating_agents != 0.):
-                #IL PROBLEMA E` QUI`
-                #print("act_logprobs[i]=", act_logprobs[i])
-                #print("(rew_norm[i] - self.baseline)=", (rew_norm[i] - self.baseline))
-                #print("self.list_lambda*self.List_loss_list[i]=", self.list_lambda*self.List_loss_list[i])
-                loss_act.append(-act_logprobs[i] * (rew_norm[i] - self.baseline))# + self.list_lambda*self.List_loss_list[i])
-            else:
-                #print("create loss act")
-                loss_act.append(-act_logprobs[i] * (rew_norm[i] - self.baseline))
-       
-        self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in loss_act])))
-        
-        #self.optimizer.zero_grad()
-        if (self.is_communicating):
-            #print("update comm loss")
-            self.opt_comm.zero_grad()
-            self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in loss_comm])))
-            tmp = [torch.ones(a.data.shape) for a in loss_comm]
-            autograd.backward(loss_comm, tmp, retain_graph=True)
-            self.opt_comm.step()
-            self.scheduler_comm.step()
+        batch_reward = self.memory._rewards
+        #print("batch_reward=", batch_reward)
 
-        if (self.opponent_selection):
-            self.opt_opponent.zero_grad()
-            tmp = [torch.ones(a.data.shape) for a in loss_opponent_choice]
-            autograd.backward(loss_opponent_choice, tmp, retain_graph=True)
-            self.opt_opponent.step()
+        R = 0; returns = deque()
+        policy_loss = []
         
-        self.opt_act.zero_grad()
-        tmp1 = [torch.ones(a.data.shape) for a in loss_act]
-        autograd.backward(loss_act, tmp1, retain_graph=True)
-        self.opt_act.step()
-        self.scheduler_act.step()
-        print("new lr=",self.scheduler_act.get_lr())
+        for r in list(batch_reward)[::-1]:
+            R = r + R*self.gamma
+            returns.appendleft(R)
+        #print("returns=", returns)
+
+        returns = torch.tensor(returns)
+        baseline = torch.mean(returns)
         
-        self.n_update += 1.
-        self.baseline += (np.mean([i for i in rew_norm]) - self.baseline) / (self.n_update)
+        for log_prob, R in zip(self.memory._logprobs, returns):
+            val = -log_prob * (R - baseline)
+            policy_loss.append(val.reshape(1))
+
+        self.optimizer.zero_grad()
+        policy_loss = torch.cat(policy_loss).sum()
+        policy_loss.backward()
+        self.optimizer.step()
 
         self.reset()
+
+        return policy_loss.detach()
+    
+    def update_reward(self):
+
+        batch_reward = self.memory._rewards
+        #print("batch_rew=", batch_reward)
+
+        policy_loss = []
+
+        baseline = torch.mean(batch_reward)
+        for log_prob, rew in zip(self.memory._logprobs, batch_reward):
+            #print("-logprob=", -log_prob, ", rew=", rew)
+            val = -log_prob * (rew - baseline)
+            policy_loss.append(val.reshape(1))
+
+        self.optimizer.zero_grad()
+        policy_loss = torch.cat(policy_loss).sum()
+        policy_loss.backward()
+        self.optimizer.step()
+
+        self.reset()
+
+        return policy_loss.detach()

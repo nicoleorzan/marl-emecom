@@ -241,7 +241,7 @@ class Agent():
         self.message_in = message_in
 
     def select_action(self, epsilon = 0., m_val=None, _eval=False):         
-        print("qui")   
+        #print("qui")   
         
         state_to_act = self.state_act
         print("agent=", self.idx, "is selecting action")
