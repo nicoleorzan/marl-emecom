@@ -72,13 +72,14 @@ class SocialNorm():
                     else: 
                         agent.reputation = torch.Tensor([1.0])
                 
-                if (agent.is_dummy == False):
-                    var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
-                    if (var == 1):
-                        if (agent.reputation == torch.Tensor([1.0])):
-                            agent.reputation = torch.Tensor([0.0])
-                        elif (agent.reputation == torch.Tensor([0.0])):
-                            agent.reputation = torch.Tensor([1.0])
+                #if (agent.is_dummy == False):
+                var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
+                if (var == 1):
+                    #print("FLIP! for agent", ag_idx)
+                    if (agent.reputation == torch.Tensor([1.0])):
+                        agent.reputation = torch.Tensor([0.0])
+                    elif (agent.reputation == torch.Tensor([0.0])):
+                        agent.reputation = torch.Tensor([1.0])
 
             #print("new reputation=", agent.reputation)
 
@@ -117,7 +118,6 @@ class SocialNorm():
                     else: 
                         agent.reputation = torch.Tensor([1.0])
                 
-                #if (agents["agent_"+str(ag_idx)].is_dummy == False):
                 var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
                 if (var == 1):
                     if (agent.reputation == torch.Tensor([1.0])):

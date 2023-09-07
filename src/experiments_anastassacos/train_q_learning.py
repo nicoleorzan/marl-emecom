@@ -158,6 +158,7 @@ def objective(args, repo_name, trial=None):
                 if (agent.is_dummy == False):
                     df_avg_coop = {ag_idx+"avg_coop": avg_coop[ag_idx]}
                     df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
+                    print(agent.Q)
                     df_Q = {ag_idx+"Q[0,0]": agent.Q[0,0], ag_idx+"Q[0,1]": agent.Q[0,1], ag_idx+"Q[1,0]": agent.Q[1,0], ag_idx+"Q[1,1]": agent.Q[1,1]}
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
@@ -199,6 +200,10 @@ def objective(args, repo_name, trial=None):
             print("avg_coop_tot=", avg_coop_tot)
             print("weighted_average_coop", weighted_average_coop)
             print("weighted_average_coop_time", weighted_average_coop_time)
+            for ag_idx, agent in agents.items(): 
+                #print("agent=", ag_idx, "reputation=", agent.reputation)
+                if (agent.is_dummy == False): 
+                    print(agent.Q)
     
     wandb.finish()
     return measure

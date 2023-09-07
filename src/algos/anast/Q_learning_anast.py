@@ -78,13 +78,17 @@ class Q_learning_agent():
         #print("current_q=", current_q)
         assert(current_q.shape == torch.Size([self.action_size]))
         #print("self.argmax(current_q)=",self.argmax(current_q))
+        #if (state_to_act == torch.Tensor([0.])):
+        #    print("state=", state_to_act)
 
         if (_eval == True):
+            #print("eval")
             action = self.argmax(current_q)
-        elif (_eval == False):   
-
+        elif (_eval == False):
             if torch.rand(1) < self.epsilon:
                 action = random.choice([i for i in range(self.action_size)])
+                #if (state_to_act == torch.Tensor([0])):
+                #    print("==================================================================>RANDOM")
             else:
                 action = self.argmax(current_q)
                 
@@ -115,7 +119,9 @@ class Q_learning_agent():
                 self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
             else:
                 self.Q[state, action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state,:][0]) - self.Q[state, action])
+            #print("Q=", self.Q)
 
         self.memory.memory = []
         self.reset()
         #print("agent=", self.idx, "Q=", self.Q)
+        #print("Q=", self.Q)
