@@ -83,7 +83,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
                     agent.return_episode =+ rewards[ag_idx]
 
         if done:
-            if (_eval == True):
+            if (_eval == True and i >= 100):
                 avg_reward = {}; avg_coop = {}
                 for ag_idx, agent in active_agents.items():
                     avg_coop[ag_idx] = torch.mean(torch.stack(actions_dict[ag_idx]))
