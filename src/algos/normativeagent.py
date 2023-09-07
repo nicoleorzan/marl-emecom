@@ -49,16 +49,23 @@ class NormativeAgent():
             print("CANNOT USE DUMMY AGENTS, THERE IS NO REPUTATION")
             return
         
-        if (hasattr(self, 'state_act')):
-            self.mf = self.state_act[0]
-            self.opponent_reputation = self.state_act[0]
-        action = torch.Tensor([0.])
-        
-        #print("self.opponent_reputation=", self.opponent_reputation)
-        #print("self.other_reputation_threshold=",self.other_reputation_threshold)
+        if (self.reputation_enabled == 1):
+            if (len(self.mult_fact) > 1):
+                self.opponent_reputation = self.state_act[0]
+                self.mf = self.state_act[1]
+            else: 
+                self.opponent_reputation = self.state_act[0]
+        else:
+            print("CANNOT USE DUMMY AGENTS, THERE IS NO REPUTATION")
+            return
 
-        if (self.mf >= 1. and self.opponent_reputation >= self.other_reputation_threshold): # and the reputation of my opponent is big enough
-            action = torch.Tensor([1.]) # I will play cooperatively
+        action = torch.Tensor([0.])
+        if (len(self.mult_fact) == 1):
+            if (self.opponent_reputation >= self.other_reputation_threshold): 
+                action = torch.Tensor([1.]) # I will play cooperatively
+        else: 
+            if (self.mf >= 1. and self.opponent_reputation >= self.other_reputation_threshold): # and the reputation of my opponent is big enough
+                action = torch.Tensor([1.]) # I will play cooperatively
 
         return action
         
