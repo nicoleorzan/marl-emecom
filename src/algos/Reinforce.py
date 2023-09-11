@@ -125,7 +125,7 @@ class Reinforce():
         for r in list(batch_reward)[::-1]:
             R = r + R*self.gamma
             returns.appendleft(R)
-        #print("returns=", returns)
+        print("returns=", returns)
 
         returns = torch.tensor(returns)
         baseline = torch.mean(returns)

@@ -13,7 +13,6 @@ from src.experiments_my_game.params import setup_training_hyperparams
 
 torch.autograd.set_detect_anomaly(True)
 
-
 def define_agents(config):
     agents = {}
     for idx in range(config.n_agents):

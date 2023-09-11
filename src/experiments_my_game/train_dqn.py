@@ -1,5 +1,6 @@
 from src.environments import pgg_parallel_v0
 from src.algos.DQN import DQN
+from src.algos.DQN_gmm import DQN_gmm
 import numpy as np
 import optuna
 from optuna.trial import TrialState
@@ -18,7 +19,10 @@ def define_agents(config):
     agents = {}
     for idx in range(config.n_agents):
         if (config.is_dummy[idx] == 0):
-            agents['agent_'+str(idx)] = DQN(config, idx) 
+            if (config.gmm_ == 1): 
+                agents['agent_'+str(idx)] = DQN_gmm(config, idx) 
+            else:
+                agents['agent_'+str(idx)] = DQN(config, idx) 
         else: 
             agents['agent_'+str(idx)] = NormativeAgent(config, idx)
     return agents
@@ -48,8 +52,8 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
                 next_states[idx_agent] = observations[idx_agent]
 
     done = False
-    for _ in range(config.num_game_iterations):
-
+    for i in range(config.num_game_iterations):
+        #print("i=", i)
         # state
         actions = {}; states = next_states
         for idx_agent, agent in active_agents.items():
@@ -66,7 +70,6 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         _, rewards, done, _ = parallel_env.step(actions)
         if (config.introspective == True):
             rewards = introspective_rewards(config, active_agents, parallel_env, rewards, actions)
-
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
                 if "agent_"+str(ag_idx) not in rewards_dict.keys():
@@ -92,7 +95,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
                     next_states[idx_agent] = observations[idx_agent]
 
         if (_eval == False):
-            # save iteration            
+            # save iteration
             for ag_idx, agent in active_agents.items():
                 if (agent.is_dummy == False):
                     agent.append_to_replay(states[ag_idx], actions[ag_idx], rewards[ag_idx], next_states[ag_idx], done)
@@ -139,6 +142,7 @@ def objective(args, repo_name, trial=None):
         parallel_env.set_active_agents(active_agents_idxs)
 
         # TRAIN
+        #print("\n\n=====================================>TRAIN")
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
@@ -147,6 +151,7 @@ def objective(args, repo_name, trial=None):
             losses[ag_idx] = agent.update(epoch)
 
         # evaluation step
+        #print("\n\n===================================>EVAL")
         for mf_input in config.mult_fact:
             avg_rew, avg_coop = interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, True, mf_input)
             avg_coop_tot = torch.mean(torch.stack([cop_val for _, cop_val in avg_coop.items()]))
@@ -178,6 +183,7 @@ def objective(args, repo_name, trial=None):
                         #print("prob[ag_idx]=", prob[ag_idx])
                     for rep in possible_reputations:
                         possible_states = torch.stack([torch.Tensor([i, rep]) for i, _ in enumerate(config.mult_fact)])
+                        #print("agent.get_action_values(possible_states).detach()=",agent.get_action_values(possible_states).detach())
                         Q[ag_idx][int(rep),:,:] = agent.get_action_values(possible_states).detach()
             #print("prob=", prob)
             stacked = torch.stack([val for _, val in Q.items()])
