@@ -50,7 +50,10 @@ class DQN_gmm():
             self.input_act = self.n_gmm_components
         else: 
             self.input_act = self.n_gmm_components + 1
-        print("input_act=",self.input_act)
+
+        self.idx = idx
+        print("DQN_gmm agent", self.idx)
+        #print("input_act=",self.input_act)
         self.max_memory_capacity = 10000
 
         self.policy_act = Actor(params=params, input_size=self.input_act, output_size=self.action_size, \
@@ -67,7 +70,6 @@ class DQN_gmm():
         self.previous_action = torch.Tensor([1.])
 
         self.is_dummy = False
-        self.idx = idx
         self.batch_size = self.num_game_iterations
 
         self.action_selections = [0 for _ in range(self.action_size)]
@@ -97,6 +99,7 @@ class DQN_gmm():
         return random.choice(ties)
     
     def add_to_observation_history(self, state_input):
+        #print("add, agent=", self.idx)
         if (self.reputation_enabled == 0):
             mult_fact = state_input[0]
         else: 
@@ -188,6 +191,10 @@ class DQN_gmm():
             return out
         
     def get_action_values(self, state):
+        #print("agent=", self.idx)
+        if (hasattr(self, 'obs_history') == False):
+            return torch.zeros((len(self.mult_fact), 2))
+
         if (self.reputation_enabled == True):
             state_gmm = torch.zeros((len(self.mult_fact), self.n_gmm_components+1))
         else: 
@@ -195,9 +202,10 @@ class DQN_gmm():
 
         for i in range(len(self.mult_fact)):
             state_gmm[i,:] = self.set_gmm_state(state[i,:])
-
+            
         with torch.no_grad():
             out = self.policy_act.get_values(state_gmm)
+            #print("out.shape=", out.shape)
             return out
 
     def append_to_replay(self, s, a, r, s_, d):
