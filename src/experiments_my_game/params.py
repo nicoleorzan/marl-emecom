@@ -143,14 +143,14 @@ def setup_training_hyperparams(args, trial):
         algo_params = dict(
             obs_size = obs_size, # mult factor and reputation of opponent
             n_episodes = 10000,
-            num_game_iterations = 5, #200, # K 
+            num_game_iterations = 200, #200, # K 
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
             memory_size = 500,
             n_hidden_act = 1,
             hidden_size_act = 4,
-            lr_actor = 0.0001,
+            lr_actor = 0.001,
             decayRate = 0.999,
             target_net_update_freq = 30,
             reputation_enabled = args.reputation_enabled,
