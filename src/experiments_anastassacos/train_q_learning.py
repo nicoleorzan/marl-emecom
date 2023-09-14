@@ -159,7 +159,10 @@ def objective(args, repo_name, trial=None):
                     df_avg_coop = {ag_idx+"avg_coop": avg_coop[ag_idx]}
                     df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
                     print(agent.Q)
-                    df_Q = {ag_idx+"Q[0,0]": agent.Q[0,0], ag_idx+"Q[0,1]": agent.Q[0,1], ag_idx+"Q[1,0]": agent.Q[1,0], ag_idx+"Q[1,1]": agent.Q[1,1]}
+                    if (config.reputation_enabled == 0):
+                        df_Q = {ag_idx+"Q[0]": agent.Q[0], ag_idx+"Q[1]": agent.Q[1]}
+                    else:
+                        df_Q = {ag_idx+"Q[0,0]": agent.Q[0,0], ag_idx+"Q[0,1]": agent.Q[0,1], ag_idx+"Q[1,0]": agent.Q[1,0], ag_idx+"Q[1,1]": agent.Q[1,1]}
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
                         'epoch': epoch}, 
@@ -185,12 +188,18 @@ def objective(args, repo_name, trial=None):
                 "weighted_average_coop_time": weighted_average_coop_time # only on the agents that played, of course
                 }
             if (config.non_dummy_idxs != []): 
-                dff = {**dff, **{
-                    "mean_Q00": torch.mean(torch.stack([agent.Q[0,0] for _, agent in agents.items() if agent.is_dummy == False])),
-                    "mean_Q01": torch.mean(torch.stack([agent.Q[0,1] for _, agent in agents.items() if agent.is_dummy == False])),
-                    "mean_Q10": torch.mean(torch.stack([agent.Q[1,0] for _, agent in agents.items() if agent.is_dummy == False])),
-                    "mean_Q11": torch.mean(torch.stack([agent.Q[1,1] for _, agent in agents.items() if agent.is_dummy == False])),
-                }}
+                if (config.reputation_enabled == 0):
+                    dff = {**dff, **{
+                        "mean_Q0": torch.mean(torch.stack([agent.Q[0] for _, agent in agents.items() if agent.is_dummy == False])),
+                        "mean_Q1": torch.mean(torch.stack([agent.Q[1] for _, agent in agents.items() if agent.is_dummy == False])),
+                    }}
+                else:
+                    dff = {**dff, **{
+                        "mean_Q00": torch.mean(torch.stack([agent.Q[0,0] for _, agent in agents.items() if agent.is_dummy == False])),
+                        "mean_Q01": torch.mean(torch.stack([agent.Q[0,1] for _, agent in agents.items() if agent.is_dummy == False])),
+                        "mean_Q10": torch.mean(torch.stack([agent.Q[1,0] for _, agent in agents.items() if agent.is_dummy == False])),
+                        "mean_Q11": torch.mean(torch.stack([agent.Q[1,1] for _, agent in agents.items() if agent.is_dummy == False])),
+                    }}
             wandb.log(dff,
                 step=epoch, commit=True)
 
@@ -200,10 +209,10 @@ def objective(args, repo_name, trial=None):
             print("avg_coop_tot=", avg_coop_tot)
             print("weighted_average_coop", weighted_average_coop)
             print("weighted_average_coop_time", weighted_average_coop_time)
-            for ag_idx, agent in agents.items(): 
-                #print("agent=", ag_idx, "reputation=", agent.reputation)
-                if (agent.is_dummy == False): 
-                    print(agent.Q)
+            #for ag_idx, agent in agents.items(): 
+            #    #print("agent=", ag_idx, "reputation=", agent.reputation)
+            #    #if (agent.is_dummy == False): 
+            #    #    print(agent.Q)
     
     wandb.finish()
     return measure
