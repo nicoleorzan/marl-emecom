@@ -141,13 +141,13 @@ class Q_learning_agent():
                     if (done):
                         self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
                     else:
-                        self.Q[state, action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[state, :]) - self.Q[state, action])
+                        self.Q[state, action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state, :]) - self.Q[state, action])
             else:
                 if (len(self.mult_fact) == 1):
                     if (done):
                         self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
                     else:
-                        self.Q[state, action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[state, :]) - self.Q[state, action])
+                        self.Q[state, action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state, :]) - self.Q[state, action])
                 else:
                     if (done):
                         self.Q[state[0], state[1], action] += self.lr_actor*(reward - self.Q[state[0], state[1], action])
