@@ -159,7 +159,8 @@ class DQN_gmm():
     def select_action(self, _eval=False):
         #print(" self.state_act=", self.state_act)
         #print("self.state_act before=", self.state_act.shape)
-        self.state_act = self.state_act.view(-1,self.input_act-self.n_gmm_components)
+        if (self.reputation_enabled == True):
+            self.state_act = self.state_act.view(-1,self.input_act-self.n_gmm_components)
         self.add_to_observation_history(self.state_act)
 
         self.state_act = self.set_gmm_state(self.state_act)

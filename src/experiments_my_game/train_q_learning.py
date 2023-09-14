@@ -259,8 +259,9 @@ def train_q_learning(args):
     if (args.uncertainties.count(0.) != args.n_agents):
         unc_string = "unc_"
 
-    repo_name = "PGG_"+ str(args.n_agents) + "agents_" + \
-        unc_string + args.algorithm# + "_dummy_population_"# + str(args.proportion_dummy_agents)
+    repo_name = "EPGG_"+ str(args.n_agents) + "agents_" + \
+        unc_string + args.algorithm + "_mf" + str(args.mult_fact) + \
+        "_rep" + str(args.reputation_enabled)
     
     if (args.addition != ""):
         repo_name += "_"+ str(args.addition)
