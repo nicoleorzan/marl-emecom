@@ -98,6 +98,7 @@ def setup_training_hyperparams(args, trial):
             n_hidden_act = 1,
             hidden_size_act = 4,
             decayRate = 0.999,
+            reputation_enabled = args.reputation_enabled,
             alpha = 0.1, # introspection level
             introspective = False
         )
@@ -141,6 +142,7 @@ def setup_training_hyperparams(args, trial):
             lr_actor = 0.001,
             decayRate = 0.999, 
             target_net_update_freq = 30,
+            reputation_enabled = args.reputation_enabled,
             alpha = 0.1, # introspection level
             introspective = False
         )
@@ -152,6 +154,7 @@ def setup_training_hyperparams(args, trial):
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
+            reputation_enabled = args.reputation_enabled,
             lr_actor = 0.01,
             alpha = 0.1, # introspection level
             introspective = False,

@@ -31,6 +31,7 @@ if __name__ == '__main__':
     parser.add_argument('--b_value', type=float, default=5.)
     parser.add_argument('--c_value', type=float, default=1.)
     parser.add_argument('--d_value', type=float, default=0.)
+    parser.add_argument('--reputation_enabled', type=int, default=1)
     parser.add_argument('--coins_value', type=float, default=4.)
     parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
     parser.add_argument('--binary_reputation', type=int, default=1) # 1 yes 0 no
@@ -48,6 +49,8 @@ if __name__ == '__main__':
     
     assert(args.proportion_dummy_agents >= 0.)    
     assert(args.proportion_dummy_agents <= 1.)
+    if (args.reputation_enabled == 0):
+        assert(args.proportion_dummy_agents == 0)
 
     assert(args.n_agents > 1)
     assert(len(args.uncertainties) == args.n_agents)
