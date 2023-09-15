@@ -154,7 +154,7 @@ def setup_training_hyperparams(args, trial):
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
-            _argmax = args._argmax,
+            #_argmax = args._argmax,
             reputation_enabled = args.reputation_enabled,
             lr_actor = 0.01,
             alpha = 0.1, # introspection level
