@@ -164,7 +164,7 @@ def setup_training_hyperparams(args, trial):
             n_episodes = 400000,
             num_game_iterations = 10, # K 
             gamma = 0.99,
-            chi = 0.0001,
+            chi = 0.001,
             epsilon = 0.01,
             lr_actor = 0.01,
             alpha = 0.1, # introspection level
