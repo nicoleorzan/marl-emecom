@@ -49,7 +49,7 @@ class SocialNorm():
     def rule09_binary_anast(self, agents, active_agents_idxs):
         # agent that cooperates with good agents, and does not cooperate with bad ones is good
         for ag_idx in active_agents_idxs:
-            #print("agent=", ag_idx)
+            #print("\nagent=", ag_idx)
             agent = self.agents["agent_"+str(ag_idx)]
             
             #print("reputation before=", agent.reputation)
@@ -57,22 +57,29 @@ class SocialNorm():
             if (self.saved_actions[ag_idx] != []):
                 other_idx = list(set(active_agents_idxs) - set([agent.idx]))[0]
                 other = self.agents["agent_"+str(other_idx)]
+                avg_cooperation_level = self.saved_actions[ag_idx]
+                #print("my action 1 =",np.mean(self.saved_actions[ag_idx]))
+                #print("my action=",avg_cooperation_level[0])
                 #print("other.reputation=", other.old_reputation)
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
-                #print("my_cooperation_level=",avg_cooperation_level)
 
                 if (avg_cooperation_level == torch.Tensor([1.0])):
+                    #print("I am cooperating")
                     if (other.old_reputation == 1.):
+                        #print("other is cooperator")
                         agent.reputation = torch.Tensor([1.0])
                     else: 
+                        #print("other is defector")
                         agent.reputation = torch.Tensor([0.0])
                 else: 
+                    #print("I am defecting")
                     if (other.old_reputation == 1.):
+                        #print("other is cooperator")
                         agent.reputation = torch.Tensor([0.0])
                     else: 
+                        #print("other is defector")
                         agent.reputation = torch.Tensor([1.0])
                 
-                #if (agent.is_dummy == False):
                 var = torch.bernoulli(torch.Tensor([self.chi])) # tensor contaitning prob that we switch the new reputation assignement
                 if (var == 1):
                     #print("FLIP! for agent", ag_idx)

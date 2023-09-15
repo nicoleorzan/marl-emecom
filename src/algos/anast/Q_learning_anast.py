@@ -41,6 +41,7 @@ class Q_learning_agent():
             input_Q = (self.obs_size, self.action_size)
         self.Q = torch.full(input_Q, self.max_value, dtype=float)
         print("self.Q=", self.Q)
+        self.actions_list = [i for i in range(self.action_size)]
     
         self.memory = ExperienceReplayMemory(self.num_game_iterations)
 
@@ -76,28 +77,25 @@ class Q_learning_agent():
     def select_action(self, _eval=False):
         #print("SELECT ACTION")
         state_to_act = self.state_act
+        #print("state=", state_to_act)
 
         if (self.reputation_enabled == 0):
             current_q = self.Q
         else: 
-            #print("state=", state_to_act)
             #print("Q=", self.Q)
             current_q = self.Q[state_to_act[0].long(),:]
         #print("current_q=", current_q)
         assert(current_q.shape == torch.Size([self.action_size]))
-        #print("self.argmax(current_q)=",self.argmax(current_q))
-        #if (state_to_act == torch.Tensor([0.])):
-        #    print("state=", state_to_act)
 
         if (_eval == True):
             #print("eval")
             action = self.argmax(current_q)
         elif (_eval == False):
             if torch.rand(1) < self.epsilon:
-                action = random.choice([i for i in range(self.action_size)])
-                #if (state_to_act == torch.Tensor([0])):
-                #    print("==================================================================>RANDOM")
+                #print("random")
+                action = random.choice(self.actions_list)
             else:
+                #print("argmax")
                 action = self.argmax(current_q)
                 
         return torch.Tensor([action])

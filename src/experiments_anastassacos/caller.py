@@ -49,8 +49,6 @@ if __name__ == '__main__':
     
     assert(args.proportion_dummy_agents >= 0.)    
     assert(args.proportion_dummy_agents <= 1.)
-    if (args.reputation_enabled == 0):
-        assert(args.proportion_dummy_agents == 0)
 
     assert(args.n_agents > 1)
     assert(len(args.uncertainties) == args.n_agents)
