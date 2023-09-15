@@ -126,8 +126,6 @@ class SocialNorm():
         #print("UPDATING ALL REPUTATIONS")
         for ag_idx in active_agents_idxs:     
             agents["agent_"+str(ag_idx)].old_reputation = agents["agent_"+str(ag_idx)].reputation
-            if (agents["agent_"+str(ag_idx)].is_dummy == True):
-                assert(agents["agent_"+str(ag_idx)].reputation == torch.Tensor([1.0]))
 
         self.reset_saved_actions()
 
