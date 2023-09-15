@@ -177,6 +177,7 @@ def objective(args, repo_name, trial=None):
             rew_agents_mf[mf_input] = avg_rew
         
         dff_coop_per_mf = dict(("avg_coop_mf"+str(mf), torch.mean(torch.stack([ag_coop for _, ag_coop in coop_agents_mf[mf].items()]))) for mf in config.mult_fact)
+        dff_rew_per_mf = dict(("avg_rew_mf"+str(mf), torch.mean(torch.stack([ag_coop for _, ag_coop in rew_agents_mf[mf].items()]))) for mf in config.mult_fact)
 
         if (config.optuna_):
             trial.report(measure, epoch)
@@ -240,7 +241,7 @@ def objective(args, repo_name, trial=None):
                 "weighted_average_coop": torch.mean(torch.stack([avg_i for _, avg_i in avg_rew.items()])) # only on the agents that played, of course
                 }
             if (config.non_dummy_idxs != []): 
-                dff = {**dff, **dff_coop_per_mf}
+                dff = {**dff, **dff_coop_per_mf, **dff_rew_per_mf}
             wandb.log(dff,
                 step=epoch, commit=True)
 
