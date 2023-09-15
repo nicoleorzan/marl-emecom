@@ -48,6 +48,7 @@ class SocialNorm():
 
     def rule09_binary_anast(self, agents, active_agents_idxs):
         for ag_idx in active_agents_idxs:
+            #print("ag=", ag_idx)
             agent = self.agents["agent_"+str(ag_idx)]
             
             agent.old_reputation = agent.reputation

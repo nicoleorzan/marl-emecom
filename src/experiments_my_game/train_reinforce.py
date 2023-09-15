@@ -131,7 +131,7 @@ def objective(args, repo_name, trial=None):
     social_norm = SocialNorm(config, agents)
     
     #### TRAINING LOOP
-    coop_agents_mf = {}
+    coop_agents_mf = {}; rew_agents_mf = {}
     for epoch in range(config.n_episodes):
         #print("\n==========>Epoch=", epoch)
 
@@ -163,8 +163,10 @@ def objective(args, repo_name, trial=None):
             avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
             measure = avg_rep
             coop_agents_mf[mf_input] = avg_coop
+            rew_agents_mf[mf_input] = avg_rew
 
         dff_coop_per_mf = dict(("avg_coop_mf"+str(mf), torch.mean(torch.stack([ag_coop for _, ag_coop in coop_agents_mf[mf].items()]))) for mf in config.mult_fact)
+        dff_rew_per_mf = dict(("avg_rew_mf"+str(mf), torch.mean(torch.stack([ag_coop for _, ag_coop in rew_agents_mf[mf].items()]))) for mf in config.mult_fact)
 
         prob = {}
         if (config.reputation_enabled == 0): 
@@ -248,7 +250,7 @@ def objective(args, repo_name, trial=None):
                 "weighted_average_coop": torch.mean(torch.stack([avg_i for _, avg_i in avg_rew.items()])) # only on the agents that played, of course
                 }
             if (config.non_dummy_idxs != []): 
-                dff = {**dff, **dff_coop_per_mf, **dff_prob00, **dff_prob01, **dff_prob10, **dff_prob11}
+                dff = {**dff, **dff_coop_per_mf, **dff_rew_per_mf, **dff_prob00, **dff_prob01, **dff_prob10, **dff_prob11}
             wandb.log(dff,
                 step=epoch, commit=True)
 

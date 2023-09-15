@@ -31,7 +31,7 @@ class Q_learning_agent():
         # Action Policy
         self.max_value = 0.
         if (self.optimistic_initial_values == 1):
-            self.max_value = (self.b_value)/(1.-self.gamma)
+            self.max_value = (self.b_value-1)/(1.-self.gamma)
         print("self.max_value=", self.max_value)
 
         input_Q = (self.obs_size, self.action_size)
@@ -65,8 +65,9 @@ class Q_learning_agent():
         return random.choice(ties) #self.rand_generator.choice(ties)
 
     def reset(self):
-        self.previous_action = torch.Tensor([1.])
-        self.return_episode = 0
+        pass
+    #    #self.previous_action = torch.Tensor([1.])
+    #    #self.return_episode = 0
 
     def digest_input_anast(self, input):
         opponent_reputation = input
@@ -130,7 +131,7 @@ class Q_learning_agent():
                     self.Q[state, action] += self.lr_actor*(reward - self.Q[state, action])
                 else:
                     self.Q[state, action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state,:][0]) - self.Q[state, action])
-
+            #print("Q=", self.Q)
         self.memory.memory = []
         self.reset()
         #print("agent=", self.idx, "Q=", self.Q)
