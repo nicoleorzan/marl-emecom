@@ -53,6 +53,8 @@ if __name__ == '__main__':
     assert(args.proportion_dummy_agents <= 1.)
 
     assert(args.n_agents > 1)
+    if (args.algorithm == "q-learning"):
+        assert(n_certain_agents == args.n_agents)
     assert(len(args.uncertainties) == args.n_agents)
     assert(len(args.communicating_agents) == args.n_agents)
     assert(len(args.listening_agents) == args.n_agents)

@@ -144,7 +144,7 @@ def objective(args, repo_name, trial=None):
     social_norm = SocialNorm(config, agents)
     
     #### TRAINING LOOP
-    coop_agents_mf = {}
+    coop_agents_mf = {}; rew_agents_mf = {}
     for epoch in range(config.n_episodes):
         #print("\n==========>Epoch=", epoch)
 
@@ -174,6 +174,7 @@ def objective(args, repo_name, trial=None):
             avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
             measure = avg_rep
             coop_agents_mf[mf_input] = avg_coop
+            rew_agents_mf[mf_input] = avg_rew
         
         dff_coop_per_mf = dict(("avg_coop_mf"+str(mf), torch.mean(torch.stack([ag_coop for _, ag_coop in coop_agents_mf[mf].items()]))) for mf in config.mult_fact)
 
@@ -191,7 +192,8 @@ def objective(args, repo_name, trial=None):
                 if (agent.is_dummy == False):
                     #print("agent.Q=",agent.Q)
                     df_avg_coop = dict((ag_idx+"avg_coop_mf"+str(mf), coop_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)
-                    df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
+                    df_avg_rew = dict((ag_idx+"avg_rew_mf"+str(mf), rew_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)
+                    #df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
                     if (len(config.mult_fact) == 1):
                         if (config.reputation_enabled == 0):
                             df_Q1 = dict((ag_idx+"Q[0]", agent.Q[0] ) for i in range(0,1))
