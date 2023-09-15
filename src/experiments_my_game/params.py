@@ -155,7 +155,8 @@ def setup_training_hyperparams(args, trial):
             target_net_update_freq = 30,
             reputation_enabled = args.reputation_enabled,
             alpha = 0.1, # introspection level
-            introspective = False
+            introspective = False,
+            decaying_epsilon = True
         )
     elif (args.algorithm == "q-learning"):
         obs_size = 2  # m factor and reputation

@@ -3,6 +3,7 @@ import copy
 import torch
 import random
 import torch.nn as nn
+import numpy as np
 from collections import namedtuple
 
 # set device to cpu or cuda
@@ -70,9 +71,11 @@ class DQN():
         self.action_log_frequency = 1.
 
         self.update_count = 0
-        self.eps0 = self.epsilon
-        #print("self.epsilon=", self.epsilon)
-        self.r = 0.99
+        if (self.decaying_epsilon == True):
+            self.eps0 = 0.1
+            self.final_epsilon = 0.0001
+        self.epsilon = self.eps0
+        self.r = 1.-np.exp(np.log(self.final_epsilon/self.eps0)/self.num_game_iterations)
 
     def reset(self):
         self.memory.reset()
@@ -192,11 +195,15 @@ class DQN():
         #print("LR=",self.scheduler.get_last_lr())
 
         #modif exploration
-        if (self.epsilon >= 0.01):
-            self.epsilon = self.eps0*self.r**(_iter-1.)
-        #print("self.epsilon=",self.epsilon)
+        self.update_epsilon(_iter)
+        #if (self.epsilon >= 0.001):
+        #    self.epsilon = self.eps0*self.r**(_iter-1.)
+        print("self.epsilon=",self.epsilon)
 
         return loss.detach()
+    
+    def update_epsilon(self, _iter):
+        self.epsilon = self.eps0*(1.-self.r)**_iter
 
     def update_target_model(self):
         self.update_count += 1

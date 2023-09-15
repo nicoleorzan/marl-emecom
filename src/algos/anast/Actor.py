@@ -24,15 +24,15 @@ class Actor(nn.Module):
         if (self.n_hidden == 2):
             self.actor = nn.Sequential(
                 nn.Linear(self.input_size, self.hidden_size),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Linear(self.hidden_size, self.hidden_size),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Linear(self.hidden_size, self.output_size)
             )
         else:
             self.actor = nn.Sequential(
                 nn.Linear(self.input_size, self.hidden_size),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Linear(self.hidden_size, self.output_size)
             )
 
