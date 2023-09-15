@@ -154,6 +154,7 @@ def setup_training_hyperparams(args, trial):
             gamma = 0.99,
             chi = 0.0001,
             epsilon = 0.01,
+            _argmax = args._argmax,
             reputation_enabled = args.reputation_enabled,
             lr_actor = 0.01,
             alpha = 0.1, # introspection level
@@ -165,7 +166,7 @@ def setup_training_hyperparams(args, trial):
     is_dummy = list(reversed([1 if i<n_dummy else 0 for i in range(args.n_agents) ]))
     non_dummy_idxs = [i for i,val in enumerate(is_dummy) if val==0]
 
-    all_params = {**all_params, **game_params, **algo_params, **comm_params, "n_dummy":n_dummy, "is_dummy":is_dummy, "non_dummy_idxs":non_dummy_idxs}
+    all_params = {**all_params, **game_params, **algo_params, **comm_params, "n_dummy": n_dummy, "is_dummy":is_dummy, "non_dummy_idxs":non_dummy_idxs}
     print("all_params=", all_params)
 
     return all_params
