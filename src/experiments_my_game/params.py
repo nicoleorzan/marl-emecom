@@ -170,6 +170,7 @@ def setup_training_hyperparams(args, trial):
             epsilon = 0.01,
             lr_actor = 0.01,
             alpha = 0.1, # introspection level
+            rule = args.rule,
             reputation_enabled = args.reputation_enabled,
             introspective = False
         )
