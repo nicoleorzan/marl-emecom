@@ -95,10 +95,12 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
                     actions_dict["agent_"+str(ag_idx)].append(actions["agent_"+str(ag_idx)])
 
         social_norm.save_actions(actions, active_agents_idxs)
-        if (config.rule == "rule09"):
-            social_norm.rule09_binary_pgg(active_agents, active_agents_idxs, parallel_env.current_multiplier)
+        if (config.rule == "rule00"):
+            social_norm.rule00_binary_pgg(active_agents, active_agents_idxs, parallel_env.current_multiplier)
         elif (config.rule == "rule03"):
             social_norm.rule03_binary_pgg(active_agents, active_agents_idxs, parallel_env.current_multiplier)
+        elif (config.rule == "rule09"):
+            social_norm.rule09_binary_pgg(active_agents, active_agents_idxs, parallel_env.current_multiplier)
         elif (config.rule == "rule11"):
             social_norm.rule11_binary_pgg(active_agents, active_agents_idxs, parallel_env.current_multiplier)
 
