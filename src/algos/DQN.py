@@ -205,7 +205,7 @@ class DQN():
     
     def update_epsilon(self, _iter):
         #self.epsilon = self.eps0*(1.-self.r)**_iter
-        self.epsilon = self.epsilon -self.epislon_delta #self.eps0*(1.-self.r)**_iter
+        self.epsilon = self.epsilon -self.epsilon_delta #self.eps0*(1.-self.r)**_iter
 
     def update_target_model(self):
         self.update_count += 1
