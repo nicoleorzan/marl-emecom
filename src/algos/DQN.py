@@ -73,7 +73,7 @@ class DQN():
         self.update_count = 0
         if (self.decaying_epsilon == True):
             self.eps0 = 0.1
-            self.final_epsilon = 0.0001
+            self.final_epsilon = 0.001
         self.epsilon = self.eps0
         self.r = 1.-np.exp(np.log(self.final_epsilon/self.eps0)/self.num_game_iterations)
 
