@@ -2,6 +2,7 @@ import argparse
 import ast
 from src.experiments_my_game.train_reinforce import train_reinforce
 from src.experiments_my_game.train_q_learning import train_q_learning
+from src.experiments_my_game.train_q_learning_reputation_assignment import train_q_learning_reputation_assignment
 from src.experiments_my_game.train_dqn import train_dqn
 
 if __name__ == '__main__':
@@ -44,6 +45,7 @@ if __name__ == '__main__':
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--optimize', type=int, default=0) # 1 for true 0 for false
     parser.add_argument('--opponent_selection', type=int, default=0) # 1 for true 0 for false
+    parser.add_argument('--reputation_assignment', type=int, default=0) # 1 for true 0 for false
     parser.add_argument('--addition', type=str, default="")
 
     args = parser.parse_args()
@@ -68,4 +70,10 @@ if __name__ == '__main__':
     elif args.algorithm == "reinforce":
         train_reinforce(args)    
     elif args.algorithm == "q-learning":
-        train_q_learning(args)
+        if (args.reputation_assignment == True):
+            if (args.reputation_enabled == True):
+                train_q_learning_reputation_assignment(args)
+            else: 
+                print("Reputation is not enabled but reputation assignment it. Fix it.")
+        else:
+            train_q_learning(args)

@@ -22,6 +22,21 @@ def pick_agents_idxs(config):
 
     return active_agents_idxs
 
+def pick_agents_idxs_opponent_selection(config, agents):
+
+    active_agents_idxs = []
+    if (config.non_dummy_idxs != []):
+        first_agent_idx = random.sample(config.non_dummy_idxs, 1)[0] 
+    else: 
+        first_agent_idx = random.sample([i for i in range(config.n_agents)], 1)[0]
+    reputations = torch.stack([agents["agent_"+str(i)].reputation for i in range(config.n_agents) if i!= first_agent_idx], dim=1).long()[0]
+    print(reputations)
+    second_agent_idx = agents["agent_"+str(first_agent_idx)].select_opponent(reputations)
+    active_agents_idxs = [first_agent_idx, second_agent_idx]
+    print("active_agents_idxs=",active_agents_idxs)
+
+    return active_agents_idxs
+
 def eval(config, parallel_env, active_agents, active_agents_idxs, m, device, _print=False):
     #print("\nEVAL<<<=====================")
     observations = parallel_env.reset(m)

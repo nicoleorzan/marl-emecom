@@ -43,13 +43,21 @@ class Q_learning_agent():
                 input_Q = (2, len(self.mult_fact), self.action_size)  # 2 is for the binary reputation
         self.Q = torch.full(input_Q, self.max_value, dtype=float)
         print("self.Q=", self.Q)
-    
+
+        if (self.reputation_assignment == True):
+            input_Q2 = (2, 2, 2)  # get as input old reputation and action, assign new reputation
+            self.Q_reputation_assignment = torch.full(input_Q2, self.max_value, dtype=float)
+        
         self.memory = ExperienceReplayMemory(self.num_game_iterations)
+        self.memory_rep = ExperienceReplayMemory(self.num_game_iterations)
 
         self.reset()
 
     def append_to_replay(self, s, a, r, s_, d):
         self.memory.push((s, a, r, s_, d))
+
+    def append_to_replay_rep(self, s, a, r, s_, d):
+        self.memory_rep.push((s, a, r, s_, d))
 
     def argmax(self, q_values):
         top = torch.Tensor([-10000000])
@@ -90,7 +98,6 @@ class Q_learning_agent():
                 current_q = self.Q[self.state_act[0].long(), self.state_act[1].long(), :] 
         #print("current_q=", current_q)
         return current_q
-
     
     def select_action(self, _eval=False):
         
@@ -111,11 +118,31 @@ class Q_learning_agent():
         
         return torch.Tensor([action])
     
+    def select_reputation_assignment(self, rep_assignment_state, _eval=False):
+        
+        #print("Q_reputation_assignment=",self.Q_reputation_assignment)
+        current_q = self.Q_reputation_assignment[rep_assignment_state[0], rep_assignment_state[1], :]
+        #print("current_q=",current_q, current_q.shape)
+        assert(current_q.shape == torch.Size([2]))
+
+        if (_eval == True):
+            action = self.argmax(current_q)
+        elif (_eval == False):  
+            if torch.rand(1) < self.epsilon:
+                #print("RANDOM")
+                action = random.choice([i for i in range(self.action_size)])
+            else:
+                #print("argmax")
+                action = self.argmax(current_q)
+        #print("action=", action)
+        
+        return torch.Tensor([action])
+    
     def get_action_distribution(self):
         return self.Q[self.state_act.long(),:]
         
-    def select_opponent(self, reputations, _eval=False):
-        pass
+    #def select_opponent(self, reputations, _eval=False):
+    #    pass
     
     def update(self):
         #print("memory=", self.memory.memory)
@@ -154,5 +181,16 @@ class Q_learning_agent():
                     else:
                         self.Q[state[0], state[1], action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state[0], next_state[1], :]) - self.Q[state[0], state[1], action])
 
-        self.memory.memory = []
+            if (self.reputation_enabled == 1):
+                state_r, action_r, reward_r, next_state_r, done_r = self.memory_rep.memory[i]
+                state = state_r.long()
+                action = action_r.long()
+                next_state = next_state_r.long()
+                if (done_r):
+                    self.Q_reputation_assignment[state_r[0], state_r[1], action_r] += self.lr_actor*(reward_r - self.Q_reputation_assignment[state_r[0], state_r[1], action_r])
+                else:
+                    self.Q_reputation_assignment[state_r[0], state_r[1], action_r] += self.lr_actor*(reward_r + self.gamma*torch.max(self.Q_reputation_assignment[next_state_r[0], next_state_r[1], :]) - self.Q_reputation_assignment[state_r[0], state_r[1], action_r])
+
+        self.memory.memory = []            
+        self.memory_rep.memory = []
         self.reset()
