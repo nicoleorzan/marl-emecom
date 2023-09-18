@@ -217,6 +217,10 @@ def objective(args, repo_name, trial=None):
                     df_avg_coop = dict((ag_idx+"avg_coop_mf"+str(mf), coop_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)
                     df_avg_rew = dict((ag_idx+"avg_rew_mf"+str(mf), rew_agents_mf[mf_input][ag_idx]) for mf in config.mult_fact)
                     #df_avg_rew = {ag_idx+"avg_rew": avg_rew[ag_idx]}
+                    df_Qrep1 = dict((ag_idx+"Q_rep[0,0,"+str(i)+"]", agent.Q_reputation_assignment[0,0,i]) for i in range(0,1))
+                    df_Qrep2 = dict((ag_idx+"Q_rep[0,1,"+str(i)+"]", agent.Q_reputation_assignment[0,1,i]) for i in range(0,1))
+                    df_Qrep3 = dict((ag_idx+"Q_rep[1,0,"+str(i)+"]", agent.Q_reputation_assignment[1,0,i]) for i in range(0,1))
+                    df_Qrep4 = dict((ag_idx+"Q_rep[1,1,"+str(i)+"]", agent.Q_reputation_assignment[1,1,i]) for i in range(0,1))
                     if (len(config.mult_fact) == 1):
                         if (config.reputation_enabled == 0):
                             df_Q1 = dict((ag_idx+"Q[0]", agent.Q[0] ) for i in range(0,1))
@@ -243,7 +247,8 @@ def objective(args, repo_name, trial=None):
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
                         'epoch': epoch}, 
-                        **df_avg_coop, **df_avg_rew, **df_Q1, **df_Q2, **df_Q3, **df_Q4
+                        **df_avg_coop, **df_avg_rew, **df_Q1, **df_Q2, **df_Q3, **df_Q4, 
+                        **df_Qrep1, **df_Qrep2, **df_Qrep3, **df_Qrep4
                         }
                 else:
                     df_avg_coop = {ag_idx+"dummy_avg_coop": avg_coop[ag_idx]}
