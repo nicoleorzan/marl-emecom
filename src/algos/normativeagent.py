@@ -68,6 +68,27 @@ class NormativeAgent():
                 action = torch.Tensor([1.]) # I will play cooperatively
 
         return action
+    
+    def select_reputation_assignment(self, rep_state):
+        other_rep = torch.Tensor([rep_state[0]])
+        other_action = torch.Tensor([rep_state[1]])
+        reputation = other_rep
+        #print("other rep=", other_rep, "other_action", other_action)
+
+        if (self.mf > 1.):
+            if (other_action == torch.Tensor([1.0])):
+                if (other_rep == torch.Tensor([1.0])):
+                    reputation = torch.Tensor([1.0])
+                else: 
+                    reputation = torch.Tensor([0.0])
+            else: 
+                if (other_rep == torch.Tensor([1.0])):
+                    reputation = torch.Tensor([0.0])
+                else: 
+                    reputation = torch.Tensor([1.0])
+        #print("rep=", reputation)
+        return reputation
+
         
     def update(self, _iter=None):
         pass
