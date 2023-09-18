@@ -39,7 +39,7 @@ if __name__ == '__main__':
     parser.add_argument('--binary_reputation', type=int, default=1) # 1 yes 0 no
     parser.add_argument('--wandb_mode', type=str, choices = ["online", "offline"], default="offline")
     parser.add_argument('--dqn_activation_function', type=str, choices = ["tanh", "relu"], default="tanh")
-    parser.add_argument('--rule', type=str, choices = ["rule09", "rule11"], default="rule09")
+    parser.add_argument('--rule', type=str, choices = ["rule09", "rule11", "rule03"], default="rule09")
     parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn", "q-learning"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--optimize', type=int, default=0) # 1 for true 0 for false
