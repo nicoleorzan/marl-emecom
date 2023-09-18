@@ -38,7 +38,8 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     #print("observations=",observations)
     rewards_dict = {}
     actions_dict = {}
-        
+    #if (_eval == False):
+    #    print("active_agents=", active_agents_idxs)
     states = {}; next_states = {}
     for idx_agent, agent in active_agents.items():
         other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
@@ -53,7 +54,9 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
 
     done = False
     for i in range(config.num_game_iterations):
-        #print("i=", i)
+        #if (_eval == False):
+        #    if (i%50 ==0):
+        #        print("i=", i)
         # state
         actions = {}; states = next_states
         for idx_agent, agent in active_agents.items():
@@ -119,7 +122,7 @@ def objective(args, repo_name, trial=None):
     config = wandb.config
     print("config=", config)
 
-    # define env
+    # define envupdate_
     parallel_env = pgg_parallel_v0.parallel_env(config)
 
     # define agents
@@ -146,6 +149,7 @@ def objective(args, repo_name, trial=None):
         interaction_loop(config, parallel_env, active_agents, active_agents_idxs, social_norm, _eval=False)
 
         # update agents
+        #print("UPDATE!!")
         losses = {}
         for ag_idx, agent in active_agents.items():
             losses[ag_idx] = agent.update(epoch)
@@ -211,6 +215,7 @@ def objective(args, repo_name, trial=None):
                     df_loss = {ag_idx+"loss": losses[ag_idx]}
                     df_agent = {**{
                         ag_idx+"_reputation": agent.reputation,
+                        ag_idx+"epsilon": active_agents[str(ag_idx)].epsilon,
                         'epoch': epoch}, 
                         **df_avg_coop, **df_avg_rew, **df_loss
                         }
@@ -237,7 +242,6 @@ def objective(args, repo_name, trial=None):
             dff = {
                 "epoch": epoch,
                 "avg_rep": avg_rep,
-                "epsilon": active_agents["agent_"+str(active_agents_idxs[0])].epsilon,
                 "avg_rew_time": measure,
                 "avg_coop_from_agents": avg_coop_tot,
                 "weighted_average_coop": torch.mean(torch.stack([avg_i for _, avg_i in avg_rew.items()])) # only on the agents that played, of course
