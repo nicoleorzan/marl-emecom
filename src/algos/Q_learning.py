@@ -181,11 +181,12 @@ class Q_learning_agent():
                     else:
                         self.Q[state[0], state[1], action] += self.lr_actor*(reward + self.gamma*torch.max(self.Q[next_state[0], next_state[1], :]) - self.Q[state[0], state[1], action])
 
-            if (self.reputation_enabled == 1):
+            if (self.reputation_enabled == 1 and i < len(self.memory_rep.memory)):
+                #print(len(self.memory_rep.memory), i)
                 state_r, action_r, reward_r, next_state_r, done_r = self.memory_rep.memory[i]
-                state = state_r.long()
-                action = action_r.long()
-                next_state = next_state_r.long()
+                state_r = state_r.long()
+                action_r = action_r.long()
+                next_state_r = next_state_r.long()
                 if (done_r):
                     self.Q_reputation_assignment[state_r[0], state_r[1], action_r] += self.lr_actor*(reward_r - self.Q_reputation_assignment[state_r[0], state_r[1], action_r])
                 else:
