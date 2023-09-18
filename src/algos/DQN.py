@@ -74,6 +74,7 @@ class DQN():
         if (self.decaying_epsilon == True):
             self.eps0 = 0.1
             self.final_epsilon = 0.001
+            self.epsilon_delta = (self.eps0 - self.final_epsilon)/self.num_game_iterations
         self.epsilon = self.eps0
         self.r = 1.-np.exp(np.log(self.final_epsilon/self.eps0)/self.num_game_iterations)
 
@@ -203,7 +204,8 @@ class DQN():
         return loss.detach()
     
     def update_epsilon(self, _iter):
-        self.epsilon = self.eps0*(1.-self.r)**_iter
+        #self.epsilon = self.eps0*(1.-self.r)**_iter
+        self.epsilon = self.epsilon -self.epislon_delta #self.eps0*(1.-self.r)**_iter
 
     def update_target_model(self):
         self.update_count += 1
