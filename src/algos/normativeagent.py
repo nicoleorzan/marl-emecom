@@ -75,7 +75,7 @@ class NormativeAgent():
         reputation = other_rep
         #print("other rep=", other_rep, "other_action", other_action)
 
-        if (self.mf > 1.):
+        if (self.mf >= 1.):
             if (other_action == torch.Tensor([1.0])):
                 if (other_rep == torch.Tensor([1.0])):
                     reputation = torch.Tensor([1.0])

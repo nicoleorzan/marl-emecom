@@ -102,7 +102,7 @@ class SocialNorm():
                 
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
 
-                if (mf > 1.):
+                if (mf >= 1.):
                     if (avg_cooperation_level == torch.Tensor([1.0])):
                         if (other.old_reputation == 1.):
                             agent.reputation = torch.Tensor([1.0])
@@ -141,7 +141,7 @@ class SocialNorm():
                 
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
 
-                if (mf > 1.):
+                if (mf >= 1.):
                     if (avg_cooperation_level == torch.Tensor([1.0])):
                             agent.reputation = torch.Tensor([1.0])
                     else: 
@@ -177,7 +177,7 @@ class SocialNorm():
                 
                 avg_cooperation_level = np.mean(self.saved_actions[ag_idx])
 
-                if (mf > 1.):
+                if (mf >= 1.):
                     if (avg_cooperation_level == torch.Tensor([1.0])):
                         agent.reputation = torch.Tensor([1.0])
                     else: 
