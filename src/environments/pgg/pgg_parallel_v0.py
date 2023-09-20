@@ -161,7 +161,10 @@ class parallel_env(ParallelEnv):
             self.current_multiplier = mult_in
         else:
             if hasattr(self.mult_fact, '__len__'):
-                self.current_multiplier = torch.Tensor(random.sample(self.mult_fact,1)).to(device)
+                self.current_multiplier = self.set_mf_from_list()
+                if hasattr(self, "mf_from_interval"):
+                    if (self.mf_from_interval == 1):
+                        self.current_multiplier = self.set_mf_from_interval()
             else: 
                 self.current_multiplier = self.mult_fact.to(device)
 
@@ -174,6 +177,14 @@ class parallel_env(ParallelEnv):
         self.observe()
 
         return self.observations
+    
+    def set_mf_from_list(self):
+        return torch.Tensor(random.sample(self.mult_fact,1)).to(device)
+    
+    def set_mf_from_interval(self):
+        self.min_mf_value = 0.
+        self.max_mf_value = 3.5
+        return (self.min_mf_value - self.max_mf_value) * torch.rand(1) + self.max_mf_value
 
     def get_coins(self):
         return self.coins

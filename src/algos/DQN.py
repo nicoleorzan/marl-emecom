@@ -81,6 +81,8 @@ class DQN():
     def reset(self):
         self.memory.reset()
         self.memory.i = 0
+        #self.observed_mult_factors = torch.zeros(self.num_game_iterations)
+        self.idx_mf = 0
 
     def argmax(self, q_values):
         top = torch.Tensor([-10000000])
@@ -99,8 +101,18 @@ class DQN():
     def select_action(self, _eval=False):
         #print(" self.state_act=", self.state_act)
         #print("self.state_act before=", self.state_act.shape)
+        # save mf obs
+        ##if (_eval == False):
+        #    if (self.reputation_enabled == 1):
+        #        self.observed_mult_factors[self.idx_mf] = self.state_act[1]
+        #    else: 
+        #        self.observed_mult_factors[self.idx_mf] = self.state_act[0]
+        #    self.idx_mf += 1
+        #    print("self.observed_mult_factors[self.idx_mf]=",self.observed_mult_factors[self.idx_mf])
+
         self.state_act = self.state_act.view(-1,self.input_act)
-        #print("self.state_act=", self.state_act.shape)
+        #if (_eval==False):
+        #    print("self.state_act=", self.state_act, self.state_act.shape)
 
         if (_eval == True):
             #print("action selected with argmax bc EVAL=TRUE")

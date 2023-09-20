@@ -154,7 +154,9 @@ def setup_training_hyperparams(args, trial):
             lr_actor = 0.001,
             decayRate = 0.999,
             target_net_update_freq = 30,
+            continuous_games = args.continuous_games,
             reputation_enabled = args.reputation_enabled,
+            mf_from_interval = args.mf_from_interval,
             alpha = 0.1, # introspection level
             introspective = False,
             decaying_epsilon = True

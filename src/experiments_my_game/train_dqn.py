@@ -1,6 +1,5 @@
 from src.environments import pgg_parallel_v0
 from src.algos.DQN import DQN
-from src.algos.DQN_gmm import DQN_gmm
 import numpy as np
 import optuna
 from optuna.trial import TrialState
@@ -19,10 +18,7 @@ def define_agents(config):
     agents = {}
     for idx in range(config.n_agents):
         if (config.is_dummy[idx] == 0):
-            if (config.gmm_ == 1): 
-                agents['agent_'+str(idx)] = DQN_gmm(config, idx) 
-            else:
-                agents['agent_'+str(idx)] = DQN(config, idx) 
+            agents['agent_'+str(idx)] = DQN(config, idx) 
         else: 
             agents['agent_'+str(idx)] = NormativeAgent(config, idx)
     return agents

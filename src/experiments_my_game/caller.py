@@ -45,6 +45,8 @@ if __name__ == '__main__':
     parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn", "q-learning"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--optimize', type=int, default=0) # 1 for true 0 for false
+    parser.add_argument('--mf_from_interval', type=int, default=0) # 1 for true 0 for false
+    parser.add_argument('--continuous_games', type=int, default=0) # 1 for true 0 for false
     parser.add_argument('--opponent_selection', type=int, default=0) # 1 for true 0 for false
     parser.add_argument('--reputation_assignment', type=int, default=0) # 1 for true 0 for false
     parser.add_argument('--addition', type=str, default="")
