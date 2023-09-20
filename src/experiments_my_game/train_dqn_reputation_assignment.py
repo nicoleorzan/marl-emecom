@@ -1,6 +1,5 @@
 from src.environments import pgg_parallel_v0
-from src.algos.DQN import DQN
-from src.algos.DQN_gmm import DQN_gmm
+from src.algos.DQN_reputation_assignment import DQN
 import numpy as np
 import optuna
 from optuna.trial import TrialState
@@ -19,10 +18,7 @@ def define_agents(config):
     agents = {}
     for idx in range(config.n_agents):
         if (config.is_dummy[idx] == 0):
-            if (config.gmm_ == 1): 
-                agents['agent_'+str(idx)] = DQN_gmm(config, idx) 
-            else:
-                agents['agent_'+str(idx)] = DQN(config, idx) 
+            agents['agent_'+str(idx)] = DQN(config, idx) 
         else: 
             agents['agent_'+str(idx)] = NormativeAgent(config, idx)
     return agents
@@ -40,7 +36,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     actions_dict = {}
     #if (_eval == False):
     #    print("active_agents=", active_agents_idxs)
-    states = {}; next_states = {}
+    states = {}; next_states = {}; rep_states = {}
     for idx_agent, agent in active_agents.items():
         other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
         #next_states[idx_agent] = torch.cat((observations[idx_agent], other.reputation))
@@ -69,6 +65,20 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
             actions[agent] = a
         #print("actions=", actions)
 
+        rep_next_states = {}
+        for idx_agent, agent in active_agents.items():
+            other = active_agents["agent_"+str(list(set(active_agents_idxs) - set([agent.idx]))[0])]
+            #print("other.reputation, actions[agent+str(other.idx)]=",other.reputation, actions["agent_"+str(other.idx)])
+            rep_next_states[idx_agent] = torch.stack((other.reputation, actions["agent_"+str(other.idx)]), dim=1).long()[0]
+
+        if (_eval == False and rep_states!={}):
+            # save iteration            
+            for ag_idx, agent in active_agents.items():
+                if (agent.is_dummy == False):
+                    agent.append_to_replay_rep(rep_states[ag_idx], rep_actions[ag_idx], rewards[ag_idx], rep_next_states[ag_idx], done)
+                    agent.return_episode =+ rewards[ag_idx]
+        rep_states = rep_next_states
+
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
         if (config.introspective == True):
@@ -82,8 +92,13 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
                     rewards_dict["agent_"+str(ag_idx)].append(rewards["agent_"+str(ag_idx)])
                     actions_dict["agent_"+str(ag_idx)].append(actions["agent_"+str(ag_idx)])
 
-        social_norm.save_actions(actions, active_agents_idxs)
-        social_norm.rule09_binary_pgg(active_agents, active_agents_idxs, parallel_env.current_multiplier)
+        #rep_states = rep_next_states; 
+        rep_actions = {}
+        for idx_agent, agent in active_agents.items():
+            rep_actions[idx_agent] = agent.select_action_rep(rep_states[idx_agent])
+            #print("new_reputation=", new_reputation)
+            other.reputation = rep_actions[idx_agent]
+        #print("rep_actions=", rep_actions)
 
         # next state
         next_states = {}
