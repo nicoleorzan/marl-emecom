@@ -4,6 +4,7 @@ from src.experiments_my_game.train_reinforce import train_reinforce
 from src.experiments_my_game.train_q_learning import train_q_learning
 from src.experiments_my_game.train_q_learning_reputation_assignment import train_q_learning_reputation_assignment
 from src.experiments_my_game.train_dqn import train_dqn
+from src.experiments_my_game.train_dqn_comm import train_dqn_comm
 from src.experiments_my_game.train_dqn_reputation_assignment import train_dqn_reputation_assignment
 
 if __name__ == '__main__':
@@ -45,6 +46,8 @@ if __name__ == '__main__':
     parser.add_argument('--algorithm', type=str, choices = ["reinforce", "PPO", "dqn", "q-learning"], default="reinforce")
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--optimize', type=int, default=0) # 1 for true 0 for false
+    parser.add_argument('--comm', type=int, default=0) # 1 for true 0 for false
+    parser.add_argument('--mex_size', type=int, default=2) # 1 for true 0 for false
     parser.add_argument('--mf_from_interval', type=int, default=0) # 1 for true 0 for false
     parser.add_argument('--continuous_games', type=int, default=0) # 1 for true 0 for false
     parser.add_argument('--opponent_selection', type=int, default=0) # 1 for true 0 for false
@@ -69,6 +72,8 @@ if __name__ == '__main__':
         assert(args.proportion_dummy_agents == 0)
 
     if args.algorithm == "dqn":
+        if (args.comm == True): 
+            train_dqn_comm(args)
         if (args.reputation_assignment == True):
             if (args.reputation_enabled == True):
                 train_dqn_reputation_assignment(args)

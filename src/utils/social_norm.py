@@ -1,5 +1,63 @@
 import numpy as np
 import torch
+import math
+
+def bin_acts(comms, acts, n_comm, n_acts, b=None):
+    # Binning function that creates a matrix that counts co-occurrences of messages and actions
+    if b is None:
+        b = np.zeros((n_comm, n_acts))
+    for a, c in zip(acts, comms):
+        b[c][a] += 1
+    return b
+
+def to_int(n):
+    # Converts various things to integers
+    if type(n) is int:
+        return n
+    elif type(n) is float:
+        return int(n)
+    else:
+        return int(n.data.numpy())
+
+def probs_from_counts(l, ldim, eps=0):
+    # Outputs a probability distribution (list) of length ldim, by counting event occurrences in l
+    l_c = [eps] * ldim
+    for i in l:
+        l_c[i] += 1. / len(l)
+    return l_c
+
+def moving_average(x, w):
+    return np.convolve(x, np.ones(w), 'valid') / w
+
+def calc_mutinfo(acts, comms, n_acts, n_comm):
+    # Calculate mutual information between actions and messages
+    # Joint probability p(a, c) is calculated by counting co-occurences, *not* by performing interventions
+    # If the actions and messages come from the same agent, then this is the speaker consistency (SC)
+    # If the actions and messages come from different agents, this is the instantaneous coordinatino (IC)
+    #print(acts)
+    #print(comms)
+    if (comms[0].size() != torch.Size()):
+        comms = [torch.argmax(c) for c in comms]
+    comms = [to_int(m) for m in comms]
+    if (acts[0].size() != torch.Size()):
+        acts = [torch.argmax(c) for c in acts]
+    acts = [to_int(a) for a in acts]
+    #print("acts=", acts)
+    #print("comm=", comms)
+
+    # Calculate probabilities by counting co-occurrences
+    p_a = probs_from_counts(acts, n_acts)
+    p_c = probs_from_counts(comms, n_comm)
+    p_ac = bin_acts(comms, acts, n_comm, n_acts)
+    p_ac /= np.sum(p_ac)  # normalize counts into a probability distribution
+
+    # Calculate mutual information
+    mutinfo = 0
+    for c in range(n_comm):
+        for a in range(n_acts):
+            if p_ac[c][a] > 0:
+                mutinfo += p_ac[c][a] * math.log(p_ac[c][a] / (p_c[c] * p_a[a]))
+    return mutinfo
 
 class SocialNorm():
 
@@ -10,7 +68,38 @@ class SocialNorm():
         self.agents = agents
         self.n_agents = len(self.agents)
 
+        self.buffer_len = 600
+
         self.reset_saved_actions()
+        self.reset_comm()
+
+    def reset_comm(self):
+        self.saved_mex_states = {key: [] for key in [i for i in range(self.n_agents)]}
+        self.saved_actions = {key: [] for key in [i for i in range(self.n_agents)]}
+        self.saved_messages = {key: [] for key in [i for i in range(self.n_agents)]}
+
+    def save_comm(self, mex_st, mex, act, active_agents_idxs):
+        for ag_idx in active_agents_idxs:
+            if (ag_idx not in self.saved_actions.keys()):
+                self.saved_actions[ag_idx] = []
+            else:
+                if (len(self.saved_actions[ag_idx]) >= self.buffer_len):
+                    del self.saved_actions[ag_idx][0]
+                    del self.saved_messages[ag_idx][0]
+                    del self.saved_mex_states[ag_idx][0]
+
+                self.saved_mex_states[ag_idx].append(mex_st["agent_"+str(ag_idx)])
+                self.saved_messages[ag_idx].append(mex["agent_"+str(ag_idx)])
+                self.saved_actions[ag_idx].append(act["agent_"+str(ag_idx)])
+
+    def change_rep_mex(self, active_agents, active_agents_idxs):
+        for ag_idx in active_agents_idxs:
+            #print('self.saved_mex_states=',self.saved_actions)
+            agent = self.agents["agent_"+str(ag_idx)]
+            agent.old_reputation = agent.reputation
+            if (self.saved_actions[ag_idx] != []):
+                agent.reputation = torch.Tensor([calc_mutinfo(self.saved_actions[ag_idx], self.saved_messages[ag_idx], self.action_size, self.mex_size)])
+                #print(agent.reputation)
 
     def reset_saved_actions(self):
         self.saved_actions = {key: [] for key in [i for i in range(self.n_agents)]}
