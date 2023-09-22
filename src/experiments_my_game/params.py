@@ -149,6 +149,7 @@ def setup_training_hyperparams(args, trial):
             epsilon = 0.01,
             memory_size = 500,
             n_hidden_act = 1,
+            freq_counts = args.freq_counts,
             hidden_size_act = 4,
             dqn_activation_function = args.dqn_activation_function,
             lr_actor = 0.001,

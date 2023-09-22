@@ -305,6 +305,8 @@ def objective(args, repo_name, trial=None):
             #print("avg_coop_tot=", avg_coop_tot)
             print("coop_agents_mf=",coop_agents_mf)
             print("dff_coop_per_mf=",dff_coop_per_mf)
+            for idx_agent, agent in active_agents.items():
+                print("agent=", idx_agent,"rep", agent.reputation)
     
     wandb.finish()
     return measure

@@ -44,6 +44,7 @@ class DQN_comm():
         for key, val in params.items(): setattr(self, key, val)
 
         #self.input_act = self.obs_size
+        print("Learning agent ", idx)
         if (self.reputation_enabled == 0):
             self.input_act = 1
         else: 

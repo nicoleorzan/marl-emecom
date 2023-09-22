@@ -37,37 +37,36 @@ class NormativeAgent():
         #self.buffer.clear()
     
     def select_message(self, _eval=False):
-        if (self.reputation_enabled == 0):
-            print("CANNOT USE DUMMY AGENTS, THERE IS NO REPUTATION")
-            return
+        #if (self.reputation_enabled == 0):
+        #    print("CANNOT USE DUMMY AGENTS, THERE IS NO REPUTATION")
+        #    return
         
-        if (self.reputation_enabled == 1):
-            if (len(self.mult_fact) > 1):
-                self.opponent_reputation = self.state_message[0]
-                self.mf = self.state_message[1]
-            else: 
-                self.opponent_reputation = self.state_message[0]
-            
-        if (self.mf >= 1.): # and the reputation of my opponent is big enough
-            if (self.opponent_reputation >= torch.Tensor([0.1])):
-                message = torch.Tensor([1.]) # I will play cooperatively
-            else: 
-                message = torch.Tensor([0.]) # I will  defect
+        if (len(self.mult_fact) > 1):
+            self.opponent_reputation = self.state_message[0]
+            self.mf = self.state_message[1]
         else: 
-            message = torch.Tensor([0.]) # I will  defect
+            self.opponent_reputation = self.state_message[0]
+        
+        message = torch.Tensor([0.])
+        if (len(self.mult_fact) == 1):
+            if (self.opponent_reputation >= torch.Tensor([0.1])): 
+                message = torch.Tensor([1.]) # I will play cooperatively
+        else: 
+            if (self.mf >= 1. and self.opponent_reputation >= torch.Tensor([0.1])): # and the reputation of my opponent is big enough
+                message = torch.Tensor([1.]) # I will play cooperatively
+
         return message
 
     def select_action(self, _eval=False):
-        if (self.reputation_enabled == 0):
-            print("CANNOT USE DUMMY AGENTS, THERE IS NO REPUTATION")
-            return
+        #if (self.reputation_enabled == 0):
+        #    print("CANNOT USE DUMMY AGENTS, THERE IS NO REPUTATION")
+        #    return
         
-        if (self.reputation_enabled == 1):
-            if (len(self.mult_fact) > 1):
-                self.opponent_reputation = self.state_act[0]
-                self.mf = self.state_act[1]
-            else: 
-                self.opponent_reputation = self.state_act[0]
+        if (len(self.mult_fact) > 1):
+            self.opponent_reputation = self.state_act[0]
+            self.mf = self.state_act[1]
+        else: 
+            self.opponent_reputation = self.state_act[0]
 
         action = torch.Tensor([0.])
         if (len(self.mult_fact) == 1):

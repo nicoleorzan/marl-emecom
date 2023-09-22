@@ -37,6 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--reputation_in_reward', type=int, default=0)
     parser.add_argument('--reputation_enabled', type=int, default=0)
     parser.add_argument('--obs_size', type=int, default=4)
+    parser.add_argument('--freq_counts', type=int, default=1)  # 1 for true 0 for false
     parser.add_argument('--coins_value', type=float, default=4.)
     parser.add_argument('--proportion_dummy_agents', type=float, default=0.)
     parser.add_argument('--binary_reputation', type=int, default=1) # 1 yes 0 no

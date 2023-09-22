@@ -36,6 +36,7 @@ def calc_mutinfo(acts, comms, n_acts, n_comm):
     # If the actions and messages come from different agents, this is the instantaneous coordinatino (IC)
     #print("acts=",acts)
     #print("comms=",comms)
+    #print(acts == comms)
     #if (len(acts)>1):
     acts = torch.stack(acts, dim=1)[0]
     comms = torch.stack(comms, dim=1)[0]
@@ -100,13 +101,22 @@ class SocialNorm():
                 self.saved_actions[ag_idx].append(act["agent_"+str(ag_idx)])
 
     def change_rep_mex(self, active_agents, active_agents_idxs):
+        #print("active_agents_idxs=",active_agents_idxs)
         for ag_idx in active_agents_idxs:
+            #print("agent=", ag_idx)
             #print('self.saved_mex_states=',self.saved_actions)
             agent = self.agents["agent_"+str(ag_idx)]
             agent.old_reputation = agent.reputation
             if (self.saved_actions[ag_idx] != []):
-                agent.reputation = torch.Tensor([calc_mutinfo(self.saved_actions[ag_idx], self.saved_messages[ag_idx], self.action_size, self.mex_size)])
+                #print("self.saved_actions[ag_idx]=",self.saved_actions[ag_idx])
+                #print("self.saved_messages[ag_idx]=",self.saved_messages[ag_idx])
+                #print("self.saved_actions[ag_idx] ",self.saved_actions[ag_idx] )
+                if (self.freq_counts == True):
+                    agent.reputation = (torch.stack(self.saved_actions[ag_idx],dim=0) == torch.stack(self.saved_messages[ag_idx],dim=0)).sum(dim=0)/len(self.saved_messages[ag_idx])
+                else:
+                    agent.reputation = torch.Tensor([calc_mutinfo(self.saved_actions[ag_idx], self.saved_messages[ag_idx], self.action_size, self.mex_size)])
                 #print(agent.reputation)
+            #print("rep=", agent.reputation)
 
     def reset_saved_actions(self):
         self.saved_actions = {key: [] for key in [i for i in range(self.n_agents)]}
