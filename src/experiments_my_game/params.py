@@ -154,6 +154,7 @@ def setup_training_hyperparams(args, trial):
             dqn_activation_function = args.dqn_activation_function,
             lr_actor = 0.001,
             decayRate = 0.999,
+            threshold = args.threshold,
             mex_size = args.mex_size,
             target_net_update_freq = 30,
             continuous_games = args.continuous_games,

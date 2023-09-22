@@ -49,10 +49,10 @@ class NormativeAgent():
         
         message = torch.Tensor([0.])
         if (len(self.mult_fact) == 1):
-            if (self.opponent_reputation >= torch.Tensor([0.1])): 
+            if (self.opponent_reputation >= torch.Tensor([self.threshold])): 
                 message = torch.Tensor([1.]) # I will play cooperatively
         else: 
-            if (self.mf >= 1. and self.opponent_reputation >= torch.Tensor([0.1])): # and the reputation of my opponent is big enough
+            if (self.mf >= 1. and self.opponent_reputation >= torch.Tensor([self.threshold])): # and the reputation of my opponent is big enough
                 message = torch.Tensor([1.]) # I will play cooperatively
 
         return message
@@ -70,10 +70,10 @@ class NormativeAgent():
 
         action = torch.Tensor([0.])
         if (len(self.mult_fact) == 1):
-            if (self.opponent_reputation >= torch.Tensor([0.1])): 
+            if (self.opponent_reputation >= torch.Tensor([self.threshold])): 
                 action = torch.Tensor([1.]) # I will play cooperatively
         else: 
-            if (self.mf >= 1. and self.opponent_reputation >= torch.Tensor([0.1])): # and the reputation of my opponent is big enough
+            if (self.mf >= 1. and self.opponent_reputation >= torch.Tensor([self.threshold])): # and the reputation of my opponent is big enough
                 action = torch.Tensor([1.]) # I will play cooperatively
 
         return action
