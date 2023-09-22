@@ -34,8 +34,13 @@ def calc_mutinfo(acts, comms, n_acts, n_comm):
     # Joint probability p(a, c) is calculated by counting co-occurences, *not* by performing interventions
     # If the actions and messages come from the same agent, then this is the speaker consistency (SC)
     # If the actions and messages come from different agents, this is the instantaneous coordinatino (IC)
-    #print(acts)
-    #print(comms)
+    #print("acts=",acts)
+    #print("comms=",comms)
+    #if (len(acts)>1):
+    acts = torch.stack(acts, dim=1)[0]
+    comms = torch.stack(comms, dim=1)[0]
+    #print("acts=",acts)
+    #print("comms=",comms)
     if (comms[0].size() != torch.Size()):
         comms = [torch.argmax(c) for c in comms]
     comms = [to_int(m) for m in comms]
@@ -57,7 +62,9 @@ def calc_mutinfo(acts, comms, n_acts, n_comm):
         for a in range(n_acts):
             if p_ac[c][a] > 0:
                 mutinfo += p_ac[c][a] * math.log(p_ac[c][a] / (p_c[c] * p_a[a]))
+    #print("mutinfo=", mutinfo)
     return mutinfo
+
 
 class SocialNorm():
 

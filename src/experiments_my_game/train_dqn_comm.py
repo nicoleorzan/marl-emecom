@@ -7,7 +7,7 @@ from optuna.trial import TrialState
 import torch
 from optuna.storages import JournalStorage, JournalFileStorage
 import wandb
-from src.algos.normativeagent import NormativeAgent
+from src.algos.normativeagent_comm import NormativeAgent
 from src.utils.social_norm import SocialNorm
 from src.utils.utils import pick_agents_idxs, introspective_rewards
 from src.experiments_my_game.params import setup_training_hyperparams
@@ -78,6 +78,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         for idx_agent, agent in active_agents.items():
             #print(agent.reputation)
             agent.state_act = states[idx_agent]
+        #print("states=", states)
         
         # action
         for agent in parallel_env.active_agents:
