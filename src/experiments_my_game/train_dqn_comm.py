@@ -76,7 +76,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
 
         actions = {}; states = next_states
         for idx_agent, agent in active_agents.items():
-            print(agent.reputation)
+            #print(agent.reputation)
             agent.state_act = states[idx_agent]
         
         # action
