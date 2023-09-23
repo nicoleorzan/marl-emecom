@@ -161,7 +161,7 @@ def setup_training_hyperparams(args, trial):
             reputation_enabled = args.reputation_enabled,
             mf_from_interval = args.mf_from_interval,
             alpha = 0.1, # introspection level
-            introspective = False,
+            introspective = args.introspective,
             decaying_epsilon = True
         )
     elif (args.algorithm == "q-learning"):

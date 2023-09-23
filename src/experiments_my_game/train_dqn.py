@@ -68,7 +68,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
         if (config.introspective == True):
-            rewards = introspective_rewards(config, active_agents, parallel_env, rewards, actions)
+            rewards = introspective_rewards(config, observations, active_agents, parallel_env, rewards, actions)
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
                 if "agent_"+str(ag_idx) not in rewards_dict.keys():

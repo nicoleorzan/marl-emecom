@@ -3,10 +3,19 @@ import itertools
 import numpy as np
 import random
 
-def introspective_rewards(config, active_agents, parallel_env, rewards, actions):
+def utility(mf,actions):
+    coins = 4
+    common_pot = torch.sum(torch.Tensor([coins*a for a in actions]))
+
+    return common_pot/2*mf+(coins-coins*actions[0])
+
+def introspective_rewards(config, observations, active_agents, parallel_env, rewards, actions):
     new_rewards = {}
     for ag_idx, _ in active_agents.items():
-        s = parallel_env.mat[actions[ag_idx], actions[ag_idx]]
+        #print("agent=", ag_idx, actions[ag_idx])
+        #print("obs mf=", observations[ag_idx])
+        s = utility(observations[ag_idx],[actions[ag_idx],actions[ag_idx]])
+        #print("s=",s)
         new_rewards[ag_idx] = config.alpha*rewards[ag_idx] + (1-config.alpha)*s
     return new_rewards
 
