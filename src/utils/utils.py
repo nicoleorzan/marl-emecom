@@ -10,13 +10,38 @@ def utility(mf,actions):
     return common_pot/2*mf+(coins-coins*actions[0])
 
 def introspective_rewards(config, observations, active_agents, parallel_env, rewards, actions):
-    new_rewards = {}
-    for ag_idx, _ in active_agents.items():
+    new_rewards = {}; states = {}; coins = {}; self_rewards = {}
+    for agent in active_agents:
+        coins[agent] = config.coins_value
+    #print("rewards=", rewards)
+
+    for ag_idx, agent in active_agents.items():
+        #print("ag_idx=", ag_idx)
+        #other = ag_idx
+        other = agent
         #print("agent=", ag_idx, actions[ag_idx])
-        #print("obs mf=", observations[ag_idx])
-        s = utility(observations[ag_idx],[actions[ag_idx],actions[ag_idx]])
-        #print("s=",s)
-        new_rewards[ag_idx] = config.alpha*rewards[ag_idx] + (1-config.alpha)*s
+        #print("obs mf=", observations)
+        if (agent.is_dummy == True): 
+            states[ag_idx] = torch.cat((other.reputation, torch.Tensor([parallel_env.current_multiplier])))
+        else: 
+            if (config.reputation_enabled == 1):
+                states[ag_idx] = torch.cat((other.reputation, observations[ag_idx]))
+            else: 
+                states[ag_idx] = observations[ag_idx]
+
+        actions = {}
+        for agent in parallel_env.active_agents:
+            a = active_agents[agent].select_action(states[ag_idx],_eval=False)
+            actions[agent] = a
+        #print("actions=", actions)
+        #print("coins=", coins)
+
+        common_pot = torch.sum(torch.Tensor([coins[agent]*actions[agent] for agent in active_agents]))
+        self_rewards[ag_idx] = common_pot/2*observations[ag_idx] + (coins[ag_idx]-coins[ag_idx]*actions[ag_idx])
+        #s = self_encounter(config, parallel_env, active_agents, observations, _eval=True) #utility(observations[ag_idx],[actions[ag_idx],actions[ag_idx]])
+        new_rewards[ag_idx] = config.alpha*rewards[ag_idx] + (1-config.alpha)*self_rewards[ag_idx]
+    #print("self_rewards=", self_rewards)
+    #print("new_rewards=",new_rewards)
     return new_rewards
 
 def pick_agents_idxs(config):

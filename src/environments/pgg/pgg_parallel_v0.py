@@ -250,7 +250,7 @@ class parallel_env(ParallelEnv):
 
         # rewards for all agents are placed in the rewards dictionary to be returned
         rewards = {}
-        
+
         common_pot = torch.sum(torch.Tensor([self.coins[agent]*actions[agent] for agent in self.active_agents])).to(device)
 
         for agent in self.active_agents:

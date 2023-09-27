@@ -52,23 +52,25 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     for i in range(config.num_game_iterations):
         #if (_eval == False):
         #    if (i%50 ==0):
-        #        print("i=", i)
+        #print("i=", i)
         # state
         actions = {}; states = next_states
-        for idx_agent, agent in active_agents.items():
-            agent.state_act = states[idx_agent]
+        #for idx_agent, agent in active_agents.items():
+        #    agent.state_act = states[idx_agent]
         #print("states=", states)
         
         # action
         for agent in parallel_env.active_agents:
-            a = active_agents[agent].select_action(_eval)
+            a = active_agents[agent].select_action(states[idx_agent],_eval)
             actions[agent] = a
         #print("actions=", actions)
 
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
+        #print("rewards=", rewards)
         if (config.introspective == True):
             rewards = introspective_rewards(config, observations, active_agents, parallel_env, rewards, actions)
+        #print("rewards1=", rewards)
         if (_eval==True):
             for ag_idx in active_agents_idxs:       
                 if "agent_"+str(ag_idx) not in rewards_dict.keys():
@@ -134,6 +136,7 @@ def objective(args, repo_name, trial=None):
 
         # pick a pair of agents
         active_agents_idxs = pick_agents_idxs(config)
+        #print("active_agents_idxs=",active_agents_idxs)
         active_agents = {"agent_"+str(key): agents["agent_"+str(key)] for key, _ in zip(active_agents_idxs, agents)}
 
         [agent.reset() for _, agent in active_agents.items()]

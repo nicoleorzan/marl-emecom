@@ -98,31 +98,20 @@ class DQN():
 
         return random.choice(ties)
         
-    def select_action(self, _eval=False):
-        #print(" self.state_act=", self.state_act)
-        #print("self.state_act before=", self.state_act.shape)
-        # save mf obs
-        ##if (_eval == False):
-        #    if (self.reputation_enabled == 1):
-        #        self.observed_mult_factors[self.idx_mf] = self.state_act[1]
-        #    else: 
-        #        self.observed_mult_factors[self.idx_mf] = self.state_act[0]
-        #    self.idx_mf += 1
-        #    print("self.observed_mult_factors[self.idx_mf]=",self.observed_mult_factors[self.idx_mf])
+    def select_action(self, state_act, _eval=False):
 
-        self.state_act = self.state_act.view(-1,self.input_act)
-        #if (_eval==False):
-        #    print("self.state_act=", self.state_act, self.state_act.shape)
+        #self.state_act = self.state_act.view(-1,self.input_act)
+        state_act = state_act.view(-1,self.input_act)
 
         if (_eval == True):
             #print("action selected with argmax bc EVAL=TRUE")
-            action = self.argmax(self.policy_act.get_values(state=self.state_act)[0])
+            action = self.argmax(self.policy_act.get_values(state=state_act)[0])
             
         elif (_eval == False):
             if torch.rand(1) < self.epsilon:
                 action = random.choice([i for i in range(self.action_size)])
             else:
-                action = self.argmax(self.policy_act.get_values(state=self.state_act)[0])
+                action = self.argmax(self.policy_act.get_values(state=state_act)[0])
                 
         return torch.Tensor([action])
     
