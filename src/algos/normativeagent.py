@@ -44,17 +44,17 @@ class NormativeAgent():
     def select_opponent(self, reputations):
         return random.randint(0, self.n_agents-1)
 
-    def select_action(self, _eval=False):
+    def select_action(self, state_act, _eval=False):
         if (self.reputation_enabled == 0):
             print("CANNOT USE DUMMY AGENTS, THERE IS NO REPUTATION")
             return
         
         if (self.reputation_enabled == 1):
             if (len(self.mult_fact) > 1):
-                self.opponent_reputation = self.state_act[0]
-                self.mf = self.state_act[1]
+                self.opponent_reputation = state_act[0]
+                self.mf = state_act[1]
             else: 
-                self.opponent_reputation = self.state_act[0]
+                self.opponent_reputation = state_act[0]
         else:
             print("CANNOT USE DUMMY AGENTS, THERE IS NO REPUTATION")
             return
