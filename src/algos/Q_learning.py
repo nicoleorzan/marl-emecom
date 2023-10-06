@@ -77,31 +77,32 @@ class Q_learning_agent():
         self.previous_action = torch.Tensor([1.])
         self.return_episode = 0
 
-    def digest_input_anast(self, input):
-        opponent_reputation = input
-
-        opponent_reputation = torch.Tensor([opponent_reputation])
-        self.state_act = torch.Tensor([opponent_reputation])
+    #def digest_input_anast(self, input):
+    #    opponent_reputation = input#
+    #
+    #    opponent_reputation = torch.Tensor([opponent_reputation])
+    #    self.state_act = torch.Tensor([opponent_reputation])
     
-    def select_current_q(self):
+    #def select_current_q(self):
+    def select_current_q(self, state_act):
         #print("self.state_act=",self.state_act)
         #print("Q=", self.Q)
         if (self.reputation_enabled == 0): 
             if (len(self.mult_fact) == 1):
                 current_q = self.Q[:]
             else: 
-                current_q = self.Q[self.state_act[0].long(),:] # Only m factor
+                current_q = self.Q[state_act[0].long(),:] # Only m factor
         else:
             if (len(self.mult_fact) == 1):
-                current_q = self.Q[self.state_act[0].long(), :] # only reputation
+                current_q = self.Q[state_act[0].long(), :] # only reputation
             else: 
-                current_q = self.Q[self.state_act[0].long(), self.state_act[1].long(), :] 
+                current_q = self.Q[state_act[0].long(), state_act[1].long(), :] 
         #print("current_q=", current_q)
         return current_q
     
-    def select_action(self, _eval=False):
+    def select_action(self, state_act, _eval=False):
         
-        current_q = self.select_current_q()
+        current_q = self.select_current_q(state_act)
         #print("current_q=",current_q, current_q.shape)
         assert(current_q.shape == torch.Size([self.action_size]))
 
@@ -138,8 +139,8 @@ class Q_learning_agent():
         
         return torch.Tensor([action])
     
-    def get_action_distribution(self):
-        return self.Q[self.state_act.long(),:]
+    def get_action_distribution(self, state_act):
+        return self.Q[state_act.long(),:]
         
     #def select_opponent(self, reputations, _eval=False):
     #    pass
