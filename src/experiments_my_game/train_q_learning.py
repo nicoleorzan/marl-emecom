@@ -82,7 +82,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
         # reward
         _, rewards, done, _ = parallel_env.step(actions)
         if (config.introspective == True):
-            rewards = introspective_rewards(config, active_agents, parallel_env, rewards, actions)
+            rewards = introspective_rewards(config, observations, active_agents, parallel_env, rewards, actions)
         #print("rewards=", rewards)
 
         if (_eval==True):
