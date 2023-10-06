@@ -174,11 +174,11 @@ def setup_training_hyperparams(args, trial):
             chi = 0.001,
             epsilon = 0.01,
             lr_actor = 0.01,
+            introspective = args.introspective,
             alpha = 0.1, # introspection level
             rule = args.rule,
             reputation_assignment = args.reputation_assignment,
-            reputation_enabled = args.reputation_enabled,
-            introspective = False
+            reputation_enabled = args.reputation_enabled
         )
 
     n_dummy = int(args.proportion_dummy_agents*args.n_agents)
