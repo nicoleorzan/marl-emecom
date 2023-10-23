@@ -31,7 +31,7 @@ def interaction_loop(config, parallel_env, active_agents, active_agents_idxs, so
     else:
         observations = parallel_env.reset()
 
-    #print("observations=",observations)
+    print("observations=",observations)
     rewards_dict = {}
     actions_dict = {}
     #if (_eval == False):
@@ -161,6 +161,7 @@ def objective(args, repo_name, trial=None):
 
             avg_rep = np.mean([agent.reputation[0] for _, agent in agents.items() if (agent.is_dummy == False)])
             measure = avg_rep
+            print("avg_coop=", avg_coop)
             coop_agents_mf[mf_input] = avg_coop
             rew_agents_mf[mf_input] = avg_rew
 
