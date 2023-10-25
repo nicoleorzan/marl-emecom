@@ -124,7 +124,7 @@ class Reinforce(Agent):
         act_logprobs = self.buffer.act_logprobs
         comm_logprobs = self.buffer.comm_logprobs
 
-        print("self.buffer.states_c=", self.buffer.states_c)
+        #print("self.buffer.states_c=", self.buffer.states_c)
 
         entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
         self.entropy = entropy
