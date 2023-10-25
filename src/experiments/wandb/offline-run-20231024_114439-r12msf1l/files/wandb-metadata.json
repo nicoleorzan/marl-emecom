@@ -1,0 +1,108 @@
+{
+    "os": "Linux-5.15.0-86-generic-x86_64-with-glibc2.29",
+    "python": "3.8.10",
+    "heartbeatAt": "2023-10-24T09:44:39.138038",
+    "startedAt": "2023-10-24T09:44:39.027197",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--n_agents",
+        "2",
+        "--mult_fact",
+        "0.5",
+        "1.5",
+        "2.5",
+        "3.5",
+        "--uncertainties",
+        "0.",
+        "0.",
+        "--communicating_agents",
+        "0",
+        "0",
+        "--listening_agents",
+        "0",
+        "0",
+        "--gmm_",
+        "0",
+        "0",
+        "--batch_size",
+        "64",
+        "--lr_actor",
+        "0.0174",
+        "--n_hidden_act",
+        "2",
+        "--hidden_size_act",
+        "8"
+    ],
+    "state": "running",
+    "program": "caller_given_params.py",
+    "codePathLocal": "caller_given_params.py",
+    "codePath": "src/experiments/caller_given_params.py",
+    "git": {
+        "remote": "https://github.com/nicoleorzan/marl-emecom.git",
+        "commit": "258e3e562b09611326b1eb8b42616c3a2b531214"
+    },
+    "email": "orzan.nicole@gmail.com",
+    "root": "/home/nicole/new_stuff/marl-emecom",
+    "host": "nikkipad",
+    "username": "nicole",
+    "executable": "/home/nicole/new_stuff/marl-emecom/env/bin/python3",
+    "cpu_count": 4,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 2442.368125,
+        "min": 400.0,
+        "max": 4900.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2546.008,
+            "min": 400.0,
+            "max": 4900.0
+        },
+        {
+            "current": 2024.457,
+            "min": 400.0,
+            "max": 4900.0
+        },
+        {
+            "current": 2767.826,
+            "min": 400.0,
+            "max": 4900.0
+        },
+        {
+            "current": 2300.0,
+            "min": 400.0,
+            "max": 4900.0
+        },
+        {
+            "current": 1902.681,
+            "min": 400.0,
+            "max": 4900.0
+        },
+        {
+            "current": 2300.0,
+            "min": 400.0,
+            "max": 4900.0
+        },
+        {
+            "current": 1867.809,
+            "min": 400.0,
+            "max": 4900.0
+        },
+        {
+            "current": 3830.164,
+            "min": 400.0,
+            "max": 4900.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 191.18775939941406,
+            "used": 153.78776168823242
+        }
+    },
+    "memory": {
+        "total": 15.249797821044922
+    }
+}

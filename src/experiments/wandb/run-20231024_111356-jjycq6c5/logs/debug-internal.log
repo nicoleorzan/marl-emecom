@@ -1,0 +1,174 @@
+2023-10-24 11:13:56,248 INFO    StreamThr :96501 [internal.py:wandb_internal():86] W&B internal server running at pid: 96501, started at: 2023-10-24 11:13:56.248399
+2023-10-24 11:13:56,250 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: status
+2023-10-24 11:13:56,255 INFO    WriterThread:96501 [datastore.py:open_for_write():85] open: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/run-jjycq6c5.wandb
+2023-10-24 11:13:56,256 DEBUG   SenderThread:96501 [sender.py:send():380] send: header
+2023-10-24 11:13:56,273 DEBUG   SenderThread:96501 [sender.py:send():380] send: run
+2023-10-24 11:13:56,735 INFO    SenderThread:96501 [dir_watcher.py:__init__():211] watching files in: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files
+2023-10-24 11:13:56,735 INFO    SenderThread:96501 [sender.py:_start_run_threads():1122] run started: jjycq6c5 with start time 1698138836.248282
+2023-10-24 11:13:56,760 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: check_version
+2023-10-24 11:13:56,760 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: check_version
+2023-10-24 11:13:56,818 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: run_start
+2023-10-24 11:13:56,819 DEBUG   HandlerThread:96501 [system_info.py:__init__():32] System info init
+2023-10-24 11:13:56,819 DEBUG   HandlerThread:96501 [system_info.py:__init__():47] System info init done
+2023-10-24 11:13:56,819 INFO    HandlerThread:96501 [system_monitor.py:start():194] Starting system monitor
+2023-10-24 11:13:56,819 INFO    SystemMonitor:96501 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2023-10-24 11:13:56,820 INFO    HandlerThread:96501 [system_monitor.py:probe():214] Collecting system info
+2023-10-24 11:13:56,820 INFO    SystemMonitor:96501 [interfaces.py:start():190] Started cpu monitoring
+2023-10-24 11:13:56,821 INFO    SystemMonitor:96501 [interfaces.py:start():190] Started disk monitoring
+2023-10-24 11:13:56,822 INFO    SystemMonitor:96501 [interfaces.py:start():190] Started memory monitoring
+2023-10-24 11:13:56,823 INFO    SystemMonitor:96501 [interfaces.py:start():190] Started network monitoring
+2023-10-24 11:13:56,845 DEBUG   HandlerThread:96501 [system_info.py:probe():196] Probing system
+2023-10-24 11:13:56,850 DEBUG   HandlerThread:96501 [system_info.py:_probe_git():181] Probing git
+2023-10-24 11:13:56,865 DEBUG   HandlerThread:96501 [system_info.py:_probe_git():189] Probing git done
+2023-10-24 11:13:56,865 DEBUG   HandlerThread:96501 [system_info.py:probe():244] Probing system done
+2023-10-24 11:13:56,865 DEBUG   HandlerThread:96501 [system_monitor.py:probe():223] {'os': 'Linux-5.15.0-86-generic-x86_64-with-glibc2.29', 'python': '3.8.10', 'heartbeatAt': '2023-10-24T09:13:56.845736', 'startedAt': '2023-10-24T09:13:56.240352', 'docker': None, 'cuda': None, 'args': ('--n_agents', '2', '--mult_fact', '0.5', '1.5', '2.5', '3.5', '--uncertainties', '0.', '0.', '--communicating_agents', '0', '0', '--listening_agents', '0', '0', '--gmm_', '0', '0', '--batch_size', '64', '--lr_actor', '0.0174', '--n_hidden_act', '2', '--hidden_size_act', '8'), 'state': 'running', 'program': 'caller_given_params.py', 'codePathLocal': 'caller_given_params.py', 'codePath': 'src/experiments/caller_given_params.py', 'git': {'remote': 'https://github.com/nicoleorzan/marl-emecom.git', 'commit': '258e3e562b09611326b1eb8b42616c3a2b531214'}, 'email': 'orzan.nicole@gmail.com', 'root': '/home/nicole/new_stuff/marl-emecom', 'host': 'nikkipad', 'username': 'nicole', 'executable': '/home/nicole/new_stuff/marl-emecom/env/bin/python3', 'cpu_count': 4, 'cpu_count_logical': 8, 'cpu_freq': {'current': 2362.522625, 'min': 400.0, 'max': 4900.0}, 'cpu_freq_per_core': [{'current': 2300.0, 'min': 400.0, 'max': 4900.0}, {'current': 2365.687, 'min': 400.0, 'max': 4900.0}, {'current': 2300.0, 'min': 400.0, 'max': 4900.0}, {'current': 2300.0, 'min': 400.0, 'max': 4900.0}, {'current': 2300.0, 'min': 400.0, 'max': 4900.0}, {'current': 2300.0, 'min': 400.0, 'max': 4900.0}, {'current': 2300.0, 'min': 400.0, 'max': 4900.0}, {'current': 2300.0, 'min': 400.0, 'max': 4900.0}], 'disk': {'/': {'total': 191.18775939941406, 'used': 153.75548934936523}}, 'memory': {'total': 15.249797821044922}}
+2023-10-24 11:13:56,865 INFO    HandlerThread:96501 [system_monitor.py:probe():224] Finished collecting system info
+2023-10-24 11:13:56,865 INFO    HandlerThread:96501 [system_monitor.py:probe():227] Publishing system info
+2023-10-24 11:13:56,866 DEBUG   HandlerThread:96501 [system_info.py:_save_pip():52] Saving list of pip packages installed into the current environment
+2023-10-24 11:13:56,866 DEBUG   HandlerThread:96501 [system_info.py:_save_pip():68] Saving pip packages done
+2023-10-24 11:13:56,866 INFO    HandlerThread:96501 [system_monitor.py:probe():229] Finished publishing system info
+2023-10-24 11:13:56,869 DEBUG   SenderThread:96501 [sender.py:send():380] send: files
+2023-10-24 11:13:56,870 INFO    SenderThread:96501 [sender.py:_save_file():1378] saving file wandb-metadata.json with policy now
+2023-10-24 11:13:56,877 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: stop_status
+2023-10-24 11:13:56,878 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: stop_status
+2023-10-24 11:13:56,880 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: internal_messages
+2023-10-24 11:13:57,135 DEBUG   SenderThread:96501 [sender.py:send():380] send: telemetry
+2023-10-24 11:13:57,283 DEBUG   SenderThread:96501 [sender.py:send():380] send: exit
+2023-10-24 11:13:57,283 INFO    SenderThread:96501 [sender.py:send_exit():585] handling exit code: 1
+2023-10-24 11:13:57,283 INFO    SenderThread:96501 [sender.py:send_exit():587] handling runtime: 0
+2023-10-24 11:13:57,283 INFO    SenderThread:96501 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-24 11:13:57,283 INFO    SenderThread:96501 [sender.py:send_exit():593] send defer
+2023-10-24 11:13:57,283 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:13:57,283 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 0
+2023-10-24 11:13:57,284 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:13:57,284 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 0
+2023-10-24 11:13:57,284 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 1
+2023-10-24 11:13:57,284 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:13:57,284 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 1
+2023-10-24 11:13:57,284 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:13:57,284 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 1
+2023-10-24 11:13:57,284 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 2
+2023-10-24 11:13:57,284 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:13:57,284 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 2
+2023-10-24 11:13:57,284 INFO    HandlerThread:96501 [system_monitor.py:finish():203] Stopping system monitor
+2023-10-24 11:13:57,284 DEBUG   SystemMonitor:96501 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2023-10-24 11:13:57,284 DEBUG   SystemMonitor:96501 [system_monitor.py:_start():179] Finished system metrics aggregation loop
+2023-10-24 11:13:57,284 DEBUG   SystemMonitor:96501 [system_monitor.py:_start():183] Publishing last batch of metrics
+2023-10-24 11:13:57,285 INFO    HandlerThread:96501 [interfaces.py:finish():202] Joined cpu monitor
+2023-10-24 11:13:57,285 INFO    HandlerThread:96501 [interfaces.py:finish():202] Joined disk monitor
+2023-10-24 11:13:57,285 INFO    HandlerThread:96501 [interfaces.py:finish():202] Joined memory monitor
+2023-10-24 11:13:57,285 INFO    HandlerThread:96501 [interfaces.py:finish():202] Joined network monitor
+2023-10-24 11:13:57,285 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:13:57,285 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 2
+2023-10-24 11:13:57,285 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 3
+2023-10-24 11:13:57,286 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:13:57,286 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 3
+2023-10-24 11:13:57,286 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:13:57,286 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 3
+2023-10-24 11:13:57,286 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 4
+2023-10-24 11:13:57,286 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:13:57,286 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 4
+2023-10-24 11:13:57,286 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:13:57,286 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 4
+2023-10-24 11:13:57,286 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 5
+2023-10-24 11:13:57,286 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:13:57,286 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 5
+2023-10-24 11:13:57,287 DEBUG   SenderThread:96501 [sender.py:send():380] send: summary
+2023-10-24 11:13:57,287 INFO    SenderThread:96501 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-24 11:13:57,288 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:13:57,288 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 5
+2023-10-24 11:13:57,288 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 6
+2023-10-24 11:13:57,288 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:13:57,288 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 6
+2023-10-24 11:13:57,288 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:13:57,288 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 6
+2023-10-24 11:13:57,292 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: status_report
+2023-10-24 11:13:57,382 INFO    wandb-upload_0:96501 [upload_job.py:push():131] Uploaded file /tmp/tmppuaqnh0mwandb/dvoqy0ac-wandb-metadata.json
+2023-10-24 11:13:57,489 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 7
+2023-10-24 11:13:57,489 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:13:57,489 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 7
+2023-10-24 11:13:57,490 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:13:57,490 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 7
+2023-10-24 11:13:57,740 INFO    Thread-12 :96501 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/config.yaml
+2023-10-24 11:13:57,741 INFO    Thread-12 :96501 [dir_watcher.py:_on_file_created():271] file/dir created: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/requirements.txt
+2023-10-24 11:13:57,741 INFO    Thread-12 :96501 [dir_watcher.py:_on_file_created():271] file/dir created: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/wandb-summary.json
+2023-10-24 11:13:57,741 INFO    Thread-12 :96501 [dir_watcher.py:_on_file_created():271] file/dir created: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/wandb-metadata.json
+2023-10-24 11:13:57,741 INFO    Thread-12 :96501 [dir_watcher.py:_on_file_created():271] file/dir created: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/output.log
+2023-10-24 11:13:58,283 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: poll_exit
+2023-10-24 11:13:59,293 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 8
+2023-10-24 11:13:59,294 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: poll_exit
+2023-10-24 11:13:59,295 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:13:59,295 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 8
+2023-10-24 11:13:59,295 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:13:59,296 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 8
+2023-10-24 11:13:59,296 INFO    SenderThread:96501 [job_builder.py:build():281] Attempting to build job artifact
+2023-10-24 11:13:59,297 INFO    SenderThread:96501 [job_builder.py:_get_source_type():393] is repo sourced job
+2023-10-24 11:13:59,301 INFO    SenderThread:96501 [job_builder.py:build():369] adding wandb-job metadata file
+2023-10-24 11:13:59,317 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 9
+2023-10-24 11:13:59,318 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:13:59,319 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 9
+2023-10-24 11:13:59,319 DEBUG   SenderThread:96501 [sender.py:send():380] send: artifact
+2023-10-24 11:13:59,738 INFO    Thread-12 :96501 [dir_watcher.py:_on_file_modified():288] file/dir modified: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/output.log
+2023-10-24 11:14:00,307 INFO    SenderThread:96501 [sender.py:send_artifact():1456] sent artifact job-https___github.com_nicoleorzan_marl-emecom.git_src_experiments_caller_given_params.py - {'id': 'QXJ0aWZhY3Q6NjE0NDY5MTcz', 'state': 'COMMITTED', 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjEwOTQ2OTEyOA==', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6NjE0NDY5MTcz', 'versionIndex': 0}}}
+2023-10-24 11:14:00,307 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:14:00,307 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 9
+2023-10-24 11:14:00,307 INFO    SenderThread:96501 [dir_watcher.py:finish():358] shutting down directory watcher
+2023-10-24 11:14:00,740 INFO    SenderThread:96501 [dir_watcher.py:finish():388] scan: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files
+2023-10-24 11:14:00,740 INFO    SenderThread:96501 [dir_watcher.py:finish():402] scan save: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/wandb-metadata.json wandb-metadata.json
+2023-10-24 11:14:00,741 INFO    SenderThread:96501 [dir_watcher.py:finish():402] scan save: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/requirements.txt requirements.txt
+2023-10-24 11:14:00,741 INFO    SenderThread:96501 [dir_watcher.py:finish():402] scan save: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/config.yaml config.yaml
+2023-10-24 11:14:00,747 INFO    SenderThread:96501 [dir_watcher.py:finish():402] scan save: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/wandb-summary.json wandb-summary.json
+2023-10-24 11:14:00,755 INFO    SenderThread:96501 [dir_watcher.py:finish():402] scan save: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/output.log output.log
+2023-10-24 11:14:00,755 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 10
+2023-10-24 11:14:00,755 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:14:00,755 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 10
+2023-10-24 11:14:00,756 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:14:00,756 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 10
+2023-10-24 11:14:00,756 INFO    SenderThread:96501 [file_pusher.py:finish():175] shutting down file pusher
+2023-10-24 11:14:01,128 INFO    wandb-upload_1:96501 [upload_job.py:push():131] Uploaded file /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/config.yaml
+2023-10-24 11:14:01,130 INFO    wandb-upload_0:96501 [upload_job.py:push():131] Uploaded file /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/requirements.txt
+2023-10-24 11:14:01,197 INFO    wandb-upload_2:96501 [upload_job.py:push():131] Uploaded file /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/wandb-summary.json
+2023-10-24 11:14:01,210 INFO    wandb-upload_3:96501 [upload_job.py:push():131] Uploaded file /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/files/output.log
+2023-10-24 11:14:01,411 INFO    Thread-11 :96501 [sender.py:transition_state():613] send defer: 11
+2023-10-24 11:14:01,411 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:14:01,412 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 11
+2023-10-24 11:14:01,413 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:14:01,413 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 11
+2023-10-24 11:14:01,413 INFO    SenderThread:96501 [file_pusher.py:join():181] waiting for file pusher
+2023-10-24 11:14:01,413 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 12
+2023-10-24 11:14:01,414 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:14:01,414 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 12
+2023-10-24 11:14:01,415 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:14:01,415 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 12
+2023-10-24 11:14:01,415 INFO    SenderThread:96501 [file_stream.py:finish():595] file stream finish called
+2023-10-24 11:14:01,844 INFO    SenderThread:96501 [file_stream.py:finish():599] file stream finish is done
+2023-10-24 11:14:01,845 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 13
+2023-10-24 11:14:01,845 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:14:01,845 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 13
+2023-10-24 11:14:01,846 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:14:01,846 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 13
+2023-10-24 11:14:01,847 INFO    SenderThread:96501 [sender.py:transition_state():613] send defer: 14
+2023-10-24 11:14:01,847 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: defer
+2023-10-24 11:14:01,847 INFO    HandlerThread:96501 [handler.py:handle_request_defer():172] handle defer: 14
+2023-10-24 11:14:01,848 DEBUG   SenderThread:96501 [sender.py:send():380] send: final
+2023-10-24 11:14:01,849 DEBUG   SenderThread:96501 [sender.py:send():380] send: footer
+2023-10-24 11:14:01,849 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: defer
+2023-10-24 11:14:01,849 INFO    SenderThread:96501 [sender.py:send_request_defer():609] handle sender defer: 14
+2023-10-24 11:14:01,850 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: poll_exit
+2023-10-24 11:14:01,852 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: server_info
+2023-10-24 11:14:01,852 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: poll_exit
+2023-10-24 11:14:01,854 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: get_summary
+2023-10-24 11:14:01,854 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: sampled_history
+2023-10-24 11:14:01,854 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: internal_messages
+2023-10-24 11:14:01,855 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: server_info
+2023-10-24 11:14:01,862 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: job_info
+2023-10-24 11:14:02,047 DEBUG   SenderThread:96501 [sender.py:send_request():407] send_request: job_info
+2023-10-24 11:14:02,048 INFO    MainThread:96501 [wandb_run.py:_footer_history_summary_info():3599] rendering history
+2023-10-24 11:14:02,048 INFO    MainThread:96501 [wandb_run.py:_footer_history_summary_info():3631] rendering summary
+2023-10-24 11:14:02,048 INFO    MainThread:96501 [wandb_run.py:_footer_sync_info():3558] logging synced files
+2023-10-24 11:14:02,048 DEBUG   HandlerThread:96501 [handler.py:handle_request():146] handle_request: shutdown
+2023-10-24 11:14:02,048 INFO    HandlerThread:96501 [handler.py:finish():866] shutting down handler
+2023-10-24 11:14:02,863 INFO    WriterThread:96501 [datastore.py:close():294] close: /home/nicole/new_stuff/marl-emecom/src/experiments/wandb/run-20231024_111356-jjycq6c5/run-jjycq6c5.wandb
+2023-10-24 11:14:03,048 INFO    SenderThread:96501 [sender.py:finish():1534] shutting down sender
+2023-10-24 11:14:03,048 INFO    SenderThread:96501 [file_pusher.py:finish():175] shutting down file pusher
+2023-10-24 11:14:03,048 INFO    SenderThread:96501 [file_pusher.py:join():181] waiting for file pusher

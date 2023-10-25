@@ -1,0 +1,117 @@
+wandb_version: 1
+
+num_game_iterations:
+  desc: null
+  value: 1
+n_epochs:
+  desc: null
+  value: 600
+obs_size:
+  desc: null
+  value: 1
+action_size:
+  desc: null
+  value: 2
+random_baseline:
+  desc: null
+  value: false
+wandb_mode:
+  desc: null
+  value: online
+n_agents:
+  desc: null
+  value: 2
+mult_fact:
+  desc: null
+  value:
+  - 0.5
+  - 1.5
+  - 2.5
+  - 3.5
+uncertainties:
+  desc: null
+  value:
+  - 0.0
+  - 0.0
+communicating_agents:
+  desc: null
+  value:
+  - 0
+  - 0
+listening_agents:
+  desc: null
+  value:
+  - 0
+  - 0
+gmm_:
+  desc: null
+  value:
+  - 0
+  - 0
+n_gmm_components:
+  desc: null
+  value: 0
+batch_size:
+  desc: null
+  value: 64
+algorithm:
+  desc: null
+  value: reinforce
+lr_actor:
+  desc: null
+  value: 0.0174
+lr_actor_comm:
+  desc: null
+  value: 0.0
+n_hidden_act:
+  desc: null
+  value: 2
+n_hidden_comm:
+  desc: null
+  value: 0
+hidden_size_act:
+  desc: null
+  value: 8
+hidden_size_comm:
+  desc: null
+  value: 0
+mex_size:
+  desc: null
+  value: 0
+sign_lambda:
+  desc: null
+  value: 0.0
+list_lambda:
+  desc: null
+  value: 0.0
+decayRate:
+  desc: null
+  value: 0.999
+_wandb:
+  desc: null
+  value:
+    python_version: 3.8.10
+    cli_version: 0.15.12
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1698138821.068489
+    t:
+      1:
+      - 1
+      - 5
+      - 53
+      - 55
+      2:
+      - 1
+      - 5
+      - 53
+      - 55
+      3:
+      - 16
+      - 23
+      4: 3.8.10
+      5: 0.15.12
+      8:
+      - 5
+      13: linux-x86_64
