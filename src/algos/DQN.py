@@ -210,6 +210,7 @@ class DQN(Agent):
         diff_act = (expected_q_values_act - current_q_values_act)
         loss = self.MSE(diff_act)
         loss = loss.mean()
+        self.saved_losses.append(loss.detach())
 
         if (self.is_communicating):
             loss = loss + loss_comm

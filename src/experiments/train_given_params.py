@@ -11,7 +11,7 @@ from utils_train_reinforce import find_max_min
 OBS_SIZE = 1
 ACTION_SIZE = 2
 DECAY_RATE = 0.999
-WANDB_MODE = "offline"
+WANDB_MODE = "online"
 RANDOM_BASELINE = False
 
 # set device to cpu or cuda
