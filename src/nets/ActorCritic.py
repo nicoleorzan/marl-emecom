@@ -9,7 +9,6 @@ class ActorCritic(nn.Module):
     def __init__(self, params, input_size, output_size, n_hidden, hidden_size, gmm=False):
         super(ActorCritic, self).__init__()
 
-        # absorb all parameters to self
         for key, val in params.items():  setattr(self, key, val)
 
         self.input_size = input_size
@@ -17,8 +16,6 @@ class ActorCritic(nn.Module):
         self.n_hidden = n_hidden
         self.hidden_size = hidden_size
         self.gmm_ = gmm
-        #print("setto gmm=", self.gmm_)
-        #print("num_hidden=", self.n_hidden)
 
         if (self.n_hidden == 2):
             self.actor = nn.Sequential(
@@ -48,7 +45,6 @@ class ActorCritic(nn.Module):
                 nn.Tanh(),
                 nn.Linear(self.hidden_size, 1),
             )
-
 
     def reset_state(self):
         pass
@@ -86,71 +82,6 @@ class ActorCritic(nn.Module):
         state_values = self.critic(state)
         return action_logprob, dist_entropy, state_values
 
-    def get_distribution(self, state, greedy=False):
+    def get_distribution(self, state):
         out = self.actor(state)
         return out
-
-
-
-
-class ActorCriticContinuous(nn.Module):
-
-    def __init__(self, params):
-        super(ActorCriticContinuous, self).__init__()
-
-        # absorb all parameters to self
-        for key, val in params.items():  setattr(self, key, val)
-
-        self.min_var = 0.001
-
-        self.policy = nn.Sequential(
-            nn.Linear(self.input_size, self.hidden_size),
-            nn.ReLU())
-
-        self.critic = nn.Sequential(
-            nn.Linear(self.input_size, self.hidden_size),
-            nn.Tanh(),
-            nn.Linear(self.hidden_size, 1),
-        )
-
-        self.mean = nn.Sequential(
-            nn.Linear(self.hidden_size, 1),
-            nn.Sigmoid())
-        self.var = nn.Sequential(
-            nn.Linear(self.hidden_size, 1),
-            nn.ReLU())
-
-    def act(self, state):
-
-        logits = self.policy(state)
-        mean = self.mean(logits)
-        var = self.var(logits) + self.min_var
-
-        dist = Normal(mean, var)
-
-        act = dist.rsample()
-
-        if (act < 0.):
-            act = torch.Tensor([0.])
-        elif (act > 1.):
-            act = torch.Tensor([1.])
-
-        logprobs = dist.log_prob(act)
-
-        return act.detach(), logprobs.detach()
-
-    def evaluate(self, state, action):
-
-        logits = self.policy(state)
-        mean = self.mean(logits)
-        var = self.var(logits) + self.min_var
-
-        dist = Normal(mean, var)
-
-        action_logprob = dist.log_prob(action)
-
-        dist_entropy = dist.entropy()
-
-        state_values = self.critic(state)
-
-        return action_logprob, dist_entropy, state_values

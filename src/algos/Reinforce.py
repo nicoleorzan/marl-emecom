@@ -1,11 +1,10 @@
-
-from src.algos.buffer import RolloutBufferComm
-from src.nets.ActorCritic import ActorCritic
+from src.algos.agent import Agent
+from src.nets.Actor import Actor
 import torch
+import torch.nn.functional as F
 import torch.autograd as autograd
+from torch.distributions import Categorical
 import numpy as np
-from sklearn.mixture import GaussianMixture as GMM
-import copy
 
 # set device to cpu or cuda
 device = torch.device('cpu')
@@ -16,156 +15,145 @@ if(torch.cuda.is_available()):
 else:
     print("Device set to : cpu")
 
-class Reinforce():
+class Reinforce(Agent):
 
-    def __init__(self, params, idx, gmm_agent):
+    def __init__(self, params, idx=0):
+        Agent.__init__(self, params, idx)
 
-        for key, val in params.items():  setattr(self, key, val)
+        opt_params = []
+        print("self.input_act=",self.input_act)
+        self.policy_act = Actor(params=params, input_size=self.input_act, output_size=self.action_size, \
+            n_hidden=self.n_hidden_act, hidden_size=self.hidden_size_act, gmm=self.gmm_).to(device)
+    
+        opt_params_act = {'params': self.policy_act.actor.parameters(), 'lr': self.lr_actor}
+        opt_params.append(opt_params_act)
 
-        self.idx = idx
-        self.gmm_ = gmm_agent
+        # Communication Policy
+        if (self.is_communicating):
+            print("self.input_comm=", self.input_comm)
+            self.policy_comm = Actor(params=params, input_size=self.input_comm, output_size=self.mex_size, \
+                n_hidden=self.n_hidden_comm, hidden_size=self.hidden_size_comm, gmm=self.gmm_).to(device)
+            opt_params_comm = {'params': self.policy_comm.actor.parameters(), 'lr': self.lr_actor_comm}
+            opt_params.append(opt_params_comm)
 
-        self.buffer = RolloutBufferComm()
-
-        # get observations size
-        self.input_size = params.obs_size
-        #if (self.gmm_):
-        #    self.input_size = self.n_gmm_components
-        # get message
-        if ("listening_agents" in params):
-            if (self.listening_agents[self.idx]):
-                self.input_size += self.mex_size*self.communicating_agents.count(1)
-        print("input size=", self.input_size)
-        self.policy = ActorCritic(params=params, input_size=self.input_size, output_size=self.action_size, \
-            n_hidden=self.n_hidden, hidden_size=self.hidden_size, gmm=self.gmm_).to(device)
-
-        self.optimizer = torch.optim.Adam([
-             {'params': self.policy.actor.parameters(), 'lr': params.lr_actor},
-             {'params': self.policy.critic.parameters(), 'lr': params.lr_critic} 
-             ])
+        self.optimizer = torch.optim.Adam(opt_params)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.decayRate)
-        
-        self.train_returns_norm = []
-        self.train_returns = []
-        self.return_episode = 0
-        self.return_episode_norm= 0
-        self.tmp_actions = []
-        self.coop = []
-        self.saved_losses = []
-        self.mutinfo_listening = []
 
-        self.reset()
+        self.htarget = np.log(self.action_size)/2.
+        self.n_update = 0.
+        self.baseline = 0.
 
-        self.eps_norm = 0.0001
+    def act(self, policy, state, greedy=False):
+        out = policy.actor(state)
+        out = self.softmax(out)
+        dist = Categorical(out)
 
-        self.idx = idx
-        self.gmm_ = self.policy.gmm_
-
-        self.z_value = 1
-        self.min_mult = min(self.mult_fact)
-        self.max_mult = max(self.mult_fact)
-        self.min_observable_mult = self.min_mult - self.z_value*self.uncertainties[idx]
-        self.max_observable_mult = self.max_mult + self.z_value*self.uncertainties[idx]
-        self.means = np.zeros(len(self.mult_fact))
-        self.probs = np.zeros(len(self.mult_fact))
-        
-    def reset(self):
-        self.logprobs = []
-        self.rewards = []
-        self.buffer.clear()
-        self.mutinfo_listening_old = self.mutinfo_listening
-        self.mutinfo_listening = []
-
-    def reset_episode(self):
-        self.return_episode_old = self.return_episode
-        self.return_episode_old_norm = self.return_episode_norm
-        self.return_episode = 0
-        self.return_episode_norm = 0
-        self.tmp_actions_old = self.tmp_actions
-        self.tmp_actions = []
-
-    def select_action(self, state, eval=False):
-
-        state = torch.FloatTensor(state).to(device)
-        if (self.gmm_):
-            state = self.get_gmm_state(state, eval)
+        if (self.random_baseline == True): 
+            act = torch.randint(0, self.action_size, (1,))[0]
         else:
-            state[1] = self.normalize_m_factor(state[1])
-            
-        if (eval == True):
+            if (greedy):
+                act = torch.argmax(out)
+            else:
+                act = dist.sample()
+
+        logprob = dist.log_prob(act) # negativi
+
+        return act.detach(), logprob, dist.entropy().detach()
+
+    def select_message(self, m_val=None, _eval=False):
+
+        if (_eval == True):
             with torch.no_grad():
-                action, action_logprob = self.policy.act(state)
-        elif (eval == False):
-            action, action_logprob = self.policy.act(state)
+                message_out, message_logprob, entropy = self.act(self.policy_comm, self.state)
 
-            self.logprobs.append(action_logprob)
-        self.buffer.actions.append(action)
+        elif (_eval == False):
+            message_out, message_logprob, entropy = self.act(self.policy_comm, self.state)
 
+            self.buffer.states_c.append(self.state)
+            self.buffer.messages.append(message_out)
+            if (m_val in self.buffer.messages_given_m):
+                self.buffer.messages_given_m[m_val].append(message_out)
+            else: 
+                self.buffer.messages_given_m[m_val] = [message_out]
+
+            self.buffer.comm_logprobs.append(message_logprob)
+            self.buffer.comm_entropy.append(entropy)
+
+        message_out = torch.Tensor([message_out.item()]).long().to(device)
+        message_out = F.one_hot(message_out, num_classes=self.mex_size)[0]
+        return message_out
+
+    def select_action(self, m_val=None, _eval=False):
+            
+        self.state_to_act = self.state
+        if (self.is_listening):
+            self.state_to_act = torch.cat((self.state, self.message_in)).to(device)
+
+        if (_eval == True):
+            with torch.no_grad():
+                action, action_logprob, entropy = self.act(self.policy_act, self.state_to_act)
+
+        elif (_eval == False):
+            #print("input act net=",self.state_to_act)
+            action, action_logprob, entropy = self.act(self.policy_act, self.state_to_act)
+            
+            if (self.is_listening == True and self.n_communicating_agents != 0.):
+                state_empty_mex = torch.cat((self.state, torch.zeros_like(self.message_in))).to(device)
+                out = self.policy_act.get_values(state_empty_mex).detach()
+                dist_empty_mex = self.softmax(out)
+                out = self.policy_act.get_values(self.state_to_act)
+                dist_mex = self.softmax(out)
+                self.List_loss_list.append(-torch.sum(torch.abs(dist_empty_mex - dist_mex)))
+
+            self.buffer.states_a.append(self.state_to_act)
+            self.buffer.actions.append(action)
+            if (m_val in self.buffer.actions_given_m):
+                self.buffer.actions_given_m[m_val].append(action)
+            else: 
+                self.buffer.actions_given_m[m_val] = [action]
+
+            self.buffer.act_logprobs.append(action_logprob)
+            self.buffer.act_entropy.append(entropy)
+        
         return action
 
-    def normalize_m_factor(self, obs_multiplier):
+    def update(self, _iter=None):
+
+        # I do not normalize rewards here because I already give normalized rewards to the agent
+        rew_norm = self.buffer.rewards # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
+        act_logprobs = self.buffer.act_logprobs
+        comm_logprobs = self.buffer.comm_logprobs
+
+        print("self.buffer.states_c=", self.buffer.states_c)
+
+        entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
+        self.entropy = entropy
+        hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
+        for i in range(len(act_logprobs)):
+            if (self.is_communicating):
+                comm_logprobs[i] = -comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i]
+            act_logprobs[i] = -act_logprobs[i] * (rew_norm[i] - self.baseline)
+            #AGAIN, HERE IS THE PROBLEM
+            #if (self.is_listening and self.n_communicating_agents != 0.):
+            #    act_logprobs[i] = -act_logprobs[i] * (rew_norm[i] - self.baseline) + self.list_lambda*self.List_loss_list[i]
         
-        obs_multiplier_norm = (obs_multiplier - self.min_observable_mult)/(self.max_observable_mult - self.min_observable_mult)
-        if (obs_multiplier_norm < 0.):
-            obs_multiplier_norm = torch.Tensor([0.])
-        elif (obs_multiplier_norm > 1.):
-            obs_multiplier_norm = torch.Tensor([1.])
-        return obs_multiplier_norm
-
-    def get_action_distribution(self, state):
-
-        with torch.no_grad():
-            state = torch.FloatTensor(state).to(device)
-            if (self.gmm_):
-                state = self.get_gmm_state(state, eval=True)
-            else:
-                state[1] = self.normalize_m_factor(state[1])
-            out = self.policy.get_distribution(state)
-
-            return out
-
-    def update(self):
-
-        rewards =  self.rewards
-        rew_norm = [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]
-
-        for i in range(len(self.logprobs)):
-            self.logprobs[i] = -self.logprobs[i] * rew_norm[i]
-
-        self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in self.logprobs])))
+        self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in act_logprobs])))
         
         self.optimizer.zero_grad()
-        tmp = [torch.ones(a.data.shape) for a in self.logprobs]
-        autograd.backward(self.logprobs, tmp, retain_graph=True)
+        if(self.is_communicating):
+            self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in comm_logprobs])))
+            tmp = [torch.ones(a.data.shape) for a in comm_logprobs]
+            autograd.backward(comm_logprobs, tmp, retain_graph=True)
+
+        tmp1 = [torch.ones(a.data.shape) for a in act_logprobs]
+        autograd.backward(act_logprobs, tmp1, retain_graph=True)
+        
         self.optimizer.step()
 
+        #diminish learning rate
         self.scheduler.step()
 
+        self.n_update += 1.
+        self.baseline += (np.mean([i[0] for i in rew_norm]) - self.baseline) / (self.n_update)
+
         self.reset()
-
-    def get_gmm_state(self, state, eval=False):
-
-        if hasattr(self, 'mf_history'):
-            if (len(self.mf_history) < 50000 and eval == False):
-                self.mf_history = torch.cat((self.mf_history, state[1].reshape(1)), 0)
-        else:
-            self.mf_history = state[1].reshape(1)
-
-        if (len(self.mf_history) >= len(self.mult_fact)):
-            if(len(self.mf_history) < 50000):
-                self.gmm = GMM(n_components = len(self.mult_fact), max_iter=1000, random_state=0, covariance_type = 'full')
-                input_ = self.mf_history.reshape(-1, 1)
-                self.gmm.fit(input_)
-            self.gmm_probs = self.gmm.predict_proba(state[1].reshape(1).reshape(-1, 1))[0]
-
-            self.means = copy.deepcopy(self.gmm.means_)
-            self.means = np.sort(self.means, axis=0)
-            ordering_values = [np.where(self.means == i)[0][0] for i in self.gmm.means_]
-            self.probs = torch.zeros(len(self.gmm_probs)).to(device)
-            for i, value in enumerate(ordering_values):
-                self.probs[value] = self.gmm_probs[i] 
-            state_in = self.probs
-        else: 
-            state_in = torch.zeros(len(self.mult_fact)).to(device)
-
-        return state_in
