@@ -21,7 +21,7 @@ class ExperienceReplayMemory:
     def __init__(self, params, input_act, input_comm=0):
 
         for key, val in params.items(): setattr(self, key, val)
-        self.capacity = self.batch_size#dqn_capacity
+        self.capacity = self.batch_size #dqn_capacity
         self.input_act = input_act
         self.input_comm = input_comm
         self.reset()
@@ -85,10 +85,15 @@ class DQN(Agent):
         self.message_out = 0
 
     def append_to_replay(self, s, m, s1, a, r, d):
+        #print("agent=", self.idx)
+        #print("self.input_act=",self.input_act)
+        #print("s=",s, "s1=", s1)
         if (self.is_communicating):
             self.memory._states_comm[self.memory.i] = s
-            self.memory._states_act[self.memory.i] = s1
+            #self.memory._states_act[self.memory.i] = s1
             self.memory._messages[self.memory.i] = m
+        if (self.is_listening):
+            self.memory._states_act[self.memory.i] = s1
         else:
             self.memory._states_act[self.memory.i] = s
         
@@ -114,7 +119,6 @@ class DQN(Agent):
     def act(self, policy, state, input_size, greedy=False):
         state = state.view(-1,input_size)
         values = policy.get_values(state=state)[0]
-        #print("values=", values)
 
         if (greedy == True):
             action = self.argmax(values)
@@ -150,14 +154,15 @@ class DQN(Agent):
         message_out = torch.Tensor([message_out.item()]).long().to(device)
         self.message_out = message_out
         message_out = F.one_hot(message_out, num_classes=self.mex_size)[0]
+        #print("message_out=", message_out)
         return message_out
 
     def select_action(self, m_val=None, _eval=False):
             
         self.state_to_act = self.state
-        #print("state=", self.state_to_act)
         if (self.is_listening):
             self.state_to_act = torch.cat((self.state, self.message_in)).to(device)
+        #print("state_to_act agent", self.idx, "=", self.state_to_act)
 
         if (_eval == True):
             with torch.no_grad():
@@ -184,7 +189,7 @@ class DQN(Agent):
                 self.buffer.actions_given_m[m_val] = [action]
 
         self.action = action[0]
-        #print("action=", self.action)
+        #print("action agent", self.idx, "=", self.action)
         return self.action
     
     def compute_loss(self):
