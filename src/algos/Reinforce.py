@@ -117,7 +117,7 @@ class Reinforce(Agent):
         
         return action
 
-    def update(self, _iter=None):
+    def update(self):
 
         # I do not normalize rewards here because I already give normalized rewards to the agent
         rew_norm = self.buffer.rewards # [(i - min(rewards))/(max(rewards) - min(rewards) + self.eps_norm) for i in rewards]

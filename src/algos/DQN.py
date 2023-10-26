@@ -83,7 +83,6 @@ class DQN(Agent):
         self.r = 1.-np.exp(np.log(self.final_epsilon/self.eps0)/self.n_epochs)
 
         self.message_out = 0
-        
 
     def append_to_replay(self, s, m, s1, a, r, d):
         if (self.is_communicating):
@@ -112,31 +111,37 @@ class DQN(Agent):
 
         return random.choice(ties)
 
-    def act(self, policy, state, greedy=False):
-        state = state.view(-1,self.input_act)
+    def act(self, policy, state, input_size, greedy=False):
+        state = state.view(-1,input_size)
+        values = policy.get_values(state=state)[0]
+        #print("values=", values)
 
         if (greedy == True):
-            action = self.argmax(policy.get_values(state=state)[0])
+            action = self.argmax(values)
             
         elif (greedy == False):
             if torch.rand(1) < self.epsilon:
                 action = random.choice([i for i in range(self.action_size)])
             else:
-                action = self.argmax(policy.get_values(state=state)[0])
+                action = self.argmax(values)
+
+        dist = Categorical(logits=values)
+        entropy = dist.entropy().detach()
                 
-        return torch.Tensor([action])
+        return torch.Tensor([action]), entropy
        
     def select_message(self, m_val=None, _eval=False):
 
         if (_eval == True):
             with torch.no_grad():
-                message_out = self.act(self.policy_comm, self.state)
+                message_out, mex_entropy = self.act(self.policy_comm, self.state, self.input_comm)
 
         elif (_eval == False):
-            message_out = self.act(self.policy_comm, self.state)
+            message_out, mex_entropy = self.act(self.policy_comm, self.state, self.input_comm)
 
             self.buffer.states_c.append(self.state)
             self.buffer.messages.append(message_out)
+            self.buffer.comm_entropy.append(mex_entropy)
             if (m_val in self.buffer.messages_given_m):
                 self.buffer.messages_given_m[m_val].append(message_out)
             else: 
@@ -156,11 +161,11 @@ class DQN(Agent):
 
         if (_eval == True):
             with torch.no_grad():
-                action = self.act(self.policy_act, self.state_to_act)
+                action, act_entropy = self.act(self.policy_act, self.state_to_act, self.input_act)
 
         elif (_eval == False):
             #print("input act net=",self.state_to_act)
-            action = self.act(self.policy_act, self.state_to_act)
+            action, act_entropy = self.act(self.policy_act, self.state_to_act, self.input_act)
             
             if (self.is_listening == True and self.n_communicating_agents != 0.):
                 state_empty_mex = torch.cat((self.state, torch.zeros_like(self.message_in))).to(device)
@@ -172,6 +177,7 @@ class DQN(Agent):
 
             self.buffer.states_a.append(self.state_to_act)
             self.buffer.actions.append(action)
+            self.buffer.act_entropy.append(act_entropy)
             if (m_val in self.buffer.actions_given_m):
                 self.buffer.actions_given_m[m_val].append(action)
             else: 
@@ -195,7 +201,7 @@ class DQN(Agent):
         current_q_values_act = torch.gather(current_q_values_act, dim=1, index=batch_action)
 
         if (self.is_communicating):
-            current_q_values_comm = self.policy_act.get_values(batch_state_comm)
+            current_q_values_comm = self.policy_comm.get_values(batch_state_comm)
             current_q_values_comm = torch.gather(current_q_values_comm, dim=1, index=batch_messages)
 
         #compute target
@@ -217,7 +223,10 @@ class DQN(Agent):
 
         return loss
 
-    def update(self, _iter):
+    def update(self):
+
+        entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
+        self.entropy = entropy
 
         loss = self.compute_loss()
 

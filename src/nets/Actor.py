@@ -38,8 +38,8 @@ class Actor(nn.Module):
         return out
     
     def get_dist_entropy(self, state):
-        print("state=", state)
+        #print("state=", state)
         out = self.actor(state)
-        print("out=", out)
+        #print("out=", out)
         dist = Categorical(logits=out)
         return dist.entropy()

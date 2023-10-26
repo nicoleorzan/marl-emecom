@@ -45,7 +45,7 @@ if __name__ == '__main__':
     parser.add_argument('--mex_size', type=int, default=2)
     parser.add_argument('--sign_lambda', type=float, default=0.)
     parser.add_argument('--list_lambda', type=float, default=0.)
-    #parser.add_argument('--dqn_capacity', type=int, default=10)
+    parser.add_argument('--wandb_mode', type=str, choices=["online", "offline"],  default="online")
     parser.add_argument('--target_net_update_freq', type=int, default=30)
     parser.add_argument('--decayRate', type=float, default = 0.999)
 

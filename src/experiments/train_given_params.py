@@ -11,7 +11,6 @@ from utils_train_reinforce import find_max_min
 OBS_SIZE = 1
 ACTION_SIZE = 2
 DECAY_RATE = 0.999
-WANDB_MODE = "online"
 RANDOM_BASELINE = False
 
 # set device to cpu or cuda
@@ -31,8 +30,7 @@ def setup_training_hyperparameters(args):
         num_game_iterations = 1,
         obs_size = OBS_SIZE,
         action_size = ACTION_SIZE,
-        random_baseline = RANDOM_BASELINE,
-        wandb_mode = WANDB_MODE
+        random_baseline = RANDOM_BASELINE
     )
     all_params = {**params, **vars(args)}
     print("all_params=",all_params)
@@ -49,9 +47,8 @@ def define_agents(config):
     return agents
 
 def train(args, repo_name):
-    print("inside train")
     all_params = setup_training_hyperparameters(args)
-    wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=WANDB_MODE)#, sync_tensorboard=True)
+    wandb.init(project=repo_name, entity="nicoleorzan", config=all_params, mode=args.wandb_mode)
     config = wandb.config
     print("config=", config)
 
@@ -134,7 +131,7 @@ def train(args, repo_name):
         # update agents
         #print("update")
         for ag_idx, agent in agents.items():
-            agent.update(epoch)
+            agent.update()
         
         mex_distrib_given_m = {}; rewards_eval_m = {}; rewards_eval_norm_m = {}; actions_eval_m = {}
         for m in config.mult_fact:
