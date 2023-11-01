@@ -68,13 +68,14 @@ def train(args, repo_name):
             #print("\ni=", i)
 
             observations = parallel_env.reset()
+            print("observations=", observations)
             
             [agent.reset_episode() for _, agent in agents.items()]
 
             done = False
             while not done:
                 mf = parallel_env.current_multiplier
-                #print("mf=", mf.numpy()[0])
+                print("mf=", mf.numpy()[0])
 
                 messages = {}; actions = {}
                 [agents[agent].set_observation(observations[agent]) for agent in parallel_env.agents]
@@ -89,11 +90,13 @@ def train(args, repo_name):
                 #print("\nlistening")
                 if (num_comm_agents != 0):
                     message = torch.stack([v for _, v in messages.items()]).view(-1).to(device)
+                    print("message=", message)
                     [agents[agent].get_message(message) for agent in parallel_env.agents if (agents[agent].is_listening)]
 
                 # acting
                 for agent in parallel_env.agents:
                     actions[agent] = agents[agent].select_action(m_val=mf.numpy()[0]) # m value is given only to compute metrics
+                    print("actions=", actions)
                 
                 observations, rewards, done, _ = parallel_env.step(actions)
                 rewards_norm = {key: value/max_values[float(parallel_env.current_multiplier[0])] for key, value in rewards.items()}
@@ -150,7 +153,7 @@ def train(args, repo_name):
         #print(avg_rew_time)
         measure = np.mean(avg_rew_time[-10:])
 
-        if (config.wandb_mode == "online"):
+        if (config.wandb_mode == "online" and epoch%10 == 0):
             for ag_idx, agent in agents.items():
                 df_actions = {ag_idx+"actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
                 df_rew = {ag_idx+"rewards_eval_m"+str(i): rewards_eval_m[i][ag_idx] for i in config.mult_fact}

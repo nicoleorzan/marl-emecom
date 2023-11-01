@@ -29,7 +29,7 @@ class ExperienceReplayMemory:
     def reset(self):
         self._states_comm = torch.empty((self.capacity,self.input_comm))
         self._states_act = torch.empty((self.capacity,self.input_act))
-        self._messages = torch.empty((self.capacity,self.mex_size))
+        self._messages = torch.empty((self.capacity,1))
         self._actions = torch.empty((self.capacity,1))
         self._rewards = torch.empty((self.capacity,1))
         #self._next_states = torch.empty((self.capacity,self.input_state))
@@ -204,17 +204,30 @@ class DQN(Agent):
     
         current_q_values_act = self.policy_act.get_values(batch_state_act)
         current_q_values_act = torch.gather(current_q_values_act, dim=1, index=batch_action)
+        #print("current_q_values_act=", current_q_values_act.shape)
 
         if (self.is_communicating):
+            #for state in batch_state_comm:
+            #    print("state=", state)
+            entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in batch_state_comm])
+            #print("entropy=", entropy)
+            self.entropy = entropy
+            hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
+            #print("hloss=", hloss.shape)
             current_q_values_comm = self.policy_comm.get_values(batch_state_comm)
+            #print("PRIMA: current_q_values_comm=",current_q_values_comm)
+            #print("batch_messages=",batch_messages)
             current_q_values_comm = torch.gather(current_q_values_comm, dim=1, index=batch_messages)
+            #print("DOPO: current_q_values_comm=",current_q_values_comm)
+            #print("current_q_values_comm", current_q_values_comm.shape)
 
         #compute target
         with torch.no_grad():
             expected_q_values_act = batch_reward # + self.gamma*max_next_q_values
             if (self.is_communicating):
                 expected_q_values_comm = batch_reward
-                diff_comm = (expected_q_values_comm - current_q_values_comm)
+                diff_comm = (expected_q_values_comm - current_q_values_comm) + self.sign_lambda*hloss
+                print("diff_comm=", diff_comm.shape)
                 loss_comm = self.MSE(diff_comm)
                 loss_comm = loss_comm.mean()
 
@@ -245,7 +258,7 @@ class DQN(Agent):
         self.memory.reset()
         self.memory.i = 0
         self.scheduler.step()
-        #print("LR=",self.scheduler.get_last_lr())
+        print("LR=",self.scheduler.get_last_lr())
 
         #modif exploration
         self.update_epsilon()

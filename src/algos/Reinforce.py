@@ -128,7 +128,10 @@ class Reinforce(Agent):
 
         entropy = torch.FloatTensor([self.policy_comm.get_dist_entropy(state).detach() for state in self.buffer.states_c])
         self.entropy = entropy
+        #for state in self.buffer.states_c:
+        #    print("state=", state)
         hloss = (torch.full(entropy.size(), self.htarget) - entropy) * (torch.full(entropy.size(), self.htarget) - entropy)
+        print("hloss=", hloss.shape)
         for i in range(len(act_logprobs)):
             if (self.is_communicating):
                 comm_logprobs[i] = -comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i]
