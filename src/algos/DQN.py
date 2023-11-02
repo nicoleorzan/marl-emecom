@@ -227,7 +227,7 @@ class DQN(Agent):
             if (self.is_communicating):
                 expected_q_values_comm = batch_reward
                 diff_comm = (expected_q_values_comm - current_q_values_comm) + self.sign_lambda*hloss
-                print("diff_comm=", diff_comm.shape)
+                #print("diff_comm=", diff_comm.shape)
                 loss_comm = self.MSE(diff_comm)
                 loss_comm = loss_comm.mean()
 
@@ -258,7 +258,7 @@ class DQN(Agent):
         self.memory.reset()
         self.memory.i = 0
         self.scheduler.step()
-        print("LR=",self.scheduler.get_last_lr())
+        #print("LR=",self.scheduler.get_last_lr())
 
         #modif exploration
         self.update_epsilon()
