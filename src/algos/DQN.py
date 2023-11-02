@@ -226,14 +226,23 @@ class DQN(Agent):
             expected_q_values_act = batch_reward # + self.gamma*max_next_q_values
             if (self.is_communicating):
                 expected_q_values_comm = batch_reward
+                #print("(expected_q_values_comm - current_q_values_comm)=", (expected_q_values_comm - current_q_values_comm).shape)
+                #print("hloss=",hloss.shape)
+                hloss = hloss.reshape(self.batch_size, 1)
+                #print("hloss=",hloss.shape)
                 diff_comm = (expected_q_values_comm - current_q_values_comm) + self.sign_lambda*hloss
+                #print("diff_comm.shape=", diff_comm.shape)
                 #print("diff_comm=", diff_comm.shape)
                 loss_comm = self.MSE(diff_comm)
                 loss_comm = loss_comm.mean()
 
         #print("current_q_values_act=", current_q_values_act.shape)
         #print("List_loss_list=",torch.Tensor(self.List_loss_list).shape)
-        diff_act = (expected_q_values_act - current_q_values_act) + self.list_lambda*torch.Tensor(self.List_loss_list)
+        #print("(expected_q_values_act - current_q_values_act)=",(expected_q_values_act - current_q_values_act).shape)
+        #print("torch.Tensor(self.List_loss_list)=",torch.Tensor(self.List_loss_list).shape)
+        listening_loss = torch.Tensor(self.List_loss_list).reshape(self.batch_size, 1)
+        diff_act = (expected_q_values_act - current_q_values_act) + self.list_lambda*listening_loss
+        #print("diff_act=", diff_act.shape)
         loss = self.MSE(diff_act)
         loss = loss.mean()
         self.saved_losses.append(loss.detach())

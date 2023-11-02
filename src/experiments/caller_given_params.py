@@ -31,7 +31,7 @@ if __name__ == '__main__':
         type=int,
         default=[])
 
-    parser.add_argument('--n_epochs', type=int, default=600)
+    parser.add_argument('--n_epochs', type=int, default=2000)
     parser.add_argument('--random_baseline', type=str, default="False")
     parser.add_argument('--n_gmm_components', type=int, default=3)
     parser.add_argument('--batch_size', type=int, default=64)
