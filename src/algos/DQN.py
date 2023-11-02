@@ -231,7 +231,9 @@ class DQN(Agent):
                 loss_comm = self.MSE(diff_comm)
                 loss_comm = loss_comm.mean()
 
-        diff_act = (expected_q_values_act - current_q_values_act)
+        #print("current_q_values_act=", current_q_values_act.shape)
+        #print("List_loss_list=",torch.Tensor(self.List_loss_list).shape)
+        diff_act = (expected_q_values_act - current_q_values_act) + self.list_lambda*torch.Tensor(self.List_loss_list)
         loss = self.MSE(diff_act)
         loss = loss.mean()
         self.saved_losses.append(loss.detach())

@@ -82,6 +82,7 @@ class Agent():
         self.sc = []
         self.mutinfo_signaling = []
         self.mutinfo_listening = []
+        self.List_loss_list = []
 
     def reset_batch(self):
         self.buffer.clear_batch()
