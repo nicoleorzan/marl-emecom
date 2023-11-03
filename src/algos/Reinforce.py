@@ -144,13 +144,15 @@ class Reinforce(Agent):
                 act_logprobs[i] = -act_logprobs[i] * (rew_norm[i] - self.baseline)
         
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in act_logprobs])))
+        print("loss=",self.saved_losses[-1])
         
         self.optimizer.zero_grad()
-        if(self.is_communicating):
+        if (self.is_communicating):
             self.saved_losses_comm.append(torch.mean(torch.Tensor([i.detach() for i in comm_logprobs])))
             tmp = [torch.ones(a.data.shape) for a in comm_logprobs]
             autograd.backward(comm_logprobs, tmp, retain_graph=True)
 
+        #print("act_logprobs=",len(act_logprobs))
         tmp1 = [torch.ones(a.data.shape) for a in act_logprobs]
         autograd.backward(act_logprobs, tmp1, retain_graph=True)
         

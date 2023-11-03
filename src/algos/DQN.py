@@ -234,7 +234,7 @@ class DQN(Agent):
                 #print("current_q_values_comm=",current_q_values_comm)
                 #print("diff=",expected_q_values_comm - current_q_values_comm)
                 #print("hloss=",hloss)
-                diff_comm = (expected_q_values_comm - current_q_values_comm) - self.sign_lambda*hloss
+                diff_comm = (expected_q_values_comm - current_q_values_comm) + self.sign_lambda*hloss
                 #print("diff_comm.shape=", diff_comm.shape)
                 #print("diff_comm=", diff_comm)
                 loss_comm = self.MSE(diff_comm)
