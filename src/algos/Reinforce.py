@@ -135,10 +135,13 @@ class Reinforce(Agent):
         for i in range(len(act_logprobs)):
             if (self.is_communicating):
                 comm_logprobs[i] = -comm_logprobs[i] * (rew_norm[i] - self.baseline) + self.sign_lambda*hloss[i]
-            act_logprobs[i] = -act_logprobs[i] * (rew_norm[i] - self.baseline)
+            #act_logprobs[i] = -act_logprobs[i] * (rew_norm[i] - self.baseline)
             #AGAIN, HERE IS THE PROBLEM
-            #if (self.is_listening and self.n_communicating_agents != 0.):
-            #    act_logprobs[i] = -act_logprobs[i] * (rew_norm[i] - self.baseline) + self.list_lambda*self.List_loss_list[i]
+            if (self.is_listening and self.n_communicating_agents != 0.):
+                #print("here")
+                act_logprobs[i] = -act_logprobs[i] * (rew_norm[i] - self.baseline) + self.list_lambda*self.List_loss_list[i]
+            else:
+                act_logprobs[i] = -act_logprobs[i] * (rew_norm[i] - self.baseline)
         
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in act_logprobs])))
         

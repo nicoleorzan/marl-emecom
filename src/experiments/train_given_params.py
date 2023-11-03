@@ -128,6 +128,9 @@ def train(args, repo_name):
                 agent.sc.append(U.calc_mutinfo(agent.buffer.actions, agent.buffer.messages, config.action_size, config.mex_size))
             if (agent.is_listening):
                 for i in idx_comm_agents:
+                    #print("agent.buffer.actions=",agent.buffer.actions)
+                    #print("agents['agent_'+str(i)].buffer.messages=",agents['agent_'+str(i)].buffer.messages)
+                    #print("out=",U.calc_mutinfo(agent.buffer.actions, agents['agent_'+str(i)].buffer.messages, config.action_size, config.mex_size))
                     agent.mutinfo_listening.append(U.calc_mutinfo(agent.buffer.actions, agents['agent_'+str(i)].buffer.messages, config.action_size, config.mex_size))
 
 

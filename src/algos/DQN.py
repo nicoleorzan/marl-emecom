@@ -226,13 +226,17 @@ class DQN(Agent):
             expected_q_values_act = batch_reward # + self.gamma*max_next_q_values
             if (self.is_communicating):
                 expected_q_values_comm = batch_reward
-                #print("(expected_q_values_comm - current_q_values_comm)=", (expected_q_values_comm - current_q_values_comm).shape)
+                #print("(expected_q_values_comm - current_q_values_comm)=", (expected_q_values_comm - current_q_values_comm))
                 #print("hloss=",hloss.shape)
                 hloss = hloss.reshape(self.batch_size, 1)
                 #print("hloss=",hloss.shape)
+                #print("expected_q_values_comm=",expected_q_values_comm)
+                #print("current_q_values_comm=",current_q_values_comm)
+                #print("diff=",expected_q_values_comm - current_q_values_comm)
+                #print("hloss=",hloss)
                 diff_comm = (expected_q_values_comm - current_q_values_comm) + self.sign_lambda*hloss
                 #print("diff_comm.shape=", diff_comm.shape)
-                #print("diff_comm=", diff_comm.shape)
+                #print("diff_comm=", diff_comm)
                 loss_comm = self.MSE(diff_comm)
                 loss_comm = loss_comm.mean()
 
@@ -248,6 +252,7 @@ class DQN(Agent):
         #print("diff_act=", diff_act.shape)
         loss = self.MSE(diff_act)
         loss = loss.mean()
+        print("loss=",loss.detach())
         self.saved_losses.append(loss.detach())
 
         if (self.is_communicating):
