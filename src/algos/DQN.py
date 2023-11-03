@@ -234,11 +234,12 @@ class DQN(Agent):
                 #print("current_q_values_comm=",current_q_values_comm)
                 #print("diff=",expected_q_values_comm - current_q_values_comm)
                 #print("hloss=",hloss)
-                diff_comm = (expected_q_values_comm - current_q_values_comm) + self.sign_lambda*hloss
+                diff_comm = (expected_q_values_comm - current_q_values_comm) - self.sign_lambda*hloss
                 #print("diff_comm.shape=", diff_comm.shape)
                 #print("diff_comm=", diff_comm)
                 loss_comm = self.MSE(diff_comm)
                 loss_comm = loss_comm.mean()
+                self.saved_losses_comm.append(loss_comm.detach())
 
         #print("current_q_values_act=", current_q_values_act.shape)
         #print("List_loss_list=",torch.Tensor(self.List_loss_list).shape)
@@ -252,7 +253,7 @@ class DQN(Agent):
         #print("diff_act=", diff_act.shape)
         loss = self.MSE(diff_act)
         loss = loss.mean()
-        print("loss=",loss.detach())
+        #print("loss=",loss.detach())
         self.saved_losses.append(loss.detach())
 
         if (self.is_communicating):

@@ -161,20 +161,22 @@ def train(args, repo_name):
                 df_actions = {ag_idx+"actions_eval_m_"+str(i): actions_eval_m[i][ag_idx] for i in config.mult_fact}
                 df_rew = {ag_idx+"rewards_eval_m"+str(i): rewards_eval_m[i][ag_idx] for i in config.mult_fact}
                 df_rew_norm = {ag_idx+"rewards_eval_norm_m"+str(i): rewards_eval_norm_m[i][ag_idx] for i in config.mult_fact}
+                df_loss = {ag_idx+"_loss": agent.saved_losses[-1]}
                 df_agent = {**{
                     ag_idx+"_return_train_norm": agent.return_episode_old_norm,
                     ag_idx+"_return_train_"+str(mf[0]): agent.return_episode_old,
                     ag_idx+"gmm_means": agent.means,
                     ag_idx+"gmm_probabilities": agent.probs,
                     'epoch': epoch}, 
-                    **df_actions, **df_rew, **df_rew_norm}
+                    **df_actions, **df_rew, **df_rew_norm, **df_loss}
                 
                 if (config.communicating_agents[agent.idx] == 1.):
                     df_mex = {ag_idx+"messages_prob_distrib_m_"+str(i): mex_distrib_given_m[i][ag_idx] for i in config.mult_fact}
                     df_sc = {ag_idx+"sc": agent.sc_old[-1]}
                     df_sc_m = {ag_idx+"sc_given_m"+str(i): agent.sc_m[i][0] for i in config.mult_fact}
                     df_ent = {ag_idx+"_avg_mex_entropy": torch.mean(agent.entropy)}
-                    df_agent = {**df_agent, **df_mex, **df_sc, **df_ent, **df_sc_m}
+                    df_comm_loss = {ag_idx+"_loss_comm": agent.saved_losses_comm[-1]}
+                    df_agent = {**df_agent, **df_mex, **df_sc, **df_ent, **df_sc_m, **df_comm_loss}
                 if (config.listening_agents[agent.idx] == 1.):
                     df_listen = {ag_idx+"mutinfo_listening": agent.mutinfo_listening_old[-1]}
                     df_agent = {**df_agent, **df_listen}
