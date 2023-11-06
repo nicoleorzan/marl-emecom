@@ -68,7 +68,7 @@ class Reinforce(Agent):
 
         elif (_eval == False):
             message_out, message_logprob, entropy = self.act(self.policy_comm, self.state)
-
+            #print("message_out=",message_out)
             self.buffer.states_c.append(self.state)
             self.buffer.messages.append(message_out)
             if (m_val in self.buffer.messages_given_m):
@@ -107,6 +107,7 @@ class Reinforce(Agent):
 
             self.buffer.states_a.append(self.state_to_act)
             self.buffer.actions.append(action)
+            #print("action=",action)
             if (m_val in self.buffer.actions_given_m):
                 self.buffer.actions_given_m[m_val].append(action)
             else: 
@@ -142,9 +143,12 @@ class Reinforce(Agent):
                 act_logprobs[i] = -act_logprobs[i] * (rew_norm[i] - self.baseline) + self.list_lambda*self.List_loss_list[i]
             else:
                 act_logprobs[i] = -act_logprobs[i] * (rew_norm[i] - self.baseline)
+
+        if (self.is_listening):
+            self.listening_loss = torch.mean(torch.Tensor(self.List_loss_list))
         
         self.saved_losses.append(torch.mean(torch.Tensor([i.detach() for i in act_logprobs])))
-        print("loss=",self.saved_losses[-1])
+        #print("loss=",self.saved_losses[-1])
         
         self.optimizer.zero_grad()
         if (self.is_communicating):

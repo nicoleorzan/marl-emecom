@@ -142,14 +142,14 @@ class DQN(Agent):
 
         elif (_eval == False):
             message_out, mex_entropy = self.act(self.policy_comm, self.state, self.input_comm)
-
+            #print("message_out=",message_out[0].long())
             self.buffer.states_c.append(self.state)
-            self.buffer.messages.append(message_out)
+            self.buffer.messages.append(message_out[0].long())
             self.buffer.comm_entropy.append(mex_entropy)
             if (m_val in self.buffer.messages_given_m):
-                self.buffer.messages_given_m[m_val].append(message_out)
+                self.buffer.messages_given_m[m_val].append(message_out[0].long())
             else: 
-                self.buffer.messages_given_m[m_val] = [message_out]
+                self.buffer.messages_given_m[m_val] = [message_out[0].long()]
 
         message_out = torch.Tensor([message_out.item()]).long().to(device)
         self.message_out = message_out
@@ -176,17 +176,23 @@ class DQN(Agent):
                 state_empty_mex = torch.cat((self.state, torch.zeros_like(self.message_in))).to(device)
                 out = self.policy_act.get_values(state_empty_mex).detach()
                 dist_empty_mex = self.softmax(out)
+                #print("dist_empty_mex=", dist_empty_mex)
                 out = self.policy_act.get_values(self.state_to_act)
                 dist_mex = self.softmax(out)
+                #print("dist_mex=",dist_mex)
+                #print("dist_empty_mex - dist_mex=",dist_empty_mex - dist_mex)
+                #print("torch.sum(torch.abs(dist_empty_mex - dist_mex))=",torch.sum(torch.abs(dist_empty_mex - dist_mex)))
                 self.List_loss_list.append(-torch.sum(torch.abs(dist_empty_mex - dist_mex)))
+                #print("-torch.sum(torch.abs(dist_empty_mex - dist_mex))=",-torch.sum(torch.abs(dist_empty_mex - dist_mex)))
 
             self.buffer.states_a.append(self.state_to_act)
-            self.buffer.actions.append(action)
+            self.buffer.actions.append(action[0].long())
+            #print("action=",action[0].long())
             self.buffer.act_entropy.append(act_entropy)
             if (m_val in self.buffer.actions_given_m):
-                self.buffer.actions_given_m[m_val].append(action)
+                self.buffer.actions_given_m[m_val].append(action[0].long())
             else: 
-                self.buffer.actions_given_m[m_val] = [action]
+                self.buffer.actions_given_m[m_val] = [action[0].long()]
 
         self.action = action[0]
         #print("action agent", self.idx, "=", self.action)
@@ -226,31 +232,23 @@ class DQN(Agent):
             expected_q_values_act = batch_reward # + self.gamma*max_next_q_values
             if (self.is_communicating):
                 expected_q_values_comm = batch_reward
-                #print("(expected_q_values_comm - current_q_values_comm)=", (expected_q_values_comm - current_q_values_comm))
-                #print("hloss=",hloss.shape)
                 hloss = hloss.reshape(self.batch_size, 1)
-                #print("hloss=",hloss.shape)
-                #print("expected_q_values_comm=",expected_q_values_comm)
-                #print("current_q_values_comm=",current_q_values_comm)
-                #print("diff=",expected_q_values_comm - current_q_values_comm)
-                #print("hloss=",hloss)
                 diff_comm = (expected_q_values_comm - current_q_values_comm) #+ self.sign_lambda*hloss
-                #print("diff_comm.shape=", diff_comm.shape)
-                #print("diff_comm=", diff_comm)
                 loss_comm = self.MSE(diff_comm) + self.sign_lambda*hloss
                 loss_comm = loss_comm.mean()
                 self.saved_losses_comm.append(loss_comm.detach())
-
-        #print("current_q_values_act=", current_q_values_act.shape)
-        #print("List_loss_list=",torch.Tensor(self.List_loss_list).shape)
-        #print("(expected_q_values_act - current_q_values_act)=",(expected_q_values_act - current_q_values_act).shape)
-        #print("torch.Tensor(self.List_loss_list)=",torch.Tensor(self.List_loss_list).shape)
+  
         diff_act = (expected_q_values_act - current_q_values_act)
-        #print("diff_act=", diff_act.shape)
         loss = self.MSE(diff_act)
+        self.pure_loss_act = loss.mean()
         if (self.is_listening):
-            listening_loss = torch.Tensor(self.List_loss_list).reshape(self.batch_size, 1)
-            loss = loss + self.list_lambda*listening_loss
+            #print("torch.Tensor(self.List_loss_list).reshape(self.batch_size, 1)",torch.Tensor(self.List_loss_list).reshape(self.batch_size, 1).mean())
+            #print("self.list_lambda*torch.Tensor(self.List_loss_list).reshape(self.batch_size, 1)=",self.list_lambda*torch.Tensor(self.List_loss_list).reshape(self.batch_size, 1).mean())
+            self.listening_loss = self.list_lambda*torch.Tensor(self.List_loss_list).reshape(self.batch_size, 1)
+            #print("loss befor=", loss)
+            #print("self.list_lambda*listening_loss=",self.list_lambda*listening_loss)
+            loss = loss + self.listening_loss
+            #print("loss after=", loss)
         loss = loss.mean()
         #print("loss=",loss.detach())
         self.saved_losses.append(loss.detach())
