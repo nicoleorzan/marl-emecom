@@ -83,12 +83,12 @@ def create_dataset(project):
 
 
 repos = [
-   "EPGG_10agents_no_unc_q-learning_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep0",
-   "EPGG_10agents_no_unc_q-learning_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep1",
-   "EPGG_10agents_no_unc_dqn_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep0",
+   #"EPGG_10agents_no_unc_q-learning_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep0",
+   #"EPGG_10agents_no_unc_q-learning_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep1",
+   #"EPGG_10agents_no_unc_dqn_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep0",
    "EPGG_10agents_no_unc_dqn_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep1",
-   "EPGG_10agents_unc_dqn_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep0",
-   "EPGG_10agents_unc_dqn_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep1"
+   #"EPGG_10agents_unc_dqn_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep0",
+   #"EPGG_10agents_unc_dqn_mf[0.5, 1.0, 1.5, 2.5, 3.5]_rep1"
 ]
 
 
