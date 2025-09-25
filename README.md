@@ -14,7 +14,7 @@ We extend the Public Goods Game into an **Extended Public Goods Game (EPGG)**, s
 **Key findings:**  
 - Communication supports cooperation under **symmetric uncertainty**.  
 - Under **asymmetric uncertainty**, agents may exploit communication.  
-- Agents trained across multiple incentive environments learn richer strategies that **generalize** better to unseen settings. .  
+- Agents trained across multiple incentive environments learn richer strategies that **generalize** better to unseen settings.
 
 ## Project Features & Repository Structure
 
