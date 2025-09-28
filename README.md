@@ -7,9 +7,12 @@
 
 ## Overview
 
-
 This project studies **emergent communication in multi-agent reinforcement learning (MARL)** under **mixed incentives** and **uncertainty**.  
 We extend the Public Goods Game into an **Extended Public Goods Game (EPGG)**, spanning cooperative, mixed, and competitive settings. The code reproduces the experiments from [our paper](https://link.springer.com/article/10.1007/s00521-024-10530-6).
+
+Example Outcome:
+
+[W&B - 2-agent Experiments with Uncertainty and Communication](https://wandb.ai/nicoleorzan/2agents_comm[1,%200]_list[0,%201]_noGmm_unc[0.0,%202.0]_mfact[0.5,%201.5,%202.5,%203.5]_algo_reinforce_BEST/reports/Extended-Public-Goods-Games-Communication-and-Uncertainty--VmlldzoxNDU1NTkzOQ)).
 
 **Key findings:**  
 - Communication supports cooperation under **symmetric uncertainty**.  
@@ -62,7 +65,3 @@ Base run:
 ```
 python src/experiments_pgg_v0/caller_given_params.py
 ```
-
-### Example Outcome:
-
-[W&B - 2-agent Experiments with Uncertainty and Communication]([https://link.springer.com/article/10.1007/s00521-024-10530-6](https://wandb.ai/nicoleorzan/2agents_comm[1,%200]_list[0,%201]_noGmm_unc[0.0,%202.0]_mfact[0.5,%201.5,%202.5,%203.5]_algo_reinforce_BEST/reports/Extended-Public-Goods-Games-Communication-and-Uncertainty--VmlldzoxNDU1NTkzOQ)).
