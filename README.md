@@ -8,7 +8,7 @@
 ## Overview
 
 This project studies **emergent communication in multi-agent reinforcement learning (MARL)** under **mixed incentives** and **uncertainty**.  
-We extend the Public Goods Game into an **Extended Public Goods Game (EPGG)**, spanning cooperative, mixed, and competitive settings. The code reproduces the experiments from [our paper](https://link.springer.com/article/10.1007/s00521-024-10530-6).
+We extend the Public Goods Game into an **Extended Public Goods Game (EPGG)**, spanning cooperative, mixed, and competitive settings. The code reproduces the experiments from our paper.
 
 Example Outcome:
 
