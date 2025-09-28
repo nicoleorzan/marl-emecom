@@ -12,7 +12,7 @@ We extend the Public Goods Game into an **Extended Public Goods Game (EPGG)**, s
 
 Example Outcome:
 
-[W&B - 2-agent Experiments with Uncertainty and Communication](https://wandb.ai/nicoleorzan/2agents_comm[1,%200]_list[0,%201]_noGmm_unc[0.0,%202.0]_mfact[0.5,%201.5,%202.5,%203.5]_algo_reinforce_BEST/reports/Extended-Public-Goods-Games-Communication-and-Uncertainty--VmlldzoxNDU1NTkzOQ)).
+[W&B - 2-agent Experiments with Uncertainty and Communication](https://wandb.ai/nicoleorzan/2agents_comm[1,%200]_list[0,%201]_noGmm_unc[0.0,%202.0]_mfact[0.5,%201.5,%202.5,%203.5]_algo_reinforce_BEST/reports/Extended-Public-Goods-Games-Communication-and-Uncertainty--VmlldzoxNDU1NTkzOQ).
 
 **Key findings:**  
 - Communication supports cooperation under **symmetric uncertainty**.  
