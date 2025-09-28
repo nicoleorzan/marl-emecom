@@ -62,3 +62,7 @@ Base run:
 ```
 python src/experiments_pgg_v0/caller_given_params.py
 ```
+
+### Example Outcome:
+
+[W&B - 2-agent Experiments with Uncertainty and Communication]([https://link.springer.com/article/10.1007/s00521-024-10530-6](https://wandb.ai/nicoleorzan/2agents_comm[1,%200]_list[0,%201]_noGmm_unc[0.0,%202.0]_mfact[0.5,%201.5,%202.5,%203.5]_algo_reinforce_BEST/reports/Extended-Public-Goods-Games-Communication-and-Uncertainty--VmlldzoxNDU1NTkzOQ)).
